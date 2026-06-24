@@ -29,6 +29,10 @@ psql -h localhost -U pi -d farm -f migrations/002_seed_data.sql
 
 ## 3. Configuração do Backend
 ```bash
+# Garantir permissões corretas
+sudo chown -R pi:pi /home/pi/fazendinha_online
+git config --global --add safe.directory /home/pi/fazendinha_online
+
 cd server
 npm install
 cp .env.example .env
@@ -58,5 +62,30 @@ pm2 save
 pm2 startup
 ```
 
-## 6. Cloudflare
-No painel do Cloudflare, certifique-se de que o registro A ou CNAME para `sgiptv.com.br` aponta para o IP do seu Raspberry Pi e que o SSL está configurado (recomendado: Full ou Flexible).
+## 6. Cloudflare (Túnel Local)
+O seu túnel é gerenciado localmente no Raspberry Pi.
+
+**ID do Túnel:** `5f23e228-85d8-4a42-ab7c-ef4f70a65722`
+
+No painel de DNS do Cloudflare, adicione um registro:
+- **Tipo:** CNAME
+- **Nome:** @
+- **Alvo:** `5f23e228-85d8-4a42-ab7c-ef4f70a65722.cfargotunnel.com`
+- **Proxy:** Ativado (Nuvem Laranja)
+
+### Configuração do Túnel (/etc/cloudflared/config.yml)
+```yaml
+tunnel: 5f23e228-85d8-4a42-ab7c-ef4f70a65722
+credentials-file: /home/pi/.cloudflared/5f23e228-85d8-4a42-ab7c-ef4f70a65722.json
+
+ingress:
+  - hostname: sgiptv.com.br
+    service: http://127.0.0.1:80
+  - hostname: copa.sgiptv.com.br
+    service: http://127.0.0.1:80
+  - hostname: api.sgiptv.com.br
+    service: http://127.0.0.1:10000
+  - hostname: farm.sgiptv.com.br
+    service: http://127.0.0.1:3002
+  - service: http_status:404
+```

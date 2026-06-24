@@ -3,10 +3,9 @@ server {
     server_name sgiptv.com.br;
 
     # Frontend do jogo
-    location /fazendinha {
-        alias /home/pi/fazendinha_online;
+    location /fazendinha/ {
+        alias /home/pi/fazendinha_online/;
         index index.html;
-        try_files $uri $uri/ /fazendinha/index.html;
 
         # Segurança: Negar acesso a arquivos sensíveis
         location ~ /\.(?!well-known) { deny all; }
