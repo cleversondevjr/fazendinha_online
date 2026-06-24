@@ -18,10 +18,9 @@ server {
         index index.html;
 
         # Segurança: Bloquear acesso a pastas de código
-        location ~ /fazendinha/\.(?!well-known) { deny all; }
-        location ~ /fazendinha/server { deny all; }
-        location ~ /fazendinha/migrations { deny all; }
-        location ~ /fazendinha/\.env { deny all; }
+        location ~ ^/fazendinha/\.(?!well-known) { deny all; }
+        location ~ ^/fazendinha/(server|migrations|tmp|\.git) { deny all; }
+        location ~ ^/fazendinha/\.env { deny all; }
     }
 
     # 3. Backend (API)

@@ -29,6 +29,10 @@ const adminRoutes = require('./routes/admin');
 app.use('/api/game', gameRoutes);
 app.use('/api/admin', adminRoutes);
 
+app.get('/api/status', (req, res) => {
+    res.json({ status: 'online', uptime: process.uptime() });
+});
+
 // Start Cron Jobs
 require('./cron');
 

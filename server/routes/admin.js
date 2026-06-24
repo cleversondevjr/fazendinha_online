@@ -44,4 +44,17 @@ router.post('/items/update', async (req, res) => {
     }
 });
 
+// POST /api/admin/user/update-resources - Update user coins, diamonds, energy
+router.post('/user/update-resources', async (req, res) => {
+    const { userId, coins, diamante, energia } = req.body;
+    try {
+        if (coins !== undefined) await db.execute("INSERT INTO fazenda_inventario (usuario_id, item_id, quantidade) VALUES ($1, 'coins', $2) ON CONFLICT (usuario_id, item_id) DO UPDATE SET quantidade = $2", [userId, coins]);
+        if (diamante !== undefined) await db.execute("INSERT INTO fazenda_inventario (usuario_id, item_id, quantidade) VALUES ($1, 'diamante', $2) ON CONFLICT (usuario_id, item_id) DO UPDATE SET quantidade = $2", [userId, diamante]);
+        if (energia !== undefined) await db.execute("INSERT INTO fazenda_inventario (usuario_id, item_id, quantidade) VALUES ($1, 'energia', $2) ON CONFLICT (usuario_id, item_id) DO UPDATE SET quantidade = $2", [userId, energia]);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 module.exports = router;
