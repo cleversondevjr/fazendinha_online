@@ -6,7 +6,6 @@ let inventario = { coins: 0, diamante: 0, energia: 0 };
 let plotStates = [];
 let missionsState = [];
 let worldTreeState = null;
-let userTreeStatus = { total_watered_today: 0, reward_collected: false };
 let configs = {};
 let cropCatalog = {};
 let itemShopPrices = {};
@@ -32,7 +31,6 @@ async function loadGameState() {
         plotStates = data.slots;
         missionsState = data.missions;
         worldTreeState = data.worldTree;
-        userTreeStatus = data.userTreeStatus || { total_watered_today: 0, reward_collected: false };
         configs = data.configs;
 
         const adminData = await apiFetch(`${ADMIN_API_BASE_URL}/config`);
@@ -159,17 +157,6 @@ function renderMissions() {
     `).join("");
 }
 
-function getItemAsset(itemId) {
-    const mappings = {
-        'vasoPequeno': 'vaso_pequeno.png',
-        'vasoGrande': 'vaso_grande.png',
-        'agua': 'agua.png',
-        'pesticida': 'borrifador_inseticida.png',
-        'espantalho': 'espantalho.png'
-    };
-    return mappings[itemId] || `${itemId}.png`;
-}
-
 function renderShopTab(tabName) {
     const grid = document.getElementById("shop-grid");
     if (!grid) return;
@@ -179,7 +166,7 @@ function renderShopTab(tabName) {
     else if (tabName === 'arvores') items = Object.values(cropCatalog).filter(c => c.tipo === 'tree');
     grid.innerHTML = items.map(item => `
         <div class="shop-item">
-            <img src="assets/${getItemAsset(item.item_id)}" onerror="this.src='assets/flores/${item.item_id}.png'">
+            <img src="assets/${item.item_id}.png" onerror="this.src='assets/flores/${item.item_id}.png'">
             <p>${item.label}</p>
             <p>${item.price_coins} Ouro</p>
             <button class="buy-btn" onclick="performAction('buy_item', null, '${item.item_id}')">Comprar</button>
@@ -192,7 +179,7 @@ function renderInventory() {
     if (!grid) return;
     grid.innerHTML = Object.entries(inventario).filter(([id, qty]) => qty > 0 && !['coins', 'diamante', 'energia'].includes(id)).map(([id, qty]) => `
         <div class="inventory-item ${itemSelecionadoState.item === id ? 'selected' : ''}">
-            <img src="assets/${getItemAsset(id)}" onerror="this.src='assets/flores/${id}.png'">
+            <img src="assets/${id}.png" onerror="this.src='assets/flores/${id}.png'">
             <p>${id}</p>
             <p>Qtd: ${qty}</p>
             <button class="use-btn" onclick="selectItem('${id}')">Selecionar</button>
@@ -215,22 +202,6 @@ function renderAll() {
     document.getElementById("diamonds").textContent = inventario.diamante || 0;
     document.getElementById("energy").textContent = inventario.energia || 0;
     renderMissions();
-    updateSidebarCounts();
-    renderWorldTree();
-}
-
-function updateSidebarCounts() {
-    const mappings = {
-        'vasoPequeno': 'count-vaso-pequeno',
-        'vasoGrande': 'count-vaso-grande',
-        'agua': 'count-agua',
-        'pesticida': 'count-pesticida',
-        'espantalho': 'count-espantalho'
-    };
-    for (const [item, id] of Object.entries(mappings)) {
-        const el = document.getElementById(id);
-        if (el) el.textContent = inventario[item] || 0;
-    }
 }
 
 function formatDuration(ms) {
@@ -286,111 +257,6 @@ setupModal(".open-shop", "shop-modal", ".close-btn");
 setupModal(".open-inventory", "inventory-modal", ".close-inventory");
 setupModal(".open-worldtree", "worldtree-modal", ".close-worldtree");
 setupModal("#admin-open", "admin-modal", "#admin-close");
-
-// --- World Tree Logic ---
-function renderWorldTree() {
-    const panel = document.getElementById("worldtree-panel");
-    if (!panel || !worldTreeState) return;
-
-    const progress = (worldTreeState.agua_atual / worldTreeState.meta_agua) * 100;
-    const canWater = userTreeStatus.total_watered_today < 2;
-    const canCollect = worldTreeState.reward_available && !userTreeStatus.reward_collected;
-
-    panel.innerHTML = `
-        <div class="worldtree-info">
-            <p>Meta Global de Hoje: <strong>${worldTreeState.agua_atual} / ${worldTreeState.meta_agua} gotas</strong></p>
-            <div class="progress-bar-container">
-                <div class="progress-bar" style="width: ${Math.min(progress, 100)}%"></div>
-            </div>
-            <p>Suas contribuições hoje: ${userTreeStatus.total_watered_today} / 2</p>
-        </div>
-        <div class="worldtree-actions">
-            <button class="wt-btn water" onclick="performAction('water_world_tree')" ${!canWater ? 'disabled' : ''}>
-                Regar Árvore
-            </button>
-            <button class="wt-btn collect" onclick="performAction('collect_tree_reward')" ${!canCollect ? 'disabled' : ''}>
-                Coletar Recompensa
-            </button>
-        </div>
-    `;
-}
-
-// --- Harvest All ---
-const harvestAllBtn = document.querySelector(".open-harvest");
-if (harvestAllBtn) {
-    harvestAllBtn.onclick = () => performAction('harvest_all');
-}
-
-function renderAdminTab(tabName) {
-    const content = document.getElementById("admin-content");
-    if (!content) return;
-
-    if (tabName === 'conta') {
-        content.innerHTML = `
-            <div class="admin-form">
-                <h3>Gerenciar Recursos do Usuário (ID: 1)</h3>
-                <div class="form-group">
-                    <label>Ouro:</label>
-                    <input type="number" id="admin-coins" value="${inventario.coins || 0}">
-                </div>
-                <div class="form-group">
-                    <label>Diamantes:</label>
-                    <input type="number" id="admin-diamonds" value="${inventario.diamante || 0}">
-                </div>
-                <div class="form-group">
-                    <label>Energia:</label>
-                    <input type="number" id="admin-energy" value="${inventario.energia || 0}">
-                </div>
-                <button class="admin-action primary" onclick="updateUserResources()">Atualizar Recursos</button>
-            </div>
-        `;
-    } else {
-        content.innerHTML = `<p>Funcionalidade em desenvolvimento para a aba ${tabName}.</p>`;
-    }
-}
-
-async function updateUserResources() {
-    const coins = parseInt(document.getElementById("admin-coins").value);
-    const diamante = parseInt(document.getElementById("admin-diamonds").value);
-    const energia = parseInt(document.getElementById("admin-energy").value);
-
-    try {
-        await apiFetch(`${ADMIN_API_BASE_URL}/user/update-resources`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: 1, coins, diamante, energia })
-        });
-        await loadGameState();
-        showDialog({ title: "Sucesso", message: "Recursos atualizados!" });
-    } catch (err) {
-        showDialog({ title: "Erro", message: err.message });
-    }
-}
-
-document.querySelectorAll(".admin-tab").forEach(tab => {
-    tab.onclick = () => {
-        document.querySelectorAll(".admin-tab").forEach(t => t.classList.remove("active"));
-        tab.classList.add("active");
-        renderAdminTab(tab.dataset.adminTab);
-    };
-});
-
-// Update modal open to render first tab
-const adminOpenBtn = document.querySelector("#admin-open");
-if (adminOpenBtn) {
-    const oldClick = adminOpenBtn.onclick;
-    adminOpenBtn.onclick = () => {
-        if (oldClick) oldClick();
-        renderAdminTab('conta');
-    }
-}
-
-const logoutBtn = document.querySelector(".logout-btn");
-if (logoutBtn) {
-    logoutBtn.onclick = () => {
-        window.location.href = "/";
-    };
-}
 
 document.querySelectorAll(".shop-tab").forEach(tab => {
     tab.onclick = () => {

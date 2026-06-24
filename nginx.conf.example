@@ -7,23 +7,22 @@ server {
 
     server_name sgiptv.com.br;
 
-    # 1. FIX: Se o usuário esquecer a barra final, o Nginx coloca automaticamente (Resolve o 404)
+    # 1. FIX: Redirecionamento se faltar a barra (Fundamental para abrir o site)
     location = /fazendinha {
         return 301 /fazendinha/;
     }
 
-    # 2. Configuração do Jogo (Frontend)
+    # 2. Frontend (Jogo)
     location /fazendinha/ {
         alias /home/pi/fazendinha_online/;
         index index.html;
 
-        # Segurança: Bloquear acesso a pastas de código
+        # Segurança Básica
         location ~ ^/fazendinha/\.(?!well-known) { deny all; }
-        location ~ ^/fazendinha/(server|migrations|tmp|\.git) { deny all; }
-        location ~ ^/fazendinha/\.env { deny all; }
+        location ~ ^/fazendinha/(server|migrations|\.git) { deny all; }
     }
 
-    # 3. Backend (API)
+    # 3. Backend (Proxy para API)
     location /fazendinha/api/ {
         proxy_pass http://localhost:3002/api/;
         proxy_http_version 1.1;
@@ -31,17 +30,9 @@ server {
         proxy_set_header Connection "upgrade";
         proxy_set_header Host $host;
         proxy_cache_bypass $http_upgrade;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    # 4. Outros sistemas (Copa Admin)
-    location /copa-admin/ {
-        proxy_pass http://127.0.0.1:3100/admin/;
-    }
-
-    # 5. Site Principal
+    # 4. Outros
     location / {
         try_files $uri $uri/ =404;
     }

@@ -78,14 +78,7 @@ router.get('/state', async (req, res) => {
         const treeMeta = treeMetaRes.rows[0] || null;
         if (treeMeta) treeMeta.reward_available = treeMeta.agua_atual >= treeMeta.meta_agua;
 
-        const today = new Date().toISOString().split('T')[0];
-        const userContribRes = await db.execute('SELECT SUM(quantidade) as total, bool_or(recompensa_coletada) as coletada FROM fazenda_arvore_contribuicoes WHERE usuario_id = $1 AND data_dia = $2', [userId, today]);
-        const userTreeStatus = {
-            total_watered_today: parseInt(userContribRes.rows[0]?.total || 0),
-            reward_collected: userContribRes.rows[0]?.coletada || false
-        };
-
-        res.json({ inventory, slots, missions: missionsRes.rows, configs: configsMap, worldTree: treeMeta, userTreeStatus });
+        res.json({ inventory, slots, missions: missionsRes.rows, configs: configsMap, worldTree: treeMeta });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -144,24 +137,6 @@ router.post('/action', async (req, res) => {
             await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade + $1 WHERE usuario_id = $2 AND item_id = 'coins'", [Math.floor(slot.reward_actual), userId]);
             await db.execute("UPDATE fazenda_plantacoes SET fase = $1, crop_id = NULL, started_at = NULL, ends_at = NULL, crow_active = FALSE, pest_active = FALSE WHERE id = $2", [slot.pot_type ? 'readyToPlant' : 'needsPot', slot.id]);
             await db.execute("UPDATE fazenda_missoes_jogador SET progress = LEAST(target, progress + 1) WHERE usuario_id = $1 AND claimed = FALSE AND expires_at > NOW() AND template_id IN (SELECT id FROM fazenda_missoes_template WHERE tipo = 'harvest_count')", [userId]);
-        }
-
-        if (action === 'harvest_all') {
-            const slotsRes = await db.execute('SELECT * FROM fazenda_plantacoes WHERE usuario_id = $1', [userId]);
-            let totalHarvested = 0;
-            let count = 0;
-            for (const s of slotsRes.rows) {
-                const slot = calculatePlotState(s, {});
-                if (slot.fase === 'ready') {
-                    totalHarvested += Math.floor(slot.reward_actual);
-                    count++;
-                    await db.execute("UPDATE fazenda_plantacoes SET fase = $1, crop_id = NULL, started_at = NULL, ends_at = NULL, crow_active = FALSE, pest_active = FALSE WHERE id = $2", [slot.pot_type ? 'readyToPlant' : 'needsPot', slot.id]);
-                }
-            }
-            if (count > 0) {
-                await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade + $1 WHERE usuario_id = $2 AND item_id = 'coins'", [totalHarvested, userId]);
-                await db.execute("UPDATE fazenda_missoes_jogador SET progress = LEAST(target, progress + $1) WHERE usuario_id = $2 AND claimed = FALSE AND expires_at > NOW() AND template_id IN (SELECT id FROM fazenda_missoes_template WHERE tipo = 'harvest_count')", [count, userId]);
-            }
         }
 
         if (action === 'claim_mission') {
