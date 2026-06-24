@@ -15,16 +15,16 @@ sudo -u postgres psql
 ```
 No console do Postgres:
 ```sql
-CREATE DATABASE farm2;
+CREATE DATABASE farm;
 CREATE USER pi WITH PASSWORD 'sua_senha_aqui';
-GRANT ALL PRIVILEGES ON DATABASE farm2 TO pi;
+GRANT ALL PRIVILEGES ON DATABASE farm TO pi;
 \q
 ```
 
 Execute as migrações:
 ```bash
-psql -h localhost -U pi -d farm2 -f migrations/001_initial_schema.sql
-psql -h localhost -U pi -d farm2 -f migrations/002_seed_data.sql
+psql -h localhost -U pi -d farm -f migrations/001_initial_schema.sql
+psql -h localhost -U pi -d farm -f migrations/002_seed_data.sql
 ```
 
 ## 3. Configuração do Backend
@@ -33,7 +33,7 @@ cd server
 npm install
 cp .env.example .env
 ```
-Edite o `.env` com as credenciais do banco e a porta desejada (padrão 3000).
+Edite o `.env` com as credenciais do banco e a porta desejada. (Neste projeto usamos a porta **3002** pois a 3000 já estava em uso).
 
 ## 4. Configuração do Nginx
 Copie o conteúdo de `nginx.conf.example` para o seu arquivo de sites ativos do Nginx (geralmente em `/etc/nginx/sites-available/default` ou um arquivo novo em `sites-enabled`).
@@ -52,6 +52,7 @@ Recomendamos o uso do `pm2` para gerenciar o processo:
 ```bash
 sudo npm install -g pm2
 cd server
+# Certifique-se de que o .env está configurado com PGDATABASE=farm e PORT=3002
 pm2 start index.js --name "fazendinha-backend"
 pm2 save
 pm2 startup
