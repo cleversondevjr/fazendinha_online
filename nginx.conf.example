@@ -7,11 +7,17 @@ server {
         alias /home/pi/fazendinha_online;
         index index.html;
         try_files $uri $uri/ /fazendinha/index.html;
+
+        # Segurança: Negar acesso a arquivos sensíveis
+        location ~ /\.(?!well-known) { deny all; }
+        location ~ /server { deny all; }
+        location ~ /migrations { deny all; }
+        location ~ /\.env { deny all; }
     }
 
     # Backend API
     location /fazendinha/api {
-        proxy_pass http://localhost:3000/api;
+        proxy_pass http://localhost:3002/api;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
