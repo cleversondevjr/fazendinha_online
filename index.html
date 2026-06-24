@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Fazendinha Online</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Barra superior -->
+  <header class="topbar">
+    <div class="topbar-main">
+      <div class="logo">
+        <img src="assets/logo_fazendinha_online.png" alt="Fazendinha Online" class="logo-icon">
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <button class="menu-btn-compact menu-top-btn open-shop" type="button">
+        <img src="assets/botao_loja.png" alt="Loja" class="menu-icon-compact">
+      </button>
+      <button class="menu-btn-compact menu-top-btn open-inventory" type="button">
+        <img src="assets/botao_inventario.png" alt="Inventário" class="menu-icon-compact">
+      </button>
+      <button class="menu-btn-compact menu-top-btn open-worldtree" type="button">
+        <img src="assets/botao_arvore_mundial.png" alt="Árvore Mundial" class="menu-icon-compact">
+      </button>
+      <button class="resource resource-btn resource-ouro" type="button" aria-label="Ouro">
+        <img src="assets/ouro.png" alt="" class="resource-icon">
+        <span id="coins">1000</span>
+      </button>
+      <button class="resource resource-btn resource-diamond" type="button" aria-label="Diamante">
+        <img src="assets/diamante.png" alt="" class="resource-icon">
+        <span id="diamonds">0</span>
+      </button>
+      <button class="resource resource-btn resource-energy" type="button" aria-label="Energia">
+        <img src="assets/energia.png" alt="" class="resource-icon">
+        <span id="energy">99999</span>
+      </button>
+      <button class="menu-btn-compact harvest open-harvest" type="button">
+        <img src="assets/botao_coletar_tudo.png" alt="Colher Tudo" class="menu-icon-compact">
+      </button>
+      <button class="menu-btn-compact logout-btn" type="button">
+        <img src="assets/botao_sair.png" alt="Sair" class="menu-icon-compact">
+      </button>
+    </div>
+  </header>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="tools-header"><img src="assets/botao_ferramentas.png" alt="Ferramentas"></div>
+    <div class="tool-item"><img src="assets/vaso_pequeno.png" class="tool-icon"><span class="count" id="count-vaso-pequeno">0</span><button class="use-btn" data-item="vasoPequeno" type="button"><img src="assets/botao_usar.png" alt="Usar" draggable="false"></button></div>
+    <div class="tool-item"><img src="assets/vaso_grande.png" class="tool-icon"><span class="count" id="count-vaso-grande">0</span><button class="use-btn" data-item="vasoGrande" type="button"><img src="assets/botao_usar.png" alt="Usar" draggable="false"></button></div>
+    <div class="tool-item"><img src="assets/agua.png" class="tool-icon"><span class="count" id="count-agua">0</span><button class="use-btn" data-item="agua" type="button"><img src="assets/botao_usar.png" alt="Usar" draggable="false"></button></div>
+    <div class="tool-item"><img src="assets/borrifador_inseticida.png" class="tool-icon"><span class="count" id="count-pesticida">0</span><button class="use-btn" data-item="pesticida" type="button"><img src="assets/botao_usar.png" alt="Usar" draggable="false"></button></div>
+    <div class="tool-item"><img src="assets/espantalho.png" class="tool-icon"><span class="count" id="count-espantalho">0</span><button class="use-btn" data-item="espantalho" type="button"><img src="assets/botao_usar.png" alt="Usar" draggable="false"></button></div>
+    <div class="sidebar-spacer"></div>
+    <section class="rewards-panel" id="rewards-panel">
+      <div class="panel-title">Recompensas</div>
+      <div class="missions-list" id="missions-list"></div>
+    </section>
+      <div class="weather-panel">
+        <img src="assets/caixa_clima.png" alt="" class="weather-icon" id="weather-icon">
+      </div>
+
+    <!-- Botões principais -->
+    <div class="menu-buttons"></div>
+  </aside>
+
+  <!-- Área principal -->
+  <main class="main">
+    <div id="plot-grid" class="plot-grid"></div>
+  </main>
+
+  <!-- Modais -->
+  <div id="shop-modal" class="shop-modal">
+    <div class="shop-content">
+      <span class="close-btn">&times;</span>
+      <h2>Loja</h2>
+      <div class="shop-tabs" id="shop-tabs">
+        <button class="shop-tab active" data-tab="itens" type="button">Itens</button>
+        <button class="shop-tab" data-tab="flores" type="button">Flores</button>
+        <button class="shop-tab" data-tab="arvores" type="button">Árvores</button>
+        <button class="shop-tab" data-tab="ouro" type="button">Ouro</button>
+        <button class="shop-tab" data-tab="diamantes" type="button">Diamantes</button>
+      </div>
+      <div class="shop-grid" id="shop-grid"></div>
+    </div>
+  </div>
+
+  <div id="inventory-modal" class="inventory-modal">
+    <div class="inventory-content">
+      <span class="close-inventory">&times;</span>
+      <h2>Inventário</h2>
+      <div class="inventory-grid" id="inventory-grid"></div>
+    </div>
+  </div>
+
+  <div id="worldtree-modal" class="worldtree-modal">
+    <div class="worldtree-content">
+      <span class="close-worldtree">&times;</span>
+      <h2>Árvore Mundial</h2>
+      <div id="worldtree-panel"></div>
+    </div>
+  </div>
+
+  <div id="game-dialog" class="game-dialog hidden">
+    <div class="game-dialog-box">
+      <h3 id="game-dialog-title">Aviso</h3>
+      <p id="game-dialog-message"></p>
+      <div class="game-dialog-actions">
+        <button id="game-dialog-confirm" class="dialog-btn dialog-btn-confirm" type="button">OK</button>
+        <button id="game-dialog-cancel" class="dialog-btn dialog-btn-cancel" type="button">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <button id="admin-open" class="admin-floating-btn" type="button">Admin</button>
+
+  <div id="admin-modal" class="admin-modal hidden">
+    <div class="admin-panel">
+      <div class="admin-header">
+        <div>
+          <h2>Painel Admin</h2>
+          <p>Gerencie conta, itens, plantas, árvores, slots e regras locais.</p>
+        </div>
+        <button id="admin-close" class="admin-close" type="button">&times;</button>
+      </div>
+
+      <div class="admin-tabs">
+        <button class="admin-tab active" data-admin-tab="conta" type="button">Conta</button>
+        <button class="admin-tab" data-admin-tab="itens" type="button">Itens</button>
+        <button class="admin-tab" data-admin-tab="plantas" type="button">Plantas</button>
+        <button class="admin-tab" data-admin-tab="slots" type="button">Slots</button>
+        <button class="admin-tab" data-admin-tab="missoes" type="button">Missões</button>
+        <button class="admin-tab" data-admin-tab="regras" type="button">Regras</button>
+        <button class="admin-tab" data-admin-tab="dados" type="button">Dados</button>
+      </div>
+
+      <div id="admin-content" class="admin-content"></div>
+
+      <div class="admin-footer">
+        <button id="admin-save" class="admin-action primary" type="button">Salvar Alterações</button>
+        <button id="admin-refresh" class="admin-action" type="button">Recarregar Painel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Script -->
+  <script src="script.js"></script>
+</body>
+</html>
