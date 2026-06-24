@@ -15,11 +15,11 @@ sudo apt install nodejs npm postgresql
 ### Configurar o Banco de Dados (PostgreSQL)
 ```bash
 # Crie o banco de dados
-sudo -u postgres createdb farm2
+sudo -u postgres createdb farm
 
 # Execute as migrações (na raiz do projeto)
-psql -h localhost -U postgres -d farm2 -f migrations/001_initial_schema.sql
-psql -h localhost -U postgres -d farm2 -f migrations/002_seed_data.sql
+psql -h localhost -U postgres -d farm -f migrations/001_initial_schema.sql
+psql -h localhost -U postgres -d farm -f migrations/002_seed_data.sql
 ```
 
 ### Configurar o Backend

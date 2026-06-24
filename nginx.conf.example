@@ -1,35 +1,49 @@
 server {
-    listen 80;
+    listen 80 default_server;
+    listen [::]:80 default_server;
+
+    root /var/www/html;
+    index index.html index.htm index.nginx-debian.html;
+
     server_name sgiptv.com.br;
 
-    # Frontend do jogo
-    location /fazendinha {
-        alias /home/pi/fazendinha_online;
-        index index.html;
-        try_files $uri $uri/ /fazendinha/index.html;
-
-        # Segurança: Negar acesso a arquivos sensíveis
-        location ~ /\.(?!well-known) { deny all; }
-        location ~ /server { deny all; }
-        location ~ /migrations { deny all; }
-        location ~ /\.env { deny all; }
+    # 1. FIX: Se o usuário esquecer a barra final, o Nginx coloca automaticamente (Resolve o 404)
+    location = /fazendinha {
+        return 301 /fazendinha/;
     }
 
-    # Backend API
-    location /fazendinha/api {
-        proxy_pass http://localhost:3002/api;
+    # 2. Configuração do Jogo (Frontend)
+    location /fazendinha/ {
+        alias /home/pi/fazendinha_online/;
+        index index.html;
+
+        # Segurança: Bloquear acesso a pastas de código
+        location ~ /fazendinha/\.(?!well-known) { deny all; }
+        location ~ /fazendinha/server { deny all; }
+        location ~ /fazendinha/migrations { deny all; }
+        location ~ /fazendinha/\.env { deny all; }
+    }
+
+    # 3. Backend (API)
+    location /fazendinha/api/ {
+        proxy_pass http://localhost:3002/api/;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
+        proxy_set_header Connection "upgrade";
         proxy_set_header Host $host;
         proxy_cache_bypass $http_upgrade;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-
-        # Ajuste de cookies se necessário para o domínio principal
-        proxy_cookie_path / /;
     }
 
-    # Configurações para assets grandes ou cache podem ser adicionadas aqui
+    # 4. Outros sistemas (Copa Admin)
+    location /copa-admin/ {
+        proxy_pass http://127.0.0.1:3100/admin/;
+    }
+
+    # 5. Site Principal
+    location / {
+        try_files $uri $uri/ =404;
+    }
 }
