@@ -18,8 +18,17 @@ app.use(cookieParser());
 app.use((req, res, next) => {
     // Priority: 1. Cookie 'usuario_id' (common for simple PHP/Legacy sites)
     //           2. Header 'x-user-id' (for testing/mobile)
-    //           3. Default to 1 (Development only)
-    req.userId = req.cookies.usuario_id || req.headers['x-user-id'] || 1;
+    const id = req.cookies.usuario_id || req.headers['x-user-id'];
+
+    if (!id) {
+        // Return 401 Unauthorized if no user is found
+        return res.status(401).json({
+            error: 'Sessão expirada',
+            loginUrl: 'https://farm.sgiptv.com.br/farm/login?next=%2Ffarm%2F'
+        });
+    }
+
+    req.userId = id;
     next();
 });
 

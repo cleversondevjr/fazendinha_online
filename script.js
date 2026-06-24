@@ -17,6 +17,11 @@ async function apiFetch(endpoint, options = {}) {
     // Ensure credentials (cookies) are sent with every request
     options.credentials = 'include';
     const res = await fetch(endpoint, options);
+    if (res.status === 401) {
+        const data = await res.json();
+        window.location.href = data.loginUrl || 'https://farm.sgiptv.com.br/farm/login?next=%2Ffarm%2F';
+        return;
+    }
     if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
         throw new Error(errData.error || `Erro: ${res.status}`);
@@ -257,6 +262,13 @@ setupModal(".open-shop", "shop-modal", ".close-btn");
 setupModal(".open-inventory", "inventory-modal", ".close-inventory");
 setupModal(".open-worldtree", "worldtree-modal", ".close-worldtree");
 setupModal("#admin-open", "admin-modal", "#admin-close");
+
+const logoutBtn = document.querySelector(".logout-btn");
+if (logoutBtn) {
+    logoutBtn.onclick = () => {
+        window.location.href = "https://farm.sgiptv.com.br/farm/login?next=%2Ffarm%2F";
+    };
+}
 
 document.querySelectorAll(".shop-tab").forEach(tab => {
     tab.onclick = () => {
