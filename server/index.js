@@ -8,7 +8,7 @@ const port = process.env.PORT || 3000;
 
 // Update CORS to allow credentials from the main domain
 app.use(cors({
-    origin: true, // In production, replace with 'https://sgiptv.com.br'
+    origin: ['https://sgiptv.com.br', 'http://sgiptv.com.br'],
     credentials: true
 }));
 app.use(express.json());
