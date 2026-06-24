@@ -157,17 +157,6 @@ function renderMissions() {
     `).join("");
 }
 
-function getItemAsset(itemId) {
-    const mappings = {
-        'vasoPequeno': 'vaso_pequeno.png',
-        'vasoGrande': 'vaso_grande.png',
-        'agua': 'agua.png',
-        'pesticida': 'borrifador_inseticida.png',
-        'espantalho': 'espantalho.png'
-    };
-    return mappings[itemId] || `${itemId}.png`;
-}
-
 function renderShopTab(tabName) {
     const grid = document.getElementById("shop-grid");
     if (!grid) return;
@@ -177,7 +166,7 @@ function renderShopTab(tabName) {
     else if (tabName === 'arvores') items = Object.values(cropCatalog).filter(c => c.tipo === 'tree');
     grid.innerHTML = items.map(item => `
         <div class="shop-item">
-            <img src="assets/${getItemAsset(item.item_id)}" onerror="this.src='assets/flores/${item.item_id}.png'">
+            <img src="assets/${item.item_id}.png" onerror="this.src='assets/flores/${item.item_id}.png'">
             <p>${item.label}</p>
             <p>${item.price_coins} Ouro</p>
             <button class="buy-btn" onclick="performAction('buy_item', null, '${item.item_id}')">Comprar</button>
@@ -190,7 +179,7 @@ function renderInventory() {
     if (!grid) return;
     grid.innerHTML = Object.entries(inventario).filter(([id, qty]) => qty > 0 && !['coins', 'diamante', 'energia'].includes(id)).map(([id, qty]) => `
         <div class="inventory-item ${itemSelecionadoState.item === id ? 'selected' : ''}">
-            <img src="assets/${getItemAsset(id)}" onerror="this.src='assets/flores/${id}.png'">
+            <img src="assets/${id}.png" onerror="this.src='assets/flores/${id}.png'">
             <p>${id}</p>
             <p>Qtd: ${qty}</p>
             <button class="use-btn" onclick="selectItem('${id}')">Selecionar</button>
@@ -213,21 +202,6 @@ function renderAll() {
     document.getElementById("diamonds").textContent = inventario.diamante || 0;
     document.getElementById("energy").textContent = inventario.energia || 0;
     renderMissions();
-    updateSidebarCounts();
-}
-
-function updateSidebarCounts() {
-    const mappings = {
-        'vasoPequeno': 'count-vaso-pequeno',
-        'vasoGrande': 'count-vaso-grande',
-        'agua': 'count-agua',
-        'pesticida': 'count-pesticida',
-        'espantalho': 'count-espantalho'
-    };
-    for (const [item, id] of Object.entries(mappings)) {
-        const el = document.getElementById(id);
-        if (el) el.textContent = inventario[item] || 0;
-    }
 }
 
 function formatDuration(ms) {
@@ -283,13 +257,6 @@ setupModal(".open-shop", "shop-modal", ".close-btn");
 setupModal(".open-inventory", "inventory-modal", ".close-inventory");
 setupModal(".open-worldtree", "worldtree-modal", ".close-worldtree");
 setupModal("#admin-open", "admin-modal", "#admin-close");
-
-const logoutBtn = document.querySelector(".logout-btn");
-if (logoutBtn) {
-    logoutBtn.onclick = () => {
-        window.location.href = "/";
-    };
-}
 
 document.querySelectorAll(".shop-tab").forEach(tab => {
     tab.onclick = () => {
