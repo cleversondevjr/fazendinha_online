@@ -32,20 +32,24 @@ async function apiFetch(endpoint, options = {}) {
 async function loadGameState() {
     try {
         const data = await apiFetch(`${API_BASE_URL}/state`);
-        inventario = data.inventory;
-        plotStates = data.slots;
-        missionsState = data.missions;
-        worldTreeState = data.worldTree;
-        configs = data.configs;
+        inventario = data.inventory || {};
+        plotStates = data.slots || [];
+        missionsState = data.missions || [];
+        worldTreeState = data.worldTree || null;
+        configs = data.configs || {};
 
-        const adminData = await apiFetch(`${ADMIN_API_BASE_URL}/config`);
-        itemShopPrices = adminData.items.filter(i => i.tipo === 'item').reduce((acc, i) => ({ ...acc, [i.item_id]: i }), {});
-        cropCatalog = adminData.items.filter(i => i.tipo === 'flower' || i.tipo === 'tree').reduce((acc, i) => ({ ...acc, [i.item_id]: i }), {});
+        const adminData = await apiFetch(`${ADMIN_API_BASE_URL}/config`).catch(() => ({ items: [] }));
+        const allItems = adminData.items || [];
+
+        itemShopPrices = allItems.filter(i => i.tipo === 'item').reduce((acc, i) => ({ ...acc, [i.item_id]: i }), {});
+        cropCatalog = allItems.filter(i => i.tipo === 'flower' || i.tipo === 'tree').reduce((acc, i) => ({ ...acc, [i.item_id]: i }), {});
 
         renderPlots();
         renderAll();
     } catch (err) {
         console.error("Erro ao carregar estado:", err);
+        // Fallback render to at least show the interface
+        renderPlots();
     }
 }
 
