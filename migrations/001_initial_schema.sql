@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS fazenda_itens_config (
     price_diamonds INT DEFAULT 0,
     reward_base INT DEFAULT 0,
     grow_hours DECIMAL(10, 2) DEFAULT 0,
+    image_asset VARCHAR(255),
     desconto_percent INT DEFAULT 0,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
