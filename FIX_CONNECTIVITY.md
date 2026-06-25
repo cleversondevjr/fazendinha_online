@@ -44,6 +44,6 @@ npm install
 pm2 restart fazendinha-backend
 ```
 
-### 3. Login
-Agora, se você não estiver logado, o site vai te levar automaticamente para:
-`https://farm.sgiptv.com.br/farm/login?next=%2Ffarm%2F`
+### 3. Limpeza de Cache
+Se o seu navegador ainda tentar ir para o domínio antigo (`farm.sgiptv.com.br`), limpe o cache do navegador ou use uma aba anônima. O novo endereço oficial é:
+`https://sgiptv.com.br/fazendinha/`
