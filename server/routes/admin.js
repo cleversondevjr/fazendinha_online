@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const fs = require('fs');
+const path = require('path');
 
 // GET /api/admin/config - Get all configurations
 router.get('/config', async (req, res) => {
@@ -29,16 +31,34 @@ router.post('/config/update', async (req, res) => {
     }
 });
 
-// POST /api/admin/items/update - Update item properties
-router.post('/items/update', async (req, res) => {
-    const { item_id, price_coins, reward_base, grow_hours } = req.body;
+// POST /api/admin/items/save - Create or Update item properties
+router.post('/items/save', async (req, res) => {
+    const { item_id, tipo, label, price_coins, price_diamonds, reward_base, grow_hours } = req.body;
     try {
         await db.execute(`
-            UPDATE fazenda_itens_config
-            SET price_coins = $1, reward_base = $2, grow_hours = $3
-            WHERE item_id = $4
-        `, [price_coins, reward_base, grow_hours, item_id]);
+            INSERT INTO fazenda_itens_config (item_id, tipo, label, price_coins, price_diamonds, reward_base, grow_hours)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            ON CONFLICT (item_id) DO UPDATE SET
+                tipo = $2, label = $3, price_coins = $4, price_diamonds = $5, reward_base = $6, grow_hours = $7
+        `, [item_id, tipo, label, price_coins || 0, price_diamonds || 0, reward_base || 0, grow_hours || 0]);
         res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET /api/admin/assets - List all images in assets folders
+router.get('/assets', (req, res) => {
+    try {
+        const assetsPath = path.join(__dirname, '../../assets');
+        const flowersPath = path.join(__dirname, '../../assets/flores');
+
+        const mainAssets = fs.readdirSync(assetsPath).filter(f => f.endsWith('.png') || f.endsWith('.jpg'));
+        const flowerAssets = fs.readdirSync(flowersPath).filter(f => f.endsWith('.png')).map(f => `flores/${f}`);
+
+        res.json({
+            images: [...mainAssets, ...flowerAssets]
+        });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
