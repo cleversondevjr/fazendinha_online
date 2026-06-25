@@ -321,6 +321,157 @@ setupModal(".open-inventory", "inventory-modal", ".close-inventory");
 setupModal(".open-worldtree", "worldtree-modal", ".close-worldtree");
 setupModal("#admin-open", "admin-modal", "#admin-close");
 
+// --- Admin Panel Logic ---
+let availableAssets = [];
+
+async function renderAdminTab(tabName) {
+    const content = document.getElementById("admin-content");
+    if (!content) return;
+
+    if (tabName === 'itens') {
+        const adminData = await apiFetch(`${ADMIN_API_BASE_URL}/config`);
+        const assetsData = await apiFetch(`${ADMIN_API_BASE_URL}/assets`);
+        availableAssets = assetsData.images;
+
+        content.innerHTML = `
+            <div class="admin-item-manager">
+                <h3>Gerenciar Itens da Loja</h3>
+                <button class="admin-action" onclick="showItemForm()">+ Adicionar Novo Item</button>
+                <div class="admin-table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>ID (Imagem)</th>
+                                <th>Label</th>
+                                <th>Tipo</th>
+                                <th>Preço Ouro</th>
+                                <th>Preço Diam.</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${adminData.items.map(item => `
+                                <tr>
+                                    <td>${item.item_id}</td>
+                                    <td>${item.label}</td>
+                                    <td>${item.tipo}</td>
+                                    <td>${item.price_coins}</td>
+                                    <td>${item.price_diamonds}</td>
+                                    <td>
+                                        <button onclick='showItemForm(${JSON.stringify(item)})'>Editar</button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    } else {
+        content.innerHTML = `<p>Aba ${tabName} em desenvolvimento.</p>`;
+    }
+}
+
+function showItemForm(item = null) {
+    const dialog = document.getElementById("game-dialog");
+    const title = item ? "Editar Item" : "Novo Item";
+
+    const formHtml = `
+        <div class="admin-form">
+            <div class="form-group">
+                <label>ID do Item (deve ser o nome da imagem sem .png):</label>
+                <input type="text" id="edit-item-id" value="${item?.item_id || ''}" ${item ? 'disabled' : ''}>
+            </div>
+            <div class="form-group">
+                <label>Selecione a Imagem (Assets):</label>
+                <select id="edit-item-asset" onchange="document.getElementById('edit-preview').src='assets/'+this.value">
+                    <option value="">Selecione...</option>
+                    ${availableAssets.map(img => `<option value="${img}" ${item && (img === item.item_id+'.png' || img === 'flores/'+item.item_id+'.png') ? 'selected' : ''}>${img}</option>`).join('')}
+                </select>
+                <img id="edit-preview" src="${item ? 'assets/'+getItemAsset(item.item_id) : ''}" style="width:50px; height:50px; margin-top:5px; border: 1px solid #555;">
+            </div>
+            <div class="form-group">
+                <label>Nome Visível (Label):</label>
+                <input type="text" id="edit-item-label" value="${item?.label || ''}">
+            </div>
+            <div class="form-group">
+                <label>Tipo:</label>
+                <select id="edit-item-tipo">
+                    <option value="item" ${item?.tipo === 'item' ? 'selected' : ''}>Consumível (Vaso/Água/Pesticida)</option>
+                    <option value="flower" ${item?.tipo === 'flower' ? 'selected' : ''}>Flor</option>
+                    <option value="tree" ${item?.tipo === 'tree' ? 'selected' : ''}>Árvore</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Preço em Ouro:</label>
+                <input type="number" id="edit-item-price-coins" value="${item?.price_coins || 0}">
+            </div>
+            <div class="form-group">
+                <label>Preço em Diamantes:</label>
+                <input type="number" id="edit-item-price-diamonds" value="${item?.price_diamonds || 0}">
+            </div>
+            <div class="form-group">
+                <label>Recompensa Base (Ouro):</label>
+                <input type="number" id="edit-item-reward" value="${item?.reward_base || 0}">
+            </div>
+            <div class="form-group">
+                <label>Tempo de Crescimento (Horas):</label>
+                <input type="number" step="0.01" id="edit-item-grow" value="${item?.grow_hours || 0}">
+            </div>
+        </div>
+    `;
+
+    document.getElementById("game-dialog-title").textContent = title;
+    document.getElementById("game-dialog-message").innerHTML = formHtml;
+    dialog.classList.remove("hidden");
+
+    document.getElementById("game-dialog-confirm").onclick = async () => {
+        const data = {
+            item_id: document.getElementById("edit-item-id").value,
+            label: document.getElementById("edit-item-label").value,
+            tipo: document.getElementById("edit-item-tipo").value,
+            price_coins: parseInt(document.getElementById("edit-item-price-coins").value),
+            price_diamonds: parseInt(document.getElementById("edit-item-price-diamonds").value),
+            reward_base: parseFloat(document.getElementById("edit-item-reward").value),
+            grow_hours: parseFloat(document.getElementById("edit-item-grow").value)
+        };
+
+        if (document.getElementById("edit-item-asset").value) {
+            // Se o usuário selecionou uma imagem diferente, poderíamos renomear ou apenas garantir o ID
+        }
+
+        try {
+            await apiFetch(`${ADMIN_API_BASE_URL}/items/save`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            dialog.classList.add("hidden");
+            renderAdminTab('itens');
+            loadGameState();
+        } catch (err) {
+            alert("Erro ao salvar: " + err.message);
+        }
+    };
+}
+
+document.querySelectorAll(".admin-tab").forEach(tab => {
+    tab.onclick = () => {
+        document.querySelectorAll(".admin-tab").forEach(t => t.classList.remove("active"));
+        tab.classList.add("active");
+        renderAdminTab(tab.dataset.adminTab);
+    };
+});
+
+// Update modal open to render first tab
+const adminOpenBtn = document.querySelector("#admin-open");
+if (adminOpenBtn) {
+    adminOpenBtn.onclick = () => {
+        document.getElementById("admin-modal").style.display = "block";
+        renderAdminTab('itens');
+    }
+}
+
 const logoutBtn = document.querySelector(".logout-btn");
 if (logoutBtn) {
     logoutBtn.onclick = () => {
