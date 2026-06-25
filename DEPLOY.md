@@ -96,4 +96,4 @@ ingress:
     service: http://127.0.0.1:80
   - service: http_status:404
 ```
-*(O hostname `farm.sgiptv.com.br` não é mais necessário para este projeto, pois agora usamos o subcaminho `/fazendinha` no domínio principal).*
+*(Remova qualquer referência ao antigo hostname `farm.sgiptv.com.br` do seu túnel, pois agora usamos o subcaminho `/fazendinha` no domínio principal).*
