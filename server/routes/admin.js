@@ -35,14 +35,6 @@ router.post('/config/update', async (req, res) => {
 router.post('/items/save', async (req, res) => {
     const { item_id, tipo, label, price_coins, price_diamonds, reward_base, grow_hours, image_asset } = req.body;
     try {
-        // Garantimos que a coluna de asset existe (se não existir na primeira vez, tratamos ou ignoramos)
-        // Como não podemos rodar ALTER TABLE aqui sem risco de erro, vamos assumir que o usuário
-        // pode precisar rodar manualmente se eu não puder garantir o schema.
-        // Mas vamos tentar adicionar a coluna se ela não existir.
-        try {
-            await db.execute('ALTER TABLE fazenda_itens_config ADD COLUMN IF NOT EXISTS image_asset VARCHAR(255)');
-        } catch (e) { /* Coluna pode já existir */ }
-
         await db.execute(`
             INSERT INTO fazenda_itens_config (item_id, tipo, label, price_coins, price_diamonds, reward_base, grow_hours, image_asset)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)

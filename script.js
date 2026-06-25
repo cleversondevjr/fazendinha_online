@@ -12,8 +12,9 @@ let itemShopPrices = {};
 
 const itemSelecionadoState = { item: null };
 
-// --- Sessão e Inatividade ---
-const INACTIVITY_LIMIT = 30 * 60 * 1000; // 30 minutos
+// --- Sessão e Inatividade (Desativados em Modo Teste) ---
+/*
+const INACTIVITY_LIMIT = 30 * 60 * 1000;
 let inactivityTimer;
 
 function resetInactivityTimer() {
@@ -25,14 +26,7 @@ function logout() {
     document.cookie = "usuario_id=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
     window.location.href = "login.html";
 }
-
-// Monitora interações do usuário
-['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'].forEach(event => {
-    document.addEventListener(event, resetInactivityTimer, true);
-});
-
-// Inicializa o timer
-resetInactivityTimer();
+*/
 
 // --- Core API ---
 async function apiFetch(endpoint, options = {}) {
@@ -40,8 +34,8 @@ async function apiFetch(endpoint, options = {}) {
     options.credentials = 'include';
     const res = await fetch(endpoint, options);
     if (res.status === 401) {
-        const data = await res.json();
-        window.location.href = data.loginUrl || 'login.html';
+        console.warn("Sessão expirada ou não autorizada (Modo Teste Ativo)");
+        // No modo teste, não redirecionamos
         return;
     }
     if (!res.ok) {
@@ -508,7 +502,7 @@ if (adminCloseBtn) {
 
 const logoutBtn = document.querySelector(".logout-btn");
 if (logoutBtn) {
-    logoutBtn.onclick = logout;
+    logoutBtn.onclick = () => alert("Modo de teste: Logout desativado.");
 }
 
 document.querySelectorAll(".shop-tab").forEach(tab => {
