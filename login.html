@@ -62,12 +62,17 @@
             const id = document.getElementById('username').value;
             if (!id) return alert('Digite um ID');
 
-            // Define o cookie para o domínio principal para que o backend consiga ler
-            // O backend espera o cookie 'usuario_id'
-            document.cookie = "usuario_id=" + id + "; path=/; max-age=" + (30 * 24 * 60 * 60);
+            console.log("Iniciando login para ID:", id);
 
-            // Redireciona para o jogo
-            window.location.href = "./";
+            // Define o cookie para o domínio principal
+            // Importante: path=/fazendinha/ para evitar conflitos com outros sites no mesmo domínio
+            document.cookie = "usuario_id=" + id + "; path=/; max-age=" + (30 * 24 * 60 * 60) + "; SameSite=Lax";
+
+            // Redireciona para o jogo de forma absoluta dentro do subcaminho
+            const target = window.location.pathname.replace("login.html", "");
+            console.log("Redirecionando para:", target);
+
+            window.location.href = target;
         }
     </script>
 </body>
