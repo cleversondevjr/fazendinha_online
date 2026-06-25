@@ -12,6 +12,28 @@ let itemShopPrices = {};
 
 const itemSelecionadoState = { item: null };
 
+// --- Sessão e Inatividade ---
+const INACTIVITY_LIMIT = 30 * 60 * 1000; // 30 minutos
+let inactivityTimer;
+
+function resetInactivityTimer() {
+    clearTimeout(inactivityTimer);
+    inactivityTimer = setTimeout(logout, INACTIVITY_LIMIT);
+}
+
+function logout() {
+    document.cookie = "usuario_id=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
+    window.location.href = "login.html";
+}
+
+// Monitora interações do usuário
+['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'].forEach(event => {
+    document.addEventListener(event, resetInactivityTimer, true);
+});
+
+// Inicializa o timer
+resetInactivityTimer();
+
 // --- Core API ---
 async function apiFetch(endpoint, options = {}) {
     // Ensure credentials (cookies) are sent with every request
@@ -167,6 +189,10 @@ function renderMissions() {
 }
 
 function getItemAsset(itemId) {
+    // Primeiro verifica se temos uma configuração dinâmica para este item
+    const item = itemShopPrices[itemId] || cropCatalog[itemId];
+    if (item && item.image_asset) return item.image_asset;
+
     const mappings = {
         'vasoPequeno': 'vaso_pequeno.png',
         'vasoGrande': 'vaso_grande.png',
@@ -433,12 +459,9 @@ function showItemForm(item = null) {
             price_coins: parseInt(document.getElementById("edit-item-price-coins").value),
             price_diamonds: parseInt(document.getElementById("edit-item-price-diamonds").value),
             reward_base: parseFloat(document.getElementById("edit-item-reward").value),
-            grow_hours: parseFloat(document.getElementById("edit-item-grow").value)
+            grow_hours: parseFloat(document.getElementById("edit-item-grow").value),
+            image_asset: document.getElementById("edit-item-asset").value
         };
-
-        if (document.getElementById("edit-item-asset").value) {
-            // Se o usuário selecionou uma imagem diferente, poderíamos renomear ou apenas garantir o ID
-        }
 
         try {
             await apiFetch(`${ADMIN_API_BASE_URL}/items/save`, {
@@ -485,10 +508,7 @@ if (adminCloseBtn) {
 
 const logoutBtn = document.querySelector(".logout-btn");
 if (logoutBtn) {
-    logoutBtn.onclick = () => {
-        document.cookie = "usuario_id=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
-        window.location.href = "login.html";
-    };
+    logoutBtn.onclick = logout;
 }
 
 document.querySelectorAll(".shop-tab").forEach(tab => {
