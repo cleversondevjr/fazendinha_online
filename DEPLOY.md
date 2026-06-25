@@ -40,10 +40,30 @@ cp .env.example .env
 Edite o `.env` com as credenciais do banco e a porta desejada. (Neste projeto usamos a porta **3002** pois a 3000 já estava em uso).
 
 ## 4. Configuração do Nginx
-Copie o conteúdo de `nginx.conf.example` para o seu arquivo de sites ativos do Nginx (geralmente em `/etc/nginx/sites-available/default` ou um arquivo novo em `sites-enabled`).
+Adicione o bloco abaixo dentro do seu arquivo de configuração do site `sgiptv.com.br` (geralmente em `/etc/nginx/sites-available/default`):
 
-Lembre-se de ajustar o caminho no `alias` para o local onde você clonou o repositório:
-`alias /home/pi/fazendinha_online;`
+```nginx
+    # Rotas da Fazendinha
+    location = /fazendinha {
+        return 301 /fazendinha/;
+    }
+
+    location /fazendinha/ {
+        alias /home/pi/fazendinha_online/;
+        index index.html;
+
+        # Segurança: Bloqueia acesso direto a pastas sensíveis
+        location ~ ^/fazendinha/(server|migrations|\.git) { deny all; }
+    }
+
+    location /fazendinha/api/ {
+        proxy_pass http://localhost:3002/api/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+    }
+```
 
 Reinicie o Nginx:
 ```bash
@@ -52,28 +72,19 @@ sudo systemctl restart nginx
 ```
 
 ## 5. Iniciando o Servidor
-Recomendamos o uso do `pm2` para gerenciar o processo:
+Certifique-se de que o `.env` no diretório `server` tem a porta `3002` e o `PGDATABASE=farm`.
+
 ```bash
-sudo npm install -g pm2
-cd server
-# Certifique-se de que o .env está configurado com PGDATABASE=farm e PORT=3002
+cd /home/pi/fazendinha_online/server
+npm install
 pm2 start index.js --name "fazendinha-backend"
 pm2 save
-pm2 startup
 ```
 
 ## 6. Cloudflare (Túnel Local)
-O seu túnel é gerenciado localmente no Raspberry Pi.
+O acesso externo é feito via Túnel do Cloudflare. Como configuramos o Nginx para responder em `sgiptv.com.br/fazendinha`, o túnel só precisa encaminhar o tráfego do domínio principal para a porta 80 do Nginx.
 
-**ID do Túnel:** `5f23e228-85d8-4a42-ab7c-ef4f70a65722`
-
-No painel de DNS do Cloudflare, adicione um registro:
-- **Tipo:** CNAME
-- **Nome:** @
-- **Alvo:** `5f23e228-85d8-4a42-ab7c-ef4f70a65722.cfargotunnel.com`
-- **Proxy:** Ativado (Nuvem Laranja)
-
-### Configuração do Túnel (/etc/cloudflared/config.yml)
+**Configuração recomendada do Túnel (/etc/cloudflared/config.yml):**
 ```yaml
 tunnel: 5f23e228-85d8-4a42-ab7c-ef4f70a65722
 credentials-file: /home/pi/.cloudflared/5f23e228-85d8-4a42-ab7c-ef4f70a65722.json
@@ -83,9 +94,6 @@ ingress:
     service: http://127.0.0.1:80
   - hostname: copa.sgiptv.com.br
     service: http://127.0.0.1:80
-  - hostname: api.sgiptv.com.br
-    service: http://127.0.0.1:10000
-  - hostname: farm.sgiptv.com.br
-    service: http://127.0.0.1:3002
   - service: http_status:404
 ```
+*(O hostname `farm.sgiptv.com.br` não é mais necessário para este projeto, pois agora usamos o subcaminho `/fazendinha` no domínio principal).*
