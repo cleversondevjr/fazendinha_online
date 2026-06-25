@@ -19,7 +19,7 @@ async function apiFetch(endpoint, options = {}) {
     const res = await fetch(endpoint, options);
     if (res.status === 401) {
         const data = await res.json();
-        window.location.href = data.loginUrl || 'https://farm.sgiptv.com.br/farm/login?next=%2Ffarm%2F';
+        window.location.href = data.loginUrl || 'https://farm.sgiptv.com.br/farm/login?next=%2Ffazendinha%2F';
         return;
     }
     if (!res.ok) {
@@ -162,6 +162,17 @@ function renderMissions() {
     `).join("");
 }
 
+function getItemAsset(itemId) {
+    const mappings = {
+        'vasoPequeno': 'vaso_pequeno.png',
+        'vasoGrande': 'vaso_grande.png',
+        'agua': 'agua.png',
+        'pesticida': 'borrifador_inseticida.png',
+        'espantalho': 'espantalho.png'
+    };
+    return mappings[itemId] || `${itemId}.png`;
+}
+
 function renderShopTab(tabName) {
     const grid = document.getElementById("shop-grid");
     if (!grid) return;
@@ -169,11 +180,39 @@ function renderShopTab(tabName) {
     if (tabName === 'itens') items = Object.values(itemShopPrices);
     else if (tabName === 'flores') items = Object.values(cropCatalog).filter(c => c.tipo === 'flower');
     else if (tabName === 'arvores') items = Object.values(cropCatalog).filter(c => c.tipo === 'tree');
+    else if (tabName === 'ouro') {
+        grid.innerHTML = `
+            <div class="shop-item">
+                <img src="assets/ouro.png">
+                <p>Pacote de Ouro 1</p>
+                <p>10 Diamantes</p>
+                <button class="buy-btn" onclick="performAction('buy_pack', null, 'pack_gold_1')">Trocar</button>
+            </div>
+            <div class="shop-item">
+                <img src="assets/ouro.png">
+                <p>Pacote de Ouro 2</p>
+                <p>50 Diamantes</p>
+                <button class="buy-btn" onclick="performAction('buy_pack', null, 'pack_gold_2')">Trocar</button>
+            </div>
+        `;
+        return;
+    } else if (tabName === 'diamantes') {
+        grid.innerHTML = `
+            <div class="shop-item">
+                <img src="assets/diamante.png">
+                <p>Pacote de Diamante 1</p>
+                <p>R$ 10,00</p>
+                <button class="buy-btn" onclick="showDialog({title:'Loja', message:'Em breve: Integração com Pagamento'})">Comprar</button>
+            </div>
+        `;
+        return;
+    }
+
     grid.innerHTML = items.map(item => `
         <div class="shop-item">
-            <img src="assets/${item.item_id}.png" onerror="this.src='assets/flores/${item.item_id}.png'">
+            <img src="assets/${getItemAsset(item.item_id)}" onerror="this.src='assets/flores/${item.item_id}.png'">
             <p>${item.label}</p>
-            <p>${item.price_coins} Ouro</p>
+            <p>${item.price_coins > 0 ? item.price_coins + ' Ouro' : item.price_diamonds + ' Diamantes'}</p>
             <button class="buy-btn" onclick="performAction('buy_item', null, '${item.item_id}')">Comprar</button>
         </div>
     `).join("");
@@ -184,7 +223,7 @@ function renderInventory() {
     if (!grid) return;
     grid.innerHTML = Object.entries(inventario).filter(([id, qty]) => qty > 0 && !['coins', 'diamante', 'energia'].includes(id)).map(([id, qty]) => `
         <div class="inventory-item ${itemSelecionadoState.item === id ? 'selected' : ''}">
-            <img src="assets/${id}.png" onerror="this.src='assets/flores/${id}.png'">
+            <img src="assets/${getItemAsset(id)}" onerror="this.src='assets/flores/${id}.png'">
             <p>${id}</p>
             <p>Qtd: ${qty}</p>
             <button class="use-btn" onclick="selectItem('${id}')">Selecionar</button>
@@ -207,6 +246,21 @@ function renderAll() {
     document.getElementById("diamonds").textContent = inventario.diamante || 0;
     document.getElementById("energy").textContent = inventario.energia || 0;
     renderMissions();
+    updateSidebarCounts();
+}
+
+function updateSidebarCounts() {
+    const mappings = {
+        'vasoPequeno': 'count-vaso-pequeno',
+        'vasoGrande': 'count-vaso-grande',
+        'agua': 'count-agua',
+        'pesticida': 'count-pesticida',
+        'espantalho': 'count-espantalho'
+    };
+    for (const [item, id] of Object.entries(mappings)) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = inventario[item] || 0;
+    }
 }
 
 function formatDuration(ms) {
@@ -266,7 +320,7 @@ setupModal("#admin-open", "admin-modal", "#admin-close");
 const logoutBtn = document.querySelector(".logout-btn");
 if (logoutBtn) {
     logoutBtn.onclick = () => {
-        window.location.href = "https://farm.sgiptv.com.br/farm/login?next=%2Ffarm%2F";
+        window.location.href = "https://farm.sgiptv.com.br/farm/login?next=%2Ffazendinha%2F";
     };
 }
 

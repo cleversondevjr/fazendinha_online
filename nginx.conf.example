@@ -2,37 +2,60 @@ server {
     listen 80 default_server;
     listen [::]:80 default_server;
 
-    root /var/www/html;
-    index index.html index.htm index.nginx-debian.html;
+    # PASTA DO SITE PRINCIPAL (SG IPTV)
+    root /home/pi/sgiptv-frontend;
+    index index.html index.htm;
 
     server_name sgiptv.com.br;
 
-    # 1. FIX: Redirecionamento se faltar a barra (Fundamental para abrir o site)
+    # 1. Fazendinha (Jogo e API)
     location = /fazendinha {
         return 301 /fazendinha/;
     }
 
-    # 2. Frontend (Jogo)
     location /fazendinha/ {
         alias /home/pi/fazendinha_online/;
         index index.html;
-
-        # Segurança Básica
-        location ~ ^/fazendinha/\.(?!well-known) { deny all; }
-        location ~ ^/fazendinha/(server|migrations|\.git) { deny all; }
+        location ~ ^/fazendinha/(server|migrations|\.git|\.env) { deny all; }
     }
 
-    # 3. Backend (Proxy para API)
     location /fazendinha/api/ {
         proxy_pass http://localhost:3002/api/;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
         proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
     }
 
-    # 4. Outros
+    # 2. BOT ASSISTIDO E API DA COPA (Porta 10000)
+    # Reativando a conexão que o Bot usa para atualizar os jogos
+    location /api/ {
+        proxy_pass http://localhost:10000/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    # 3. Copa Admin (Proxy Porta 3100)
+    location /copa-admin/ {
+        proxy_pass http://127.0.0.1:3100/admin/;
+        proxy_set_header Host $host;
+    }
+
+    # 4. Site da Copa e APKs (Pasta legada)
+    location /copa2026/ {
+        alias /var/www/html/copa2026/;
+        index index.html;
+    }
+
+    location ~ \.apk$ {
+        root /var/www/html;
+    }
+
+    # 5. Site Principal e Admin.html
     location / {
         try_files $uri $uri/ =404;
     }
