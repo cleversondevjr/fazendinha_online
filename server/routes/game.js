@@ -97,10 +97,28 @@ router.post('/action', async (req, res) => {
             if (!itemRes.rows.length) throw new Error('Item inválido');
             const item = itemRes.rows[0];
             const discount = parseInt((await db.execute("SELECT valor FROM fazenda_config WHERE chave = 'global_discount'")).rows[0].valor || 0);
-            const price = Math.floor(item.price_coins * (1 - discount / 100));
-            if ((inventory['coins'] || 0) < price) throw new Error('Ouro insuficiente');
-            await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade - $1 WHERE usuario_id = $2 AND item_id = 'coins'", [price, userId]);
+
+            if (item.price_diamonds > 0) {
+                if ((inventory['diamante'] || 0) < item.price_diamonds) throw new Error('Diamantes insuficientes');
+                await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade - $1 WHERE usuario_id = $2 AND item_id = 'diamante'", [item.price_diamonds, userId]);
+            } else {
+                const price = Math.floor(item.price_coins * (1 - discount / 100));
+                if ((inventory['coins'] || 0) < price) throw new Error('Ouro insuficiente');
+                await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade - $1 WHERE usuario_id = $2 AND item_id = 'coins'", [price, userId]);
+            }
             await db.execute("INSERT INTO fazenda_inventario (usuario_id, item_id, quantidade) VALUES ($1, $2, 1) ON CONFLICT (usuario_id, item_id) DO UPDATE SET quantidade = fazenda_inventario.quantidade + 1", [userId, itemId]);
+        }
+
+        if (action === 'buy_pack') {
+            if (itemId === 'pack_gold_1') {
+                if ((inventory['diamante'] || 0) < 10) throw new Error('Diamantes insuficientes');
+                await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade - 10 WHERE usuario_id = $1 AND item_id = 'diamante'", [userId]);
+                await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade + 1000 WHERE usuario_id = $1 AND item_id = 'coins'", [userId]);
+            } else if (itemId === 'pack_gold_2') {
+                if ((inventory['diamante'] || 0) < 50) throw new Error('Diamantes insuficientes');
+                await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade - 50 WHERE usuario_id = $1 AND item_id = 'diamante'", [userId]);
+                await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade + 6000 WHERE usuario_id = $1 AND item_id = 'coins'", [userId]);
+            }
         }
 
         if (action === 'use_item') {

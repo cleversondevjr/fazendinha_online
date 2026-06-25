@@ -24,7 +24,7 @@ app.use((req, res, next) => {
         // Return 401 Unauthorized if no user is found
         return res.status(401).json({
             error: 'Sessão expirada',
-            loginUrl: 'https://farm.sgiptv.com.br/farm/login?next=%2Ffarm%2F'
+            loginUrl: 'https://farm.sgiptv.com.br/farm/login?next=%2Ffazendinha%2F'
         });
     }
 
