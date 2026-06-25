@@ -467,8 +467,19 @@ document.querySelectorAll(".admin-tab").forEach(tab => {
 const adminOpenBtn = document.querySelector("#admin-open");
 if (adminOpenBtn) {
     adminOpenBtn.onclick = () => {
-        document.getElementById("admin-modal").style.display = "block";
+        const modal = document.getElementById("admin-modal");
+        modal.classList.remove("hidden");
+        modal.style.display = "block";
         renderAdminTab('itens');
+    }
+}
+
+const adminCloseBtn = document.querySelector("#admin-close");
+if (adminCloseBtn) {
+    adminCloseBtn.onclick = () => {
+        const modal = document.getElementById("admin-modal");
+        modal.classList.add("hidden");
+        modal.style.display = "none";
     }
 }
 
@@ -488,7 +499,19 @@ document.querySelectorAll(".shop-tab").forEach(tab => {
 });
 
 // --- Init ---
+renderPlots(); // Force initial render of slots
 loadGameState();
 setInterval(() => {
-    plotStates.forEach((_, i) => renderPlotState(i));
+    if (plotStates.length > 0) {
+        plotStates.forEach((_, i) => renderPlotState(i));
+    } else {
+        // If state hasn't loaded yet, just update the waiting timers
+        for (let i = 0; i < 8; i++) {
+            const plotEl = document.querySelector(`.plot[data-plot-index="${i}"]`);
+            if (plotEl) {
+                const timer = plotEl.querySelector(".timer");
+                if (timer) timer.textContent = "CARREGANDO...";
+            }
+        }
+    }
 }, 1000);
