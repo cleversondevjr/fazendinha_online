@@ -24,7 +24,7 @@ app.use((req, res, next) => {
         // Return 401 Unauthorized if no user is found
         return res.status(401).json({
             error: 'Sessão expirada',
-            loginUrl: '/fazendinha/login'
+            loginUrl: 'login.html'
         });
     }
 

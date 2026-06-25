@@ -19,7 +19,7 @@ async function apiFetch(endpoint, options = {}) {
     const res = await fetch(endpoint, options);
     if (res.status === 401) {
         const data = await res.json();
-        window.location.href = data.loginUrl || '/fazendinha/login';
+        window.location.href = data.loginUrl || 'login.html';
         return;
     }
     if (!res.ok) {
@@ -486,7 +486,8 @@ if (adminCloseBtn) {
 const logoutBtn = document.querySelector(".logout-btn");
 if (logoutBtn) {
     logoutBtn.onclick = () => {
-        window.location.href = "/fazendinha/login";
+        document.cookie = "usuario_id=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
+        window.location.href = "login.html";
     };
 }
 
