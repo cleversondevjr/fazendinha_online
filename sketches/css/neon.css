@@ -1,0 +1,32 @@
+/* Concept 3: Neon / Modern (PvU 2.0 style) */
+:root {
+    --neon-blue: #00f2ff;
+    --neon-purple: #bc00ff;
+    --dark-void: #0a0a0f;
+}
+
+body {
+    background: var(--dark-void);
+    color: white;
+}
+
+.sidebar {
+    background: linear-gradient(180deg, rgba(188, 0, 255, 0.1) 0%, rgba(0, 242, 255, 0.1) 100%);
+    border-right: 2px solid var(--neon-blue);
+    box-shadow: 10px 0 20px rgba(0, 242, 255, 0.2);
+}
+
+.topbar {
+    background: rgba(10, 10, 15, 0.9);
+    border-bottom: 2px solid var(--neon-purple);
+    box-shadow: 0 5px 15px rgba(188, 0, 255, 0.3);
+}
+
+.plot-bg {
+    filter: drop-shadow(0 0 5px var(--neon-blue));
+}
+
+.resource-btn span {
+    color: var(--neon-blue);
+    text-shadow: 0 0 10px var(--neon-blue);
+}

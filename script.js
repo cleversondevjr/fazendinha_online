@@ -435,6 +435,49 @@ async function renderAdminTab(tabName) {
                 </div>
             </div>
         `;
+    } else if (tabName === 'slots') {
+        content.innerHTML = `
+            <div class="admin-slots-manager">
+                <h3>Gerenciar Slots de Jogador</h3>
+                <div class="admin-inline-actions">
+                    <input type="number" id="admin-slots-search-id" placeholder="ID do Usuário">
+                    <button class="admin-action primary" onclick="searchUserSlots()">Buscar Slots</button>
+                </div>
+                <div id="admin-slots-result" style="margin-top: 20px;"></div>
+            </div>
+        `;
+    } else if (tabName === 'plantas') {
+        const adminData = await apiFetch(`${ADMIN_API_BASE_URL}/config`);
+        const crops = adminData.items.filter(i => i.tipo === 'flower' || i.tipo === 'tree');
+        content.innerHTML = `
+            <div class="admin-crops-manager">
+                <h3>Parâmetros de Cultivo</h3>
+                <div class="admin-table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Label</th>
+                                <th>Tempo (h)</th>
+                                <th>Recompensa</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${crops.map(c => `
+                                <tr>
+                                    <td>${c.item_id}</td>
+                                    <td>${c.label}</td>
+                                    <td><input type="number" step="0.1" id="crop-grow-${c.item_id}" value="${c.grow_hours}"></td>
+                                    <td><input type="number" id="crop-reward-${c.item_id}" value="${c.reward_base}"></td>
+                                    <td><button onclick="saveCropParams('${c.item_id}')">Salvar</button></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
     } else if (tabName === 'itens') {
         const adminData = await apiFetch(`${ADMIN_API_BASE_URL}/config`);
         const assetsData = await apiFetch(`${ADMIN_API_BASE_URL}/assets`);
@@ -581,6 +624,74 @@ async function searchUserAccount() {
     } catch (err) {
         alert("Erro ao buscar usuário: " + err.message);
     }
+}
+
+async function searchUserSlots() {
+    const id = document.getElementById("admin-slots-search-id").value;
+    if (!id) return alert("Digite um ID válido.");
+    try {
+        const res = await apiFetch(`${ADMIN_API_BASE_URL}/user/${id}/slots`);
+        const container = document.getElementById("admin-slots-result");
+        container.innerHTML = `
+            <table class="admin-table">
+                <thead>
+                    <tr><th>Slot</th><th>Fase</th><th>Planta</th><th>Vaso</th><th>Ações</th></tr>
+                </thead>
+                <tbody>
+                    ${res.slots.map(s => `
+                        <tr>
+                            <td>${s.slot_index}</td>
+                            <td>
+                                <select id="slot-fase-${s.id}">
+                                    <option value="locked" ${s.fase === 'locked' ? 'selected' : ''}>Bloqueado</option>
+                                    <option value="needsPot" ${s.fase === 'needsPot' ? 'selected' : ''}>Sem Vaso</option>
+                                    <option value="needsWater" ${s.fase === 'needsWater' ? 'selected' : ''}>Sem Água</option>
+                                    <option value="readyToPlant" ${s.fase === 'readyToPlant' ? 'selected' : ''}>Pronto p/ Plantar</option>
+                                    <option value="growing" ${s.fase === 'growing' ? 'selected' : ''}>Crescendo</option>
+                                    <option value="ready" ${s.fase === 'ready' ? 'selected' : ''}>Pronto p/ Colher</option>
+                                </select>
+                            </td>
+                            <td><input type="text" id="slot-crop-${s.id}" value="${s.crop_id || ''}"></td>
+                            <td><input type="text" id="slot-pot-${s.id}" value="${s.pot_type || ''}"></td>
+                            <td><button onclick="saveSlotAdmin(${s.id})">Salvar</button></td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+    } catch (err) { alert(err.message); }
+}
+
+async function saveSlotAdmin(slotId) {
+    const data = {
+        id: slotId,
+        fase: document.getElementById(`slot-fase-${slotId}`).value,
+        crop_id: document.getElementById(`slot-crop-${slotId}`).value || null,
+        pot_type: document.getElementById(`slot-pot-${slotId}`).value || null
+    };
+    await apiFetch(`${ADMIN_API_BASE_URL}/slots/update`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+    alert("Slot atualizado!");
+}
+
+async function saveCropParams(itemId) {
+    const grow = parseFloat(document.getElementById(`crop-grow-${itemId}`).value);
+    const reward = parseFloat(document.getElementById(`crop-reward-${itemId}`).value);
+
+    // Precisamos buscar o objeto completo para não perder outros campos no save_item
+    const adminData = await apiFetch(`${ADMIN_API_BASE_URL}/config`);
+    const item = adminData.items.find(i => i.item_id === itemId);
+
+    const data = { ...item, grow_hours: grow, reward_base: reward };
+    await apiFetch(`${ADMIN_API_BASE_URL}/items/save`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+    alert("Parâmetros salvos!");
 }
 
 async function saveUserAccount(userId) {

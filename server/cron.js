@@ -57,13 +57,22 @@ cron.schedule('* * * * *', async () => {
         const pestChance = parseFloat(configs.pest_chance_percent || 20) / 100;
 
         const growingRes = await db.execute("SELECT * FROM fazenda_plantacoes WHERE fase = 'growing'");
+        const weather = configs.current_weather || 'sunny';
+
         for (const plot of growingRes.rows) {
+            let currentCrowChance = crowChance;
+            let currentPestChance = pestChance;
+
+            // Weather Impact
+            if (weather === 'windy') currentCrowChance *= 1.5;
+            if (weather === 'rainy') currentPestChance *= 0.5; // Rain helps wash away some pests?
+
             // Crow Event
-            if (!plot.crow_active && !plot.scarecrow_until && Math.random() < (crowChance / 60)) {
+            if (!plot.crow_active && !plot.scarecrow_until && Math.random() < (currentCrowChance / 60)) {
                 await db.execute("UPDATE fazenda_plantacoes SET crow_active = TRUE, pause_started_at = NOW() WHERE id = $1", [plot.id]);
             }
             // Pest Event
-            if (!plot.pest_active && Math.random() < (pestChance / 60)) {
+            if (!plot.pest_active && Math.random() < (currentPestChance / 60)) {
                 await db.execute("UPDATE fazenda_plantacoes SET pest_active = TRUE, last_pest_check = NOW() WHERE id = $1", [plot.id]);
             }
             // Pest Penalty

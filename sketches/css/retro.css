@@ -1,0 +1,31 @@
+/* Concept 2: Retro RPG (Parchment & Wood) */
+body {
+    background: #2d1b0d url('assets/praia_bg.jpg') center/cover no-repeat fixed;
+    background-blend-mode: multiply;
+}
+
+.sidebar {
+    background: #e6ccac; /* Parchment color */
+    border: 8px solid #5d4037; /* Dark wood */
+    color: #5d4037;
+    image-rendering: pixelated;
+}
+
+.topbar {
+    background: #8d6e63;
+    border-bottom: 5px solid #5d4037;
+    width: 100vw;
+    right: 0;
+    top: 0;
+    border-radius: 0;
+}
+
+.tool-item .count {
+    color: #5d4037;
+    font-weight: bold;
+}
+
+.admin-floating-btn {
+    background: #795548;
+    border: 3px solid #3e2723;
+}
