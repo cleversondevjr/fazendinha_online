@@ -27,6 +27,8 @@ cd server
 npm install
 pm2 restart fazendinha-backend
 sudo nginx -t && sudo systemctl restart nginx
+# Opcional: Reiniciar o Raspberry Pi por completo
+sudo reboot
 ```
 
 ### 3. Backup e Atualização Local (PC Windows)
