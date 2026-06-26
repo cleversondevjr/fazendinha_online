@@ -54,6 +54,11 @@ async function loadGameState() {
         worldTreeState = data.worldTree || null;
         configs = data.configs || {};
 
+        // Aplica o layout salvo nas configurações
+        if (configs.active_layout && configs.active_layout !== 'default') {
+            applyLayout(configs.active_layout);
+        }
+
         const adminData = await apiFetch(`${ADMIN_API_BASE_URL}/config`).catch(() => ({ items: [] }));
         const allItems = adminData.items || [];
 
@@ -319,6 +324,21 @@ function formatDuration(ms) {
     return `${Math.floor(s/3600).toString().padStart(2, '0')}:${Math.floor((s%3600)/60).toString().padStart(2, '0')}:${(s%60).toString().padStart(2, '0')}`;
 }
 
+function applyLayout(name) {
+    let link = document.getElementById('theme-link');
+    if (!link) {
+        link = document.createElement('link');
+        link.id = 'theme-link';
+        link.rel = 'stylesheet';
+        document.head.appendChild(link);
+    }
+    if (!name || name === 'default') {
+        link.href = '';
+    } else {
+        link.href = `sketches/css/${name}.css`;
+    }
+}
+
 // Dialog Utility
 function showDialog({ title, message }) {
     const dialog = document.getElementById("game-dialog");
@@ -509,6 +529,7 @@ async function renderAdminTab(tabName) {
                                     <td>${item.price_diamonds}</td>
                                     <td>
                                         <button onclick='showItemForm(${JSON.stringify(item)})'>Editar</button>
+                                        <button class="admin-danger" onclick="deleteItemAdmin('${item.item_id}')">Excluir</button>
                                     </td>
                                 </tr>
                             `).join('')}
@@ -543,7 +564,10 @@ async function renderAdminTab(tabName) {
                                     <td>${m.tipo}</td>
                                     <td>${m.target}</td>
                                     <td>${m.reward_amount} ${m.reward_type}</td>
-                                    <td><button onclick='showMissionForm(${JSON.stringify(m)})'>Editar</button></td>
+                                    <td>
+                                        <button onclick='showMissionForm(${JSON.stringify(m)})'>Editar</button>
+                                        <button class="admin-danger" onclick="deleteMissionAdmin(${m.id})">Excluir</button>
+                                    </td>
                                 </tr>
                             `).join('')}
                         </tbody>
@@ -553,11 +577,28 @@ async function renderAdminTab(tabName) {
         `;
     } else if (tabName === 'regras') {
         const adminData = await apiFetch(`${ADMIN_API_BASE_URL}/config`);
+        const currentLayout = adminData.configs.find(c => c.chave === 'active_layout')?.valor || 'default';
+
         content.innerHTML = `
             <div class="admin-rules-manager">
+                <h3>Aparência e Layout</h3>
+                <div class="admin-card" style="margin-bottom: 20px; border: 2px solid #ffeb3b;">
+                    <div class="admin-field">
+                        <label>Escolher Layout do Jogo</label>
+                        <select id="config-active_layout" onchange="applyLayout(this.value)">
+                            <option value="default" ${currentLayout === 'default' ? 'selected' : ''}>Original (Roxo)</option>
+                            <option value="immersive" ${currentLayout === 'immersive' ? 'selected' : ''}>Imersivo (Glassmorphism)</option>
+                            <option value="retro" ${currentLayout === 'retro' ? 'selected' : ''}>Retrô RPG (Madeira/Papel)</option>
+                            <option value="neon" ${currentLayout === 'neon' ? 'selected' : ''}>Neon Moderno (PvU 2.0)</option>
+                        </select>
+                        <p><small>O layout muda instantaneamente para você. Clique abaixo para salvar para todos.</small></p>
+                        <button class="admin-action primary" onclick="saveConfig('active_layout')">Salvar Layout para Todos</button>
+                    </div>
+                </div>
+
                 <h3>Configurações Globais</h3>
                 <div class="admin-grid">
-                    ${adminData.configs.map(c => `
+                    ${adminData.configs.filter(c => c.chave !== 'active_layout').map(c => `
                         <div class="admin-card">
                             <div class="admin-field">
                                 <label>${c.chave}</label>
@@ -598,27 +639,52 @@ async function searchUserAccount() {
     if (!id) return alert("Digite um ID válido.");
 
     try {
-        const user = await apiFetch(`${ADMIN_API_BASE_URL}/user/${id}`);
+        const data = await apiFetch(`${ADMIN_API_BASE_URL}/user/${id}`);
         const resultDiv = document.getElementById("admin-user-result");
+
+        // Build inventory list
+        const invEntries = Object.entries(data.inventory)
+            .filter(([key]) => !['coins', 'diamante', 'energia'].includes(key))
+            .map(([key, qty]) => `
+                <div class="admin-field" style="grid-template-columns: 1fr 80px;">
+                    <label>${key}</label>
+                    <input type="number" class="edit-user-inv-item" data-item-id="${key}" value="${qty}">
+                </div>
+            `).join('');
+
         resultDiv.innerHTML = `
             <div class="admin-card">
+                <h3>Recursos</h3>
                 <div class="admin-field">
                     <label>ID do Usuário</label>
-                    <input type="text" value="${user.usuario_id}" disabled>
+                    <input type="text" value="${data.usuario_id}" disabled>
                 </div>
                 <div class="admin-field">
                     <label>Ouro (Coins)</label>
-                    <input type="number" id="edit-user-ouro" value="${user.ouro}">
+                    <input type="number" id="edit-user-ouro" value="${data.ouro}">
                 </div>
                 <div class="admin-field">
                     <label>Diamantes</label>
-                    <input type="number" id="edit-user-diamante" value="${user.diamante}">
+                    <input type="number" id="edit-user-diamante" value="${data.diamante}">
                 </div>
                 <div class="admin-field">
                     <label>Energia</label>
-                    <input type="number" id="edit-user-energia" value="${user.energia}">
+                    <input type="number" id="edit-user-energia" value="${data.energia}">
                 </div>
-                <button class="admin-action primary" onclick="saveUserAccount(${user.usuario_id})">Salvar Saldo</button>
+
+                <h3 style="margin-top:20px;">Inventário (Itens)</h3>
+                ${invEntries}
+
+                <div class="admin-field" style="margin-top:10px;">
+                    <label>Adicionar Novo Item</label>
+                    <select id="add-user-item-id">
+                        <option value="">Selecione...</option>
+                        ${data.availableItems.map(i => `<option value="${i.item_id}">${i.label}</option>`).join('')}
+                    </select>
+                    <input type="number" id="add-user-item-qty" placeholder="Qtd" value="1">
+                </div>
+
+                <button class="admin-action primary" onclick="saveUserAccount(${data.usuario_id})">Salvar Tudo</button>
             </div>
         `;
     } catch (err) {
@@ -677,6 +743,22 @@ async function saveSlotAdmin(slotId) {
     alert("Slot atualizado!");
 }
 
+async function deleteItemAdmin(itemId) {
+    if (!confirm(`Tem certeza que deseja excluir o item ${itemId}?`)) return;
+    try {
+        await apiFetch(`${ADMIN_API_BASE_URL}/items/${itemId}`, { method: 'DELETE' });
+        renderAdminTab('itens');
+    } catch (err) { alert(err.message); }
+}
+
+async function deleteMissionAdmin(id) {
+    if (!confirm(`Tem certeza que deseja excluir a missão ID ${id}?`)) return;
+    try {
+        await apiFetch(`${ADMIN_API_BASE_URL}/missions/${id}`, { method: 'DELETE' });
+        renderAdminTab('missoes');
+    } catch (err) { alert(err.message); }
+}
+
 async function saveCropParams(itemId) {
     const grow = parseFloat(document.getElementById(`crop-grow-${itemId}`).value);
     const reward = parseFloat(document.getElementById(`crop-reward-${itemId}`).value);
@@ -695,11 +777,23 @@ async function saveCropParams(itemId) {
 }
 
 async function saveUserAccount(userId) {
+    const items = {};
+    document.querySelectorAll(".edit-user-inv-item").forEach(input => {
+        items[input.dataset.itemId] = parseInt(input.value);
+    });
+
+    const newItemId = document.getElementById("add-user-item-id").value;
+    if (newItemId) {
+        const newItemQty = parseInt(document.getElementById("add-user-item-qty").value);
+        items[newItemId] = (items[newItemId] || 0) + newItemQty;
+    }
+
     const data = {
         usuario_id: userId,
         ouro: parseInt(document.getElementById("edit-user-ouro").value),
         diamante: parseInt(document.getElementById("edit-user-diamante").value),
-        energia: parseInt(document.getElementById("edit-user-energia").value)
+        energia: parseInt(document.getElementById("edit-user-energia").value),
+        items: items
     };
 
     try {
@@ -709,8 +803,9 @@ async function saveUserAccount(userId) {
             body: JSON.stringify(data)
         });
         alert("Dados da conta salvos com sucesso!");
+        searchUserAccount(); // Refresh
         if (String(userId) === String(inventario.usuario_id || '1')) {
-            loadGameState(); // Atualiza UI se for o próprio usuário
+            loadGameState();
         }
     } catch (err) {
         alert("Erro ao salvar: " + err.message);
