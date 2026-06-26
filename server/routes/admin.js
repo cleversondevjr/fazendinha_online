@@ -103,6 +103,32 @@ router.post('/user/update', async (req, res) => {
     }
 });
 
+// GET /api/admin/user/:id/slots - Get user slots
+router.get('/user/:id/slots', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const slots = await db.execute('SELECT * FROM fazenda_plantacoes WHERE usuario_id = $1 ORDER BY slot_index', [id]);
+        res.json({ slots: slots.rows });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// POST /api/admin/slots/update - Update a specific slot
+router.post('/slots/update', async (req, res) => {
+    const { id, fase, crop_id, pot_type } = req.body;
+    try {
+        await db.execute(`
+            UPDATE fazenda_plantacoes
+            SET fase = $1, crop_id = $2, pot_type = $3
+            WHERE id = $4
+        `, [fase, crop_id, pot_type, id]);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // GET /api/admin/stats - Basic database stats
 router.get('/stats', async (req, res) => {
     try {
