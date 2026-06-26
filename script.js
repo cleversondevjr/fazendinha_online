@@ -422,7 +422,20 @@ async function renderAdminTab(tabName) {
     const content = document.getElementById("admin-content");
     if (!content) return;
 
-    if (tabName === 'itens') {
+    if (tabName === 'conta') {
+        content.innerHTML = `
+            <div class="admin-account-manager">
+                <h3>Gerenciar Recursos do Jogador</h3>
+                <div class="admin-inline-actions">
+                    <input type="number" id="admin-user-search-id" placeholder="ID do Usuário">
+                    <button class="admin-action primary" onclick="searchUserAccount()">Buscar</button>
+                </div>
+                <div id="admin-user-result" class="admin-grid" style="margin-top: 20px;">
+                    <p>Digite um ID e clique em buscar.</p>
+                </div>
+            </div>
+        `;
+    } else if (tabName === 'itens') {
         const adminData = await apiFetch(`${ADMIN_API_BASE_URL}/config`);
         const assetsData = await apiFetch(`${ADMIN_API_BASE_URL}/assets`);
         availableAssets = assetsData.images;
@@ -534,6 +547,62 @@ async function renderAdminTab(tabName) {
         `;
     } else {
         content.innerHTML = `<p>Aba ${tabName} em desenvolvimento.</p>`;
+    }
+}
+
+async function searchUserAccount() {
+    const id = document.getElementById("admin-user-search-id").value;
+    if (!id) return alert("Digite um ID válido.");
+
+    try {
+        const user = await apiFetch(`${ADMIN_API_BASE_URL}/user/${id}`);
+        const resultDiv = document.getElementById("admin-user-result");
+        resultDiv.innerHTML = `
+            <div class="admin-card">
+                <div class="admin-field">
+                    <label>ID do Usuário</label>
+                    <input type="text" value="${user.usuario_id}" disabled>
+                </div>
+                <div class="admin-field">
+                    <label>Ouro (Coins)</label>
+                    <input type="number" id="edit-user-ouro" value="${user.ouro}">
+                </div>
+                <div class="admin-field">
+                    <label>Diamantes</label>
+                    <input type="number" id="edit-user-diamante" value="${user.diamante}">
+                </div>
+                <div class="admin-field">
+                    <label>Energia</label>
+                    <input type="number" id="edit-user-energia" value="${user.energia}">
+                </div>
+                <button class="admin-action primary" onclick="saveUserAccount(${user.usuario_id})">Salvar Saldo</button>
+            </div>
+        `;
+    } catch (err) {
+        alert("Erro ao buscar usuário: " + err.message);
+    }
+}
+
+async function saveUserAccount(userId) {
+    const data = {
+        usuario_id: userId,
+        ouro: parseInt(document.getElementById("edit-user-ouro").value),
+        diamante: parseInt(document.getElementById("edit-user-diamante").value),
+        energia: parseInt(document.getElementById("edit-user-energia").value)
+    };
+
+    try {
+        await apiFetch(`${ADMIN_API_BASE_URL}/user/update`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        alert("Dados da conta salvos com sucesso!");
+        if (String(userId) === String(inventario.usuario_id || '1')) {
+            loadGameState(); // Atualiza UI se for o próprio usuário
+        }
+    } catch (err) {
+        alert("Erro ao salvar: " + err.message);
     }
 }
 
