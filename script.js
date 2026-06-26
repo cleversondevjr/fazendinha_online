@@ -76,7 +76,12 @@ async function performAction(action, slotIndex = null, itemId = null, missionId 
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action, slotIndex, itemId, missionId })
         });
-        if (res.success) await loadGameState();
+        if (res.success) {
+            await loadGameState();
+            if (action === 'buy_item') showDialog({ title: "Loja", message: "Item comprado com sucesso!" });
+            if (action === 'water_world_tree') showDialog({ title: "Árvore Mundial", message: "Obrigado por sua contribuição!" });
+            if (action === 'claim_mission') showDialog({ title: "Missões", message: "Recompensa resgatada!" });
+        }
     } catch (err) {
         showDialog({ title: "Ação Falhou", message: err.message });
     }
@@ -185,7 +190,11 @@ function renderMissions() {
 function getItemAsset(itemId) {
     // Primeiro verifica se temos uma configuração dinâmica para este item
     const item = itemShopPrices[itemId] || cropCatalog[itemId];
-    if (item && item.image_asset) return item.image_asset;
+    if (item && item.image_asset) {
+        // Se já tem o caminho completo (ex: flores/imagem.png), retorna ele
+        if (item.image_asset.includes('/')) return item.image_asset;
+        return item.image_asset;
+    }
 
     const mappings = {
         'vasoPequeno': 'vaso_pequeno.png',
@@ -194,7 +203,13 @@ function getItemAsset(itemId) {
         'pesticida': 'borrifador_inseticida.png',
         'espantalho': 'espantalho.png'
     };
-    return mappings[itemId] || `${itemId}.png`;
+
+    if (mappings[itemId]) return mappings[itemId];
+
+    // Fallback para flores que não estão no mapeamento estático mas seguem o padrão de nome
+    if (cropCatalog[itemId]) return `flores/${itemId}_adulta.png`;
+
+    return `${itemId}.png`;
 }
 
 function renderShopTab(tabName) {
@@ -266,11 +281,22 @@ function selectItem(id) {
 
 function renderAll() {
     plotStates.forEach((_, i) => renderPlotState(i));
-    document.getElementById("coins").textContent = inventario.coins || 0;
-    document.getElementById("diamonds").textContent = inventario.diamante || 0;
-    document.getElementById("energy").textContent = inventario.energia || 0;
+    const coinsEl = document.getElementById("coins");
+    const diamondsEl = document.getElementById("diamonds");
+    const energyEl = document.getElementById("energy");
+
+    if (coinsEl) coinsEl.textContent = inventario.coins || 0;
+    if (diamondsEl) diamondsEl.textContent = inventario.diamante || 0;
+    if (energyEl) energyEl.textContent = inventario.energia || 0;
+
     renderMissions();
     updateSidebarCounts();
+
+    // Atualiza a árvore mundial se o modal estiver aberto
+    const treeModal = document.getElementById("worldtree-modal");
+    if (treeModal && treeModal.style.display === "block") {
+        renderWorldTree();
+    }
 }
 
 function updateSidebarCounts() {
@@ -341,6 +367,54 @@ setupModal(".open-inventory", "inventory-modal", ".close-inventory");
 setupModal(".open-worldtree", "worldtree-modal", ".close-worldtree");
 setupModal("#admin-open", "admin-modal", "#admin-close");
 
+// Ensure setupModal calls renderWorldTree
+const openTreeBtn = document.querySelector(".open-worldtree");
+if (openTreeBtn) {
+    const originalClick = openTreeBtn.onclick;
+    openTreeBtn.onclick = () => {
+        if (originalClick) originalClick();
+        renderWorldTree();
+    };
+}
+
+function renderWorldTree() {
+    const panel = document.getElementById("worldtree-panel");
+    if (!panel || !worldTreeState) {
+        if (panel) panel.innerHTML = "<p>Nenhum dado da Árvore Mundial disponível no momento.</p>";
+        return;
+    }
+
+    const progress = Math.min(100, (worldTreeState.agua_atual / worldTreeState.meta_agua) * 100);
+
+    panel.innerHTML = `
+        <div class="worldtree-summary">
+            <div class="worldtree-visual">
+                <img src="assets/arvore_mundial_v1.png" class="worldtree-art" onerror="this.src='assets/logo_fazendinha_online.png'">
+            </div>
+            <div class="worldtree-stats">
+                <p>Status: <strong>${progress >= 100 ? 'Meta Atingida!' : 'Crescendo...'}</strong></p>
+                <div class="worldtree-progress">
+                    <div class="worldtree-progress-bar" style="width: ${progress}%"></div>
+                </div>
+                <p>Geral: ${worldTreeState.agua_atual} / ${worldTreeState.meta_agua} gotas</p>
+                <p>Sua contribuição ajuda a todos!</p>
+            </div>
+        </div>
+        <div class="worldtree-donations">
+            <button class="worldtree-donate" onclick="performAction('water_world_tree')">
+                Regar Árvore (1 gota)
+            </button>
+            <button class="worldtree-donate" onclick="performAction('collect_tree_reward')" ${!worldTreeState.reward_available ? 'disabled' : ''}>
+                Coletar Recompensa Coletiva
+            </button>
+        </div>
+        <div class="worldtree-donation-log">
+            <p><small>* Você pode contribuir com até 2 gotas a cada 6 horas.</small></p>
+            <p><small>* A recompensa de 100 Ouro é liberada para todos que contribuíram no dia, assim que a meta for atingida.</small></p>
+        </div>
+    `;
+}
+
 // --- Admin Panel Logic ---
 let availableAssets = [];
 
@@ -387,9 +461,159 @@ async function renderAdminTab(tabName) {
                 </div>
             </div>
         `;
+    } else if (tabName === 'missoes') {
+        const adminData = await apiFetch(`${ADMIN_API_BASE_URL}/config`);
+        content.innerHTML = `
+            <div class="admin-mission-manager">
+                <h3>Modelos de Missões</h3>
+                <button class="admin-action" onclick="showMissionForm()">+ Criar Missão</button>
+                <div class="admin-table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Label</th>
+                                <th>Tipo</th>
+                                <th>Meta</th>
+                                <th>Recompensa</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${adminData.missions.map(m => `
+                                <tr>
+                                    <td>${m.id}</td>
+                                    <td>${m.label}</td>
+                                    <td>${m.tipo}</td>
+                                    <td>${m.target}</td>
+                                    <td>${m.reward_amount} ${m.reward_type}</td>
+                                    <td><button onclick='showMissionForm(${JSON.stringify(m)})'>Editar</button></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    } else if (tabName === 'regras') {
+        const adminData = await apiFetch(`${ADMIN_API_BASE_URL}/config`);
+        content.innerHTML = `
+            <div class="admin-rules-manager">
+                <h3>Configurações Globais</h3>
+                <div class="admin-grid">
+                    ${adminData.configs.map(c => `
+                        <div class="admin-card">
+                            <div class="admin-field">
+                                <label>${c.chave}</label>
+                                <input type="text" id="config-${c.chave}" value="${c.valor}">
+                                <small>${c.descricao || ''}</small>
+                                <button class="admin-action" onclick="saveConfig('${c.chave}')">Atualizar</button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    } else if (tabName === 'dados') {
+        const stats = await apiFetch(`${ADMIN_API_BASE_URL}/stats`);
+        content.innerHTML = `
+            <div class="admin-stats">
+                <h3>Estatísticas do Jogo</h3>
+                <div class="admin-grid">
+                    <div class="admin-card">
+                        <p>Total de Jogadores: <strong>${stats.totalUsers}</strong></p>
+                    </div>
+                    <div class="admin-card">
+                        <p>Slots Desbloqueados: <strong>${stats.activeSlots}</strong></p>
+                    </div>
+                    <div class="admin-card">
+                        <p>Total Ouro em Circulação: <strong>${stats.totalEconomy}</strong></p>
+                    </div>
+                </div>
+            </div>
+        `;
     } else {
         content.innerHTML = `<p>Aba ${tabName} em desenvolvimento.</p>`;
     }
+}
+
+async function saveConfig(chave) {
+    const valor = document.getElementById(`config-${chave}`).value;
+    try {
+        await apiFetch(`${ADMIN_API_BASE_URL}/config/update`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chave, valor })
+        });
+        alert('Configuração atualizada!');
+        renderAdminTab('regras');
+    } catch (err) {
+        alert('Erro ao salvar: ' + err.message);
+    }
+}
+
+function showMissionForm(mission = null) {
+    const dialog = document.getElementById("game-dialog");
+    const formHtml = `
+        <div class="admin-form">
+            <input type="hidden" id="edit-mission-id" value="${mission?.id || ''}">
+            <div class="form-group">
+                <label>Label:</label>
+                <input type="text" id="edit-mission-label" value="${mission?.label || ''}">
+            </div>
+            <div class="form-group">
+                <label>Tipo:</label>
+                <select id="edit-mission-tipo">
+                    <option value="harvest_count" ${mission?.tipo === 'harvest_count' ? 'selected' : ''}>Colheitas Realizadas</option>
+                    <option value="water_count" ${mission?.tipo === 'water_count' ? 'selected' : ''}>Regas Realizadas</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Meta (Quantidade):</label>
+                <input type="number" id="edit-mission-target" value="${mission?.target || 1}">
+            </div>
+            <div class="form-group">
+                <label>Recompensa (Tipo):</label>
+                <select id="edit-mission-reward-type">
+                    <option value="coins" ${mission?.reward_type === 'coins' ? 'selected' : ''}>Ouro</option>
+                    <option value="diamante" ${mission?.reward_type === 'diamante' ? 'selected' : ''}>Diamante</option>
+                    <option value="energia" ${mission?.reward_type === 'energia' ? 'selected' : ''}>Energia</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Recompensa (Quantidade):</label>
+                <input type="number" id="edit-mission-reward-amount" value="${mission?.reward_amount || 0}">
+            </div>
+            <div class="form-group">
+                <label>Peso (Raridade):</label>
+                <input type="number" id="edit-mission-weight" value="${mission?.weight || 1}">
+            </div>
+        </div>
+    `;
+
+    document.getElementById("game-dialog-title").textContent = mission ? "Editar Missão" : "Nova Missão";
+    document.getElementById("game-dialog-message").innerHTML = formHtml;
+    dialog.classList.remove("hidden");
+
+    document.getElementById("game-dialog-confirm").onclick = async () => {
+        const data = {
+            id: document.getElementById("edit-mission-id").value,
+            label: document.getElementById("edit-mission-label").value,
+            tipo: document.getElementById("edit-mission-tipo").value,
+            target: parseInt(document.getElementById("edit-mission-target").value),
+            reward_type: document.getElementById("edit-mission-reward-type").value,
+            reward_amount: parseInt(document.getElementById("edit-mission-reward-amount").value),
+            weight: parseInt(document.getElementById("edit-mission-weight").value),
+            active: true
+        };
+        await apiFetch(`${ADMIN_API_BASE_URL}/missions/save`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        dialog.classList.add("hidden");
+        renderAdminTab('missoes');
+    };
 }
 
 function showItemForm(item = null) {

@@ -60,6 +60,12 @@ router.get('/state', async (req, res) => {
         const configsRes = await db.execute('SELECT chave, valor FROM fazenda_config');
         const configsMap = configsRes.rows.reduce((acc, curr) => ({ ...acc, [curr.chave]: curr.valor }), {});
 
+        // Defaults for missing configs
+        if (!configsMap.max_energy) configsMap.max_energy = '100';
+        if (!configsMap.energy_restore_per_hour) configsMap.energy_restore_per_hour = '5';
+        if (!configsMap.slot_price_base) configsMap.slot_price_base = '500';
+        if (!configsMap.global_discount) configsMap.global_discount = '0';
+
         await syncEnergy(userId, configsMap);
 
         const inventoryRes = await db.execute('SELECT item_id, quantidade FROM fazenda_inventario WHERE usuario_id = $1', [userId]);
@@ -76,10 +82,17 @@ router.get('/state', async (req, res) => {
 
         const treeMetaRes = await db.execute('SELECT * FROM fazenda_arvore_meta WHERE data_dia = CURRENT_DATE');
         const treeMeta = treeMetaRes.rows[0] || null;
-        if (treeMeta) treeMeta.reward_available = treeMeta.agua_atual >= treeMeta.meta_agua;
+        if (treeMeta) {
+            treeMeta.reward_available = treeMeta.agua_atual >= treeMeta.meta_agua;
+        } else {
+            // Se não houver meta hoje, cria uma padrão
+            const dailyMeta = 100; // Fallback
+            await db.execute('INSERT INTO fazenda_arvore_meta (data_dia, meta_agua) VALUES (CURRENT_DATE, $1) ON CONFLICT DO NOTHING', [dailyMeta]);
+        }
 
         res.json({ inventory, slots, missions: missionsRes.rows, configs: configsMap, worldTree: treeMeta });
     } catch (err) {
+        console.error("State Error:", err);
         res.status(500).json({ error: err.message });
     }
 });
