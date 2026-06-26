@@ -47,6 +47,45 @@ router.post('/items/save', async (req, res) => {
     }
 });
 
+// POST /api/admin/missions/save - Create or Update mission templates
+router.post('/missions/save', async (req, res) => {
+    const { id, label, tipo, target, reward_type, reward_amount, weight, active } = req.body;
+    try {
+        if (id) {
+            await db.execute(`
+                UPDATE fazenda_missoes_template
+                SET label = $1, tipo = $2, target = $3, reward_type = $4, reward_amount = $5, weight = $6, active = $7
+                WHERE id = $8
+            `, [label, tipo, target, reward_type, reward_amount, weight, active, id]);
+        } else {
+            await db.execute(`
+                INSERT INTO fazenda_missoes_template (label, tipo, target, reward_type, reward_amount, weight, active)
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
+            `, [label, tipo, target, reward_type, reward_amount, weight, active]);
+        }
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET /api/admin/stats - Basic database stats
+router.get('/stats', async (req, res) => {
+    try {
+        const users = await db.execute('SELECT COUNT(DISTINCT usuario_id) FROM fazenda_plantacoes');
+        const activeSlots = await db.execute("SELECT COUNT(*) FROM fazenda_plantacoes WHERE fase != 'locked'");
+        const totalCoins = await db.execute("SELECT SUM(quantidade) FROM fazenda_inventario WHERE item_id = 'coins'");
+
+        res.json({
+            totalUsers: users.rows[0].count,
+            activeSlots: activeSlots.rows[0].count,
+            totalEconomy: totalCoins.rows[0].sum
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // GET /api/admin/assets - List all images in assets folders
 router.get('/assets', (req, res) => {
     try {
