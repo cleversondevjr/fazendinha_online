@@ -1,59 +1,52 @@
-# Guia Rápido: Colocando o Site Online
+# Guia de Comandos: Atualização e Backup
 
-Para colocar a Fazendinha online no seu Raspberry Pi sob o domínio principal, siga estes passos:
+Siga as sequências abaixo para manter seu servidor e seu backup local sempre atualizados com as últimas melhorias (v1.0.3 + Painel Admin Total).
 
-### 1. Atualizar o Código no Servidor
-No seu Raspberry Pi, execute:
+---
+
+### 1. Atualização Normal (Raspberry Pi)
+Use este comando quando quiser apenas puxar as novidades do dia.
 ```bash
 cd /home/pi/fazendinha_online
-git pull origin deploy-fazendinha-v1
+git fetch origin
+git checkout main
+git pull origin main
+cd server
+npm install
+pm2 restart fazendinha-backend
+pm2 save
 ```
 
-### 2. Configurar o Nginx
-Você deve adicionar as rotas da fazendinha **dentro** do bloco `server` que já cuida do domínio `sgiptv.com.br`.
-
-**Comando:**
+### 2. Limpeza Profunda / Hard Reset (Raspberry Pi)
+Use este comando se os arquivos não estiverem subindo ou se houver erro de conflito no Git. **Isso forçará o servidor a ficar idêntico ao repositório.**
 ```bash
-sudo nano /etc/nginx/sites-available/default
-```
-
-**Adicione estas linhas antes do último `}` do bloco server:**
-```nginx
-    # Rotas da Fazendinha
-    location = /fazendinha {
-        return 301 /fazendinha/;
-    }
-
-    location /fazendinha/ {
-        alias /home/pi/fazendinha_online/;
-        index index.html;
-        location ~ ^/fazendinha/(server|migrations|\.git) { deny all; }
-    }
-
-    location /fazendinha/api/ {
-        proxy_pass http://localhost:3002/api/;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_set_header Host $host;
-    }
-```
-
-**Reinicie o Nginx:**
-```bash
+cd /home/pi/fazendinha_online
+git fetch origin
+git reset --hard origin/main
+cd server
+npm install
+pm2 restart fazendinha-backend
 sudo nginx -t && sudo systemctl restart nginx
 ```
 
-### 3. Reiniciar o Backend
-```bash
-cd /home/pi/fazendinha_online/server
-npm install
-pm2 restart fazendinha-backend || pm2 start index.js --name "fazendinha-backend"
+### 3. Backup e Atualização Local (PC Windows)
+Para manter sua pasta `F:\projetos\fazendinha_online` atualizada como um backup seguro.
+Abra o **PowerShell** ou **Git Bash** no seu PC e execute:
+```powershell
+# Entrar na pasta do projeto
+cd F:\projetos\fazendinha_online
+
+# Puxar as atualizações do GitHub
+git fetch origin
+git pull origin main
+
+# Confirmar versão v1.0.3 no código
+git log -n 1
 ```
 
-### 4. Acesso Oficial
-O novo endereço oficial é:
-[https://sgiptv.com.br/fazendinha/](https://sgiptv.com.br/fazendinha/)
-
 ---
-**Nota:** O sistema foi testado e validado. Certifique-se de que o seu `.env` em `server/` aponta para o banco de dados correto.
+
+### 🔍 Verificação de Sucesso
+1.  **No Navegador**: Abra [https://sgiptv.com.br/fazendinha/](https://sgiptv.com.br/fazendinha/) em aba anônima.
+2.  **Versão**: Verifique se aparece **v1.0.3** abaixo da logo.
+3.  **Painel Admin**: Teste as novas abas (Conta, Slots, Plantas).
