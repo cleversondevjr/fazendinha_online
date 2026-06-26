@@ -69,26 +69,32 @@ router.post('/missions/save', async (req, res) => {
     }
 });
 
-// GET /api/admin/user/:id - Get user financial data
+// GET /api/admin/user/:id - Get user financial data and inventory
 router.get('/user/:id', async (req, res) => {
     const { id } = req.params;
     try {
         const inventoryRes = await db.execute('SELECT item_id, quantidade FROM fazenda_inventario WHERE usuario_id = $1', [id]);
         const inventory = inventoryRes.rows.reduce((acc, curr) => ({ ...acc, [curr.item_id]: curr.quantidade }), {});
+
+        // Also get list of all available items to allow adding them
+        const itemsRes = await db.execute('SELECT item_id, label FROM fazenda_itens_config ORDER BY label');
+
         res.json({
             usuario_id: id,
             ouro: inventory.coins || 0,
             diamante: inventory.diamante || 0,
-            energia: inventory.energia || 0
+            energia: inventory.energia || 0,
+            inventory: inventory,
+            availableItems: itemsRes.rows
         });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
-// POST /api/admin/user/update - Update user financial data
+// POST /api/admin/user/update - Update user financial data and items
 router.post('/user/update', async (req, res) => {
-    const { usuario_id, ouro, diamante, energia } = req.body;
+    const { usuario_id, ouro, diamante, energia, items } = req.body;
     try {
         // Update Gold
         await db.execute("INSERT INTO fazenda_inventario (usuario_id, item_id, quantidade) VALUES ($1, 'coins', $2) ON CONFLICT (usuario_id, item_id) DO UPDATE SET quantidade = $2", [usuario_id, ouro]);
@@ -96,6 +102,13 @@ router.post('/user/update', async (req, res) => {
         await db.execute("INSERT INTO fazenda_inventario (usuario_id, item_id, quantidade) VALUES ($1, 'diamante', $2) ON CONFLICT (usuario_id, item_id) DO UPDATE SET quantidade = $2", [usuario_id, diamante]);
         // Update Energy
         await db.execute("INSERT INTO fazenda_inventario (usuario_id, item_id, quantidade) VALUES ($1, 'energia', $2) ON CONFLICT (usuario_id, item_id) DO UPDATE SET quantidade = $2", [usuario_id, energia]);
+
+        // Update specific items if provided
+        if (items && typeof items === 'object') {
+            for (const [itemId, qty] of Object.entries(items)) {
+                await db.execute("INSERT INTO fazenda_inventario (usuario_id, item_id, quantidade) VALUES ($1, $2, $3) ON CONFLICT (usuario_id, item_id) DO UPDATE SET quantidade = $3", [usuario_id, itemId, qty]);
+            }
+        }
 
         res.json({ success: true });
     } catch (err) {
@@ -180,6 +193,29 @@ router.get('/stats', async (req, res) => {
             activeSlots: activeSlots.rows[0].count,
             totalEconomy: totalCoins.rows[0].sum
         });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// DELETE /api/admin/items/:id - Delete an item
+router.delete('/items/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        await db.execute('DELETE FROM fazenda_itens_config WHERE item_id = $1', [id]);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// DELETE /api/admin/missions/:id - Delete a mission template
+router.delete('/missions/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        await db.execute('DELETE FROM fazenda_missoes_jogador WHERE template_id = $1', [id]);
+        await db.execute('DELETE FROM fazenda_missoes_template WHERE id = $1', [id]);
+        res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
