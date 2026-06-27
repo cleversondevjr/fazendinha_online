@@ -20,11 +20,15 @@ router.get('/config', async (req, res) => {
     }
 });
 
-// POST /api/admin/config/update - Update a specific config
+// POST /api/admin/config/update - Update or create a specific config
 router.post('/config/update', async (req, res) => {
     const { chave, valor } = req.body;
     try {
-        await db.execute('UPDATE fazenda_config SET valor = $1 WHERE chave = $2', [valor, chave]);
+        await db.execute(`
+            INSERT INTO fazenda_config (chave, valor)
+            VALUES ($1, $2)
+            ON CONFLICT (chave) DO UPDATE SET valor = $2, updated_at = NOW()
+        `, [chave, valor]);
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: err.message });

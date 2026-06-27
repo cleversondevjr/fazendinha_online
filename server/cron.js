@@ -46,7 +46,21 @@ cron.schedule('0 0 * * 1', async () => {
 });
 
 /**
- * 3. Game Tick - Every minute (Random Events & Penalties)
+ * 3. Weather Rotation - Every 8 hours
+ */
+cron.schedule('0 */8 * * *', async () => {
+    console.log('Rotating weather...');
+    try {
+        const weathers = ['sunny', 'rainy', 'windy'];
+        const selected = weathers[Math.floor(Math.random() * weathers.length)];
+        await db.execute("UPDATE fazenda_config SET valor = $1 WHERE chave = 'current_weather'", [selected]);
+    } catch (err) {
+        console.error('Error rotating weather:', err);
+    }
+});
+
+/**
+ * 4. Game Tick - Every minute (Random Events & Penalties)
  */
 cron.schedule('* * * * *', async () => {
     console.log('Processing game tick...');

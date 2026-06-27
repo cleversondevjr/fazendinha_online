@@ -140,7 +140,18 @@ router.post('/action', async (req, res) => {
             const item = itemRes.rows[0];
             let used = false;
             if (item.tipo === 'flower' || item.tipo === 'tree') {
-                const endsAt = new Date(Date.now() + item.grow_hours * 3600000);
+                const configsRes = await db.execute("SELECT chave, valor FROM fazenda_config WHERE chave = 'current_weather'");
+                const weather = configsRes.rows[0]?.valor || 'sunny';
+
+                let growHours = parseFloat(item.grow_hours);
+
+                // IMPACTO CLIMÁTICO NO TEMPO DE CRESCIMENTO
+                // Chuva acelera árvores, Sol acelera flores
+                if (weather === 'rainy' && item.tipo === 'tree') growHours *= 0.8;
+                if (weather === 'sunny' && item.tipo === 'flower') growHours *= 0.8;
+                if (weather === 'windy') growHours *= 1.1; // Vento atrapalha ambos
+
+                const endsAt = new Date(Date.now() + growHours * 3600000);
                 const updateRes = await db.execute("UPDATE fazenda_plantacoes SET fase = 'growing', crop_id = $1, started_at = NOW(), ends_at = $2, reward_base = $3, reward_actual = $4, crow_active = FALSE, pest_active = FALSE, total_paused_ms = 0 WHERE usuario_id = $5 AND slot_index = $6 AND fase = 'readyToPlant'", [itemId, endsAt, item.reward_base, item.reward_base, userId, slotIndex]);
                 used = updateRes.rowCount > 0;
             } else if (itemId === 'vasoPequeno' || itemId === 'vasoGrande') {
