@@ -224,6 +224,20 @@ function renderPlotState(index) {
     } else {
         timer.textContent = state.fase.toUpperCase().replace('NEEDS', 'AGUARDANDO ');
     }
+
+    // --- Controle de Visibilidade dos Botões de Ação ---
+    const actions = plotEl.querySelector(".plot-actions");
+    if (actions) {
+        // Mostrar botões se não estiver trancado, ou se estiver pronto para colher ou se houver uma planta para remover
+        const showActions = (state.fase !== 'locked' || state.fase === 'ready') || state.crop_id;
+        actions.style.display = showActions ? "flex" : "none";
+
+        const removeBtn = actions.querySelector(".remove");
+        if (removeBtn) {
+            // Só mostra o botão remover se houver algo plantado
+            removeBtn.style.visibility = state.crop_id ? "visible" : "hidden";
+        }
+    }
 }
 
 function renderMissions() {
