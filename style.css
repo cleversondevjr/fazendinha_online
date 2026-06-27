@@ -305,21 +305,19 @@ body {
 .mission-claim {
   margin-top: 6px;
   width: 100%;
-  height: 30px;
-  border: none;
-  border-radius: 8px;
-  padding: 0;
-  background: linear-gradient(180deg, #37ad34 0%, #1a6818 100%);
-  color: #ffcf49;
-  font-family: 'Luckiest Guy', cursive, Arial, sans-serif;
-  font-size: 13px;
-  cursor: pointer;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .mission-claim:disabled {
-  opacity: 0.45;
+  opacity: 0.5;
+  filter: grayscale(1);
   cursor: default;
 }
+
+.mission-claim:disabled::after { display: none; }
 
 .weather-icon {
   width: 100%;
@@ -443,33 +441,33 @@ body {
 }
 
 .crop-layer.crop-flower.stage-semente {
-  width: 30%;
-  bottom: calc(23% + 25px);
+  width: 22%;
+  bottom: 34%;
 }
 
 .crop-layer.crop-flower.stage-broto {
-  width: 38%;
-  bottom: calc(20% + 25px);
+  width: 32%;
+  bottom: 34%;
 }
 
 .crop-layer.crop-flower.stage-adulta {
-  width: 58%;
-  bottom: calc(16% + 25px);
+  width: 48%;
+  bottom: 32%;
 }
 
 .crop-layer.crop-tree.stage-semente {
-  width: 30%;
-  bottom: calc(23% + 25px);
+  width: 22%;
+  bottom: 34%;
 }
 
 .crop-layer.crop-tree.stage-broto {
-  width: 42%;
-  bottom: calc(18% + 25px);
+  width: 40%;
+  bottom: 32%;
 }
 
 .crop-layer.crop-tree.stage-adulta {
-  width: 68%;
-  bottom: calc(12% + 25px);
+  width: 65%;
+  bottom: 30%;
 }
 
 .danger-sign {
@@ -507,22 +505,32 @@ body {
 
 .status-icons {
   position: absolute;
-  top: 12.8%;
-  right: 13.2%;
-  width: 10.4%;
-  height: 65.4%;
+  top: 14%;
+  right: 14.5%;
+  width: 13%;
+  height: 56%;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  z-index: 2;
+  z-index: 10;
 }
 
 .status-slot {
   width: 100%;
-  aspect-ratio: 1 / 1;
+  height: 18%;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: rgba(0,0,0,0.3);
+  border: 1.5px solid #ffd75b;
+  border-radius: 6px;
+  box-shadow: inset 0 0 5px rgba(0,0,0,0.5);
+}
+
+.status-slot img {
+  width: 80%;
+  height: 80%;
+  object-fit: contain;
 }
 
 .status-slot img {
@@ -746,15 +754,9 @@ body {
 
 .buy-btn {
   margin-top: 10px;
-  background: #00c853;
-  border: none;
-  padding: 6px 12px;
-  color: #fff;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background 0.2s;
+  width: 130px;
+  height: 40px;
 }
-.buy-btn:hover { background: #009624; }
 
 .game-dialog {
   position: fixed;
@@ -799,24 +801,12 @@ body {
   gap: 12px;
 }
 
-.dialog-btn {
-  min-width: 130px;
-  border: none;
-  border-radius: 12px;
-  padding: 10px 16px;
-  color: #ffcf49;
-  font-family: 'Luckiest Guy', cursive, Arial, sans-serif;
-  font-size: 18px;
-  cursor: pointer;
-  box-shadow: inset 0 2px 0 rgba(255,255,255,0.2);
-}
-
 .dialog-btn-confirm {
-  background: linear-gradient(180deg, #3ebd3d 0%, #1f7f22 100%);
+  background: #37ad34 !important;
 }
 
 .dialog-btn-cancel {
-  background: linear-gradient(180deg, #c94334 0%, #8c1e1e 100%);
+  background: #d83d31 !important;
 }
 
 /* Painel Admin */
@@ -914,22 +904,45 @@ body {
 }
 
 .admin-tab,
-.admin-action {
-  border: 1px solid rgba(255, 215, 90, 0.45);
-  border-radius: 10px;
-  background: linear-gradient(180deg, #3f3f45 0%, #24242a 100%);
+.admin-action,
+.buy-btn,
+.dialog-btn,
+.mission-claim,
+.resource-btn {
+  position: relative;
+  border: 3px solid #ffd75b;
+  border-radius: 16px;
+  background: #5a3a7e;
   color: #fff;
-  padding: 8px 14px;
-  font-family: Arial, sans-serif;
-  font-weight: 700;
+  font-family: 'Luckiest Guy', cursive, Arial, sans-serif;
   cursor: pointer;
+  box-shadow: 0 4px 0 rgba(0,0,0,0.3);
+  transition: all 0.1s;
+  text-shadow: 0 2px 0 rgba(0,0,0,0.5);
+}
+
+.admin-tab::after,
+.admin-action::after,
+.buy-btn::after,
+.dialog-btn::after,
+.mission-claim::after,
+.resource-btn::after {
+  content: '';
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 22px;
+  height: 22px;
+  background: url('assets/folha.png') center/contain no-repeat;
+  pointer-events: none;
+  z-index: 5;
 }
 
 .admin-tab.active,
 .admin-action.primary {
-  background: linear-gradient(180deg, #37ad34 0%, #1a6818 100%);
-  color: #ffd75b;
-  text-shadow: 0 1px 0 #000;
+  background: #37ad34;
+  border-color: #ffd75b;
+  color: #fff;
 }
 
 .admin-content {

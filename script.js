@@ -104,8 +104,11 @@ function createPlot(index) {
                     </div>
                     <div class="soil"></div>
                     <div class="status-icons">
-                        <div class="status-slot"></div>
-                        <div class="status-slot"></div>
+                        <div class="status-slot" data-status="pot"></div>
+                        <div class="status-slot" data-status="water"></div>
+                        <div class="status-slot" data-status="crow"></div>
+                        <div class="status-slot" data-status="pest"></div>
+                        <div class="status-slot" data-status="scarecrow"></div>
                     </div>
                     <div class="plot-actions">
                         <button class="plot-action-btn usar" type="button" data-action="use"></button>
@@ -129,13 +132,16 @@ function getCropAsset(state) {
     if (!state.crop_id) return null;
     const baseId = state.crop_id.replace(/_(adulta|broto|semente|jovem)$/u, "");
     const progress = parseFloat(state.progress) || 0;
+    const config = cropCatalog[state.crop_id] || {};
+    const type = config.tipo || 'flower';
 
     let stage = "semente";
-    if (progress >= 1.0) stage = "adulta";
-    else if (progress > 0.75) stage = "jovem";
-    else if (progress > 0.40) stage = "broto";
+    // Regra: Estágio 1 (0-40%), Estágio 2 (40-80%), Estágio 3 (80-100%)
+    if (progress >= 0.80) stage = "adulta";
+    else if (progress >= 0.40) stage = "broto";
+    else stage = "semente";
 
-    return { src: `assets/flores/${baseId}_${stage}.png`, stage };
+    return { src: `assets/flores/${baseId}_${stage}.png`, stage, type };
 }
 
 function renderPlotState(index) {
@@ -144,9 +150,15 @@ function renderPlotState(index) {
     if (!plotEl || !state) return;
 
     const bg = plotEl.querySelector(".plot-bg");
-    if (state.fase === 'locked') bg.src = "assets/slot_comprar_terra_v5.png";
-    else if (state.fase === 'needsPot') bg.src = "assets/slot_vazio_v5.png";
-    else bg.src = "assets/slot_planta_v5.png";
+    if (state.fase === 'locked') {
+        bg.src = "assets/slot_comprar_terra_v5.png";
+    } else if (state.fase === 'needsPot') {
+        bg.src = "assets/terra_sem_pote.png";
+    } else if (state.fase === 'needsWater') {
+        bg.src = "assets/terra_sem_agua.png";
+    } else {
+        bg.src = "assets/terra_com_agua.png";
+    }
 
     const soil = plotEl.querySelector(".soil");
     soil.innerHTML = "";
@@ -154,7 +166,7 @@ function renderPlotState(index) {
     const crop = getCropAsset(state);
     if (crop) {
         const img = document.createElement("img");
-        img.className = `crop-layer stage-${crop.stage}`;
+        img.className = `crop-layer crop-${crop.type} stage-${crop.stage}`;
         img.src = crop.src;
         soil.appendChild(img);
     }
@@ -164,6 +176,41 @@ function renderPlotState(index) {
         crow.className = "danger-sign danger-crow";
         crow.innerHTML = `<div class="danger-plaque">CORVO!</div><img src="assets/corvo.png" alt="Corvo">`;
         soil.appendChild(crow);
+    }
+
+    // --- Renderização dos 5 Ícones de Status ---
+    const slots = plotEl.querySelectorAll(".status-slot");
+    slots.forEach(s => s.innerHTML = ""); // Limpar
+
+    // 1. Pote (Slot 1)
+    if (state.pot_type) {
+        const potImg = document.createElement("img");
+        potImg.src = `assets/${state.pot_type === 'vasoGrande' ? 'vaso_grande.png' : 'vaso_pequeno.png'}`;
+        slots[0].appendChild(potImg);
+    }
+    // 2. Água (Slot 2)
+    if (state.fase !== 'needsWater' && state.fase !== 'needsPot' && state.fase !== 'locked') {
+        const waterImg = document.createElement("img");
+        waterImg.src = "assets/agua.png";
+        slots[1].appendChild(waterImg);
+    }
+    // 3. Corvo (Slot 3)
+    if (state.crow_active) {
+        const crowIcon = document.createElement("img");
+        crowIcon.src = "assets/corvo.png";
+        slots[2].appendChild(crowIcon);
+    }
+    // 4. Praga (Slot 4)
+    if (state.pest_active) {
+        const pestIcon = document.createElement("img");
+        pestIcon.src = "assets/larva.png";
+        slots[3].appendChild(pestIcon);
+    }
+    // 5. Espantalho (Slot 5)
+    if (state.scarecrow_until && new Date(state.scarecrow_until).getTime() > Date.now()) {
+        const scIcon = document.createElement("img");
+        scIcon.src = "assets/espantalho.png";
+        slots[4].appendChild(scIcon);
     }
 
     const timer = plotEl.querySelector(".timer");

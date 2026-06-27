@@ -35,20 +35,46 @@ async function syncEnergy(userId, configs) {
 
 // --- Helper: Process Plot State ---
 function calculatePlotState(plot, configs) {
-    if (plot.fase !== 'growing' && plot.fase !== 'ready') return plot;
     const now = Date.now();
+    let fase = plot.fase;
+    let pauseStartedAt = plot.pause_started_at;
+
+    // 1. Verificar se o pote expirou
+    if (plot.pot_expires_at && new Date(plot.pot_expires_at).getTime() < now) {
+        if (fase !== 'locked' && fase !== 'needsPot') {
+            fase = 'needsPot';
+        }
+    }
+    // 2. Verificar se a água expirou
+    if (plot.water_expires_at && new Date(plot.water_expires_at).getTime() < now) {
+        if (fase === 'readyToPlant' || fase === 'growing' || fase === 'ready') {
+            fase = 'needsWater';
+        }
+    }
+
+    const isActuallyPaused = plot.crow_active || fase === 'needsPot' || fase === 'needsWater';
+
+    if (plot.fase === 'growing' && isActuallyPaused && !pauseStartedAt) {
+        pauseStartedAt = new Date();
+    }
+
+    if (fase !== 'growing' && fase !== 'ready') {
+        return { ...plot, fase, pause_started_at: pauseStartedAt };
+    }
+
     const started = new Date(plot.started_at).getTime();
     const ends = new Date(plot.ends_at).getTime();
     const paused = Number(plot.total_paused_ms || 0);
     const totalMs = ends - started;
     let currentPaused = paused;
-    if (plot.crow_active && plot.pause_started_at) {
-        currentPaused += (now - new Date(plot.pause_started_at).getTime());
+
+    if (isActuallyPaused && pauseStartedAt) {
+        currentPaused += (now - new Date(pauseStartedAt).getTime());
     }
+
     let progress = totalMs > 0 ? (now - started - currentPaused) / totalMs : 1;
-    let fase = plot.fase;
     if (progress >= 1) { fase = 'ready'; progress = 1; }
-    return { ...plot, progress, fase };
+    return { ...plot, progress, fase, pause_started_at: pauseStartedAt };
 }
 
 // GET /api/game/state
@@ -60,7 +86,6 @@ router.get('/state', async (req, res) => {
         const configsRes = await db.execute('SELECT chave, valor FROM fazenda_config');
         const configsMap = configsRes.rows.reduce((acc, curr) => ({ ...acc, [curr.chave]: curr.valor }), {});
 
-        // Defaults for missing configs
         if (!configsMap.max_energy) configsMap.max_energy = '100';
         if (!configsMap.energy_restore_per_hour) configsMap.energy_restore_per_hour = '5';
         if (!configsMap.slot_price_base) configsMap.slot_price_base = '500';
@@ -85,8 +110,7 @@ router.get('/state', async (req, res) => {
         if (treeMeta) {
             treeMeta.reward_available = treeMeta.agua_atual >= treeMeta.meta_agua;
         } else {
-            // Se não houver meta hoje, cria uma padrão
-            const dailyMeta = 100; // Fallback
+            const dailyMeta = 100;
             await db.execute('INSERT INTO fazenda_arvore_meta (data_dia, meta_agua) VALUES (CURRENT_DATE, $1) ON CONFLICT DO NOTHING', [dailyMeta]);
         }
 
@@ -144,21 +168,35 @@ router.post('/action', async (req, res) => {
                 const weather = configsRes.rows[0]?.valor || 'sunny';
 
                 let growHours = parseFloat(item.grow_hours);
-
-                // IMPACTO CLIMÁTICO NO TEMPO DE CRESCIMENTO
-                // Chuva acelera árvores, Sol acelera flores
                 if (weather === 'rainy' && item.tipo === 'tree') growHours *= 0.8;
                 if (weather === 'sunny' && item.tipo === 'flower') growHours *= 0.8;
-                if (weather === 'windy') growHours *= 1.1; // Vento atrapalha ambos
+                if (weather === 'windy') growHours *= 1.1;
 
                 const endsAt = new Date(Date.now() + growHours * 3600000);
                 const updateRes = await db.execute("UPDATE fazenda_plantacoes SET fase = 'growing', crop_id = $1, started_at = NOW(), ends_at = $2, reward_base = $3, reward_actual = $4, crow_active = FALSE, pest_active = FALSE, total_paused_ms = 0 WHERE usuario_id = $5 AND slot_index = $6 AND fase = 'readyToPlant'", [itemId, endsAt, item.reward_base, item.reward_base, userId, slotIndex]);
                 used = updateRes.rowCount > 0;
             } else if (itemId === 'vasoPequeno' || itemId === 'vasoGrande') {
-                const updateRes = await db.execute("UPDATE fazenda_plantacoes SET fase = 'needsWater', pot_type = $1 WHERE usuario_id = $2 AND slot_index = $3 AND fase = 'needsPot'", [itemId, userId, slotIndex]);
+                const potHours = parseInt((await db.execute("SELECT valor FROM fazenda_config WHERE chave = 'pot_duration_hours'")).rows[0]?.valor || 168);
+                const expiresAt = new Date(Date.now() + potHours * 3600000);
+                const updateRes = await db.execute(`
+                    UPDATE fazenda_plantacoes
+                    SET fase = 'needsWater', pot_type = $1, pot_expires_at = $2,
+                        total_paused_ms = total_paused_ms + CASE WHEN pause_started_at IS NOT NULL THEN (EXTRACT(EPOCH FROM (NOW() - pause_started_at)) * 1000) ELSE 0 END,
+                        pause_started_at = NULL
+                    WHERE usuario_id = $3 AND slot_index = $4 AND (fase = 'needsPot' OR fase = 'growing')
+                `, [itemId, expiresAt, userId, slotIndex]);
                 used = updateRes.rowCount > 0;
             } else if (itemId === 'agua') {
-                const updateRes = await db.execute("UPDATE fazenda_plantacoes SET fase = 'readyToPlant' WHERE usuario_id = $1 AND slot_index = $2 AND (fase = 'needsWater' OR fase = 'readyToPlant')", [userId, slotIndex]);
+                const waterHours = parseInt((await db.execute("SELECT valor FROM fazenda_config WHERE chave = 'water_duration_hours'")).rows[0]?.valor || 24);
+                const expiresAt = new Date(Date.now() + waterHours * 3600000);
+                const updateRes = await db.execute(`
+                    UPDATE fazenda_plantacoes
+                    SET fase = CASE WHEN crop_id IS NOT NULL THEN 'growing' ELSE 'readyToPlant' END,
+                        water_expires_at = $1,
+                        total_paused_ms = total_paused_ms + CASE WHEN pause_started_at IS NOT NULL AND crow_active = FALSE THEN (EXTRACT(EPOCH FROM (NOW() - pause_started_at)) * 1000) ELSE 0 END,
+                        pause_started_at = CASE WHEN crow_active = TRUE THEN NOW() ELSE NULL END
+                    WHERE usuario_id = $2 AND slot_index = $3 AND (fase = 'needsWater' OR fase = 'readyToPlant' OR fase = 'growing')
+                `, [expiresAt, userId, slotIndex]);
                 used = updateRes.rowCount > 0;
             } else if (itemId === 'espantalho') {
                 const until = new Date(Date.now() + 7 * 24 * 3600000);
@@ -233,7 +271,7 @@ router.post('/action', async (req, res) => {
             if (contribRes.rows[0].coletada) throw new Error('Recompensa já coletada');
 
             await db.execute("UPDATE fazenda_arvore_contribuicoes SET recompensa_coletada = TRUE WHERE usuario_id = $1 AND data_dia = $2", [userId, today]);
-            await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade + 100 WHERE usuario_id = $1 AND item_id = 'coins'", [userId]); // Reward 100 gold
+            await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade + 100 WHERE usuario_id = $1 AND item_id = 'coins'", [userId]);
         }
 
         res.json({ success: true });
