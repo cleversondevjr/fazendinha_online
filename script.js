@@ -107,6 +107,10 @@ function createPlot(index) {
                         <div class="status-slot"></div>
                         <div class="status-slot"></div>
                     </div>
+                    <div class="plot-actions">
+                        <button class="plot-action-btn usar" type="button" data-action="use"></button>
+                        <button class="plot-action-btn remove" type="button" data-action="remove"></button>
+                    </div>
                 </div>
             </div>
         </section>
@@ -387,6 +391,25 @@ document.getElementById("game-dialog-cancel").onclick = () => document.getElemen
 
 // Interactions
 document.addEventListener('click', e => {
+    const btn = e.target.closest('.plot-action-btn');
+    if (btn) {
+        const plot = btn.closest('.plot');
+        const index = parseInt(plot.dataset.plotIndex);
+        const action = btn.dataset.action;
+
+        if (action === 'use') {
+            const state = plotStates.find(s => s.slot_index === index);
+            if (state.fase === 'ready') performAction('harvest', index);
+            else if (state.fase === 'locked') performAction('buy_slot', index);
+            else if (itemSelecionadoState.item) performAction('use_item', index, itemSelecionadoState.item);
+        } else if (action === 'remove') {
+            if (confirm("Deseja realmente remover a planta deste slot? (Nenhum recurso será devolvido)")) {
+                performAction('remove_plant', index);
+            }
+        }
+        return;
+    }
+
     const plot = e.target.closest('.plot');
     if (plot) {
         const index = parseInt(plot.dataset.plotIndex);
