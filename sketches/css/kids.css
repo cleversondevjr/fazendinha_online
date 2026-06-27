@@ -1,0 +1,23 @@
+/* Layout Dia das Crianças */
+body {
+    background: #fff9c4 url('assets/praia_bg.jpg') center/cover no-repeat fixed;
+    background-blend-mode: soft-light;
+}
+
+.topbar {
+    background: #ff4081 !important;
+    border-radius: 0 0 40px 40px !important;
+}
+
+.sidebar {
+    background: #00bcd4;
+    border: 5px dotted #ffeb3b;
+}
+
+.sidebar::before {
+    content: '🎈 DIA DAS CRIANÇAS 🍭';
+    display: block;
+    text-align: center;
+    font-size: 16px;
+    font-weight: bold;
+}

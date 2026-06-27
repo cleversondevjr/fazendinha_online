@@ -177,8 +177,15 @@ function renderPlotState(index) {
 
 function renderMissions() {
     const list = document.getElementById("missions-list");
-    if (!list) return;
-    list.innerHTML = missionsState.map(mission => `
+    if (!list || !missionsState.length) {
+        if (list) list.innerHTML = "<p style='font-size:12px; opacity:0.7;'>Nenhuma missão ativa.</p>";
+        return;
+    }
+
+    // Exibir apenas a primeira missão ativa por vez conforme solicitado
+    const mission = missionsState.find(m => !m.claimed) || missionsState[0];
+
+    list.innerHTML = `
         <div class="mission-item ${mission.claimed ? 'done' : ''}">
             <div class="mission-name">${mission.label}</div>
             <div class="mission-meta">
@@ -188,8 +195,23 @@ function renderMissions() {
             <button class="mission-claim" onclick="performAction('claim_mission', null, null, ${mission.id})" ${mission.progress < mission.target || mission.claimed ? 'disabled' : ''}>
                 ${mission.claimed ? 'Resgatado' : 'Resgatar'}
             </button>
+            <p style="font-size: 9px; margin-top: 5px; text-align: center; opacity: 0.6;">Próxima missão em: <span id="mission-timer">--:--</span></p>
         </div>
-    `).join("");
+    `;
+
+    updateMissionTimer();
+}
+
+function updateMissionTimer() {
+    const el = document.getElementById("mission-timer");
+    if (!el) return;
+
+    const now = new Date();
+    const nextRotation = new Date();
+    nextRotation.setHours(Math.ceil((now.getHours() + 0.1) / 4) * 4, 0, 0, 0);
+
+    const diff = nextRotation - now;
+    el.textContent = formatDuration(diff);
 }
 
 function getItemAsset(itemId) {
@@ -296,12 +318,25 @@ function renderAll() {
 
     renderMissions();
     updateSidebarCounts();
+    renderWeather();
 
     // Atualiza a árvore mundial se o modal estiver aberto
     const treeModal = document.getElementById("worldtree-modal");
     if (treeModal && treeModal.style.display === "block") {
         renderWorldTree();
     }
+}
+
+function renderWeather() {
+    const icon = document.getElementById("weather-icon");
+    if (!icon) return;
+    const weather = configs.current_weather || 'sunny';
+    const mappings = {
+        'sunny': 'clima_sol_v1.png',
+        'rainy': 'clima_chuva_v1.png',
+        'windy': 'clima_vento_v1.png'
+    };
+    icon.src = `assets/${mappings[weather] || 'caixa_clima.png'}`;
 }
 
 function updateSidebarCounts() {
@@ -468,10 +503,10 @@ async function renderAdminTab(tabName) {
         `;
     } else if (tabName === 'plantas') {
         const adminData = await apiFetch(`${ADMIN_API_BASE_URL}/config`);
-        const crops = adminData.items.filter(i => i.tipo === 'flower' || i.tipo === 'tree');
+        const crops = adminData.items.filter(i => i.tipo === 'flower');
         content.innerHTML = `
             <div class="admin-crops-manager">
-                <h3>Parâmetros de Cultivo</h3>
+                <h3>Parâmetros de Flores</h3>
                 <div class="admin-table-container">
                     <table class="admin-table">
                         <thead>
@@ -498,14 +533,47 @@ async function renderAdminTab(tabName) {
                 </div>
             </div>
         `;
+    } else if (tabName === 'arvores') {
+        const adminData = await apiFetch(`${ADMIN_API_BASE_URL}/config`);
+        const trees = adminData.items.filter(i => i.tipo === 'tree');
+        content.innerHTML = `
+            <div class="admin-crops-manager">
+                <h3>Parâmetros de Árvores</h3>
+                <div class="admin-table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Label</th>
+                                <th>Tempo (h)</th>
+                                <th>Recompensa</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${trees.map(c => `
+                                <tr>
+                                    <td>${c.item_id}</td>
+                                    <td>${c.label}</td>
+                                    <td><input type="number" step="0.1" id="crop-grow-${c.item_id}" value="${c.grow_hours}"></td>
+                                    <td><input type="number" id="crop-reward-${c.item_id}" value="${c.reward_base}"></td>
+                                    <td><button onclick="saveCropParams('${c.item_id}')">Salvar</button></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
     } else if (tabName === 'itens') {
         const adminData = await apiFetch(`${ADMIN_API_BASE_URL}/config`);
         const assetsData = await apiFetch(`${ADMIN_API_BASE_URL}/assets`);
         availableAssets = assetsData.images;
+        const items = adminData.items.filter(i => i.tipo === 'item');
 
         content.innerHTML = `
             <div class="admin-item-manager">
-                <h3>Gerenciar Itens da Loja</h3>
+                <h3>Gerenciar Itens de Consumo</h3>
                 <button class="admin-action" onclick="showItemForm()">+ Adicionar Novo Item</button>
                 <div class="admin-table-container">
                     <table class="admin-table">
@@ -513,18 +581,16 @@ async function renderAdminTab(tabName) {
                             <tr>
                                 <th>ID (Imagem)</th>
                                 <th>Label</th>
-                                <th>Tipo</th>
                                 <th>Preço Ouro</th>
                                 <th>Preço Diam.</th>
                                 <th>Ações</th>
                             </tr>
                         </thead>
                         <tbody>
-                            ${adminData.items.map(item => `
+                            ${items.map(item => `
                                 <tr>
                                     <td>${item.item_id}</td>
                                     <td>${item.label}</td>
-                                    <td>${item.tipo}</td>
                                     <td>${item.price_coins}</td>
                                     <td>${item.price_diamonds}</td>
                                     <td>
@@ -590,6 +656,10 @@ async function renderAdminTab(tabName) {
                             <option value="immersive" ${currentLayout === 'immersive' ? 'selected' : ''}>Imersivo (Glassmorphism)</option>
                             <option value="retro" ${currentLayout === 'retro' ? 'selected' : ''}>Retrô RPG (Madeira/Papel)</option>
                             <option value="neon" ${currentLayout === 'neon' ? 'selected' : ''}>Neon Moderno (PvU 2.0)</option>
+                            <option value="junina" ${currentLayout === 'junina' ? 'selected' : ''}>Festa Junina (Brasil)</option>
+                            <option value="kids" ${currentLayout === 'kids' ? 'selected' : ''}>Dia das Crianças</option>
+                            <option value="natal" ${currentLayout === 'natal' ? 'selected' : ''}>Natal</option>
+                            <option value="anonovo" ${currentLayout === 'anonovo' ? 'selected' : ''}>Ano Novo</option>
                         </select>
                         <p><small>O layout muda instantaneamente para você. Clique abaixo para salvar para todos.</small></p>
                         <button class="admin-action primary" onclick="saveConfig('active_layout')">Salvar Layout para Todos</button>
@@ -986,7 +1056,7 @@ if (adminOpenBtn) {
         const modal = document.getElementById("admin-modal");
         modal.classList.remove("hidden");
         modal.style.display = "block";
-        renderAdminTab('itens');
+        renderAdminTab('conta');
     }
 }
 
@@ -1018,6 +1088,10 @@ loadGameState();
 setInterval(() => {
     if (plotStates.length > 0) {
         plotStates.forEach((_, i) => renderPlotState(i));
+        updateMissionTimer();
+
+        // Atualiza clima visual a cada minuto para garantir que mudou
+        renderWeather();
     } else {
         // If state hasn't loaded yet, just update the waiting timers
         for (let i = 0; i < 8; i++) {
