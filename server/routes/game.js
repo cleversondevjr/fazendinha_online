@@ -196,6 +196,20 @@ router.post('/action', async (req, res) => {
             await db.execute("UPDATE fazenda_plantacoes SET fase = 'needsPot' WHERE usuario_id = $1 AND slot_index = $2 AND fase = 'locked'", [userId, slotIndex]);
         }
 
+        if (action === 'remove_plant') {
+            const slotRes = await db.execute('SELECT * FROM fazenda_plantacoes WHERE usuario_id = $1 AND slot_index = $2', [userId, slotIndex]);
+            if (!slotRes.rows.length) throw new Error('Slot não encontrado');
+            const slot = slotRes.rows[0];
+            if (slot.fase === 'locked' || slot.fase === 'needsPot') throw new Error('Slot já está vazio');
+
+            await db.execute(`
+                UPDATE fazenda_plantacoes
+                SET fase = $1, crop_id = NULL, started_at = NULL, ends_at = NULL,
+                    crow_active = FALSE, pest_active = FALSE, reward_actual = 0
+                WHERE id = $2
+            `, [slot.pot_type ? 'readyToPlant' : 'needsPot', slot.id]);
+        }
+
         if (action === 'water_world_tree') {
             const today = new Date().toISOString().split('T')[0];
             const hour = new Date().getHours();
