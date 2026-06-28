@@ -10,8 +10,9 @@ git pull origin main
 
 ### 2. Configurar Banco de Dados
 ```bash
-# Executar as migrações (se ainda não executou a 003)
-psql -h localhost -U pi -d farm -f migrations/003_add_layout_config.sql
+# Executar as novas migrações para habilitar a lógica de pausa de crescimento e correções de ativos
+psql -h localhost -U pi -d farm -f migrations/004_growth_pause_logic.sql
+psql -h localhost -U pi -d farm -f migrations/005_item_asset_fix.sql
 ```
 
 ### 3. Reiniciar Backend com PM2

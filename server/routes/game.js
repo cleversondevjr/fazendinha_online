@@ -286,9 +286,13 @@ router.post('/action', async (req, res) => {
 
             // Regra: Slots de ouro (0-5) devem ser comprados em ordem
             if (price.type === 'gold' && slotIndex > 0) {
-                const prevSlot = await db.execute('SELECT fase FROM fazenda_plantacoes WHERE usuario_id = $1 AND slot_index = $2', [userId, slotIndex - 1]);
-                if (prevSlot.rows[0]?.fase === 'locked') {
-                    throw new Error('Você deve comprar os slots anteriores de ouro primeiro');
+                const goldSlotsRes = await db.execute('SELECT slot_index, fase FROM fazenda_plantacoes WHERE usuario_id = $1 AND slot_index < $2 ORDER BY slot_index ASC', [userId, slotIndex]);
+                const prevGoldSlots = goldSlotsRes.rows.filter(s => slotPrices[s.slot_index].type === 'gold');
+
+                for (const s of prevGoldSlots) {
+                    if (s.fase === 'locked') {
+                        throw new Error(`Você deve comprar o Slot ${s.slot_index + 1} de ouro primeiro`);
+                    }
                 }
             }
 

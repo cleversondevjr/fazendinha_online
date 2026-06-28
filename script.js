@@ -12,8 +12,7 @@ let itemShopPrices = {};
 
 const itemSelecionadoState = { item: null };
 
-// --- Sessão e Inatividade (Desativados em Modo Teste) ---
-/*
+// --- Sessão e Inatividade ---
 const INACTIVITY_LIMIT = 30 * 60 * 1000;
 let inactivityTimer;
 
@@ -26,7 +25,11 @@ function logout() {
     document.cookie = "usuario_id=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
     window.location.href = "login.html";
 }
-*/
+
+document.addEventListener('mousemove', resetInactivityTimer);
+document.addEventListener('keydown', resetInactivityTimer);
+document.addEventListener('click', resetInactivityTimer);
+resetInactivityTimer();
 
 // --- Core API ---
 async function apiFetch(endpoint, options = {}) {
@@ -170,9 +173,23 @@ function renderPlotState(index) {
     if (state.fase === 'locked') {
         bg.src = "assets/slot_comprar_terra_v5.png";
     } else if (state.fase === 'needsPot') {
-        bg.src = "assets/slot_vazio_v5.png";
+        bg.src = "assets/slot_planta_v5.png";
     } else {
         bg.src = "assets/slot_planta_v5.png";
+    }
+
+    // --- Camada de Terreno ---
+    if (state.fase !== 'locked') {
+        const terrainImg = document.createElement("img");
+        terrainImg.className = "terrain-layer";
+        if (state.fase === 'needsPot') {
+            terrainImg.src = "assets/terra_sem_pote.png";
+        } else if (state.fase === 'needsWater') {
+            terrainImg.src = "assets/terra_sem_agua.png";
+        } else {
+            terrainImg.src = "assets/terra_com_agua.png";
+        }
+        soil.appendChild(terrainImg);
     }
 
     const crop = getCropAsset(state);
@@ -252,7 +269,8 @@ function renderPlotState(index) {
         timer.innerHTML = `COMPRAR ${p.cost} <img src="assets/${p.type === 'gold' ? 'ouro' : 'diamante'}.png" style="width:14px; vertical-align:middle;">`;
     } else if (state.fase === 'growing') {
         const remaining = new Date(state.ends_at).getTime() - Date.now();
-        timer.textContent = state.crow_active ? "PAUSADO" : `Tempo: ${formatDuration(remaining)}`;
+        const isPaused = state.crow_active || state.fase === 'needsPot' || state.fase === 'needsWater' || state.pest_active;
+        timer.textContent = isPaused ? "PAUSADO" : `Tempo: ${formatDuration(remaining)}`;
     } else if (state.fase === 'ready') {
         timer.textContent = "COLHER!";
     } else {
@@ -271,18 +289,20 @@ function renderPlotState(index) {
             if (state.fase === 'ready') {
                 useBtn.style.backgroundImage = "url('assets/botao_coletar_tudo.png')";
                 useBtn.style.visibility = "visible";
+                useBtn.dataset.action = "harvest";
             } else {
                 useBtn.style.backgroundImage = "url('assets/botao_usar.png')";
-                // Se for um item selecionado ou se puder plantar/regar, fica visível
                 useBtn.style.visibility = "visible";
+                useBtn.dataset.action = "use";
             }
         }
 
         const removeBtn = actions.querySelector(".remove");
         if (removeBtn) {
-            // Mostrar remover apenas se houver uma planta (growing, needsWater ou ready)
-            const hasPlant = (state.fase === 'growing' || state.fase === 'needsWater' || state.fase === 'ready');
-            removeBtn.style.visibility = hasPlant ? "visible" : "hidden";
+            // Mostrar remover apenas se houver algo no slot que não seja 'locked' ou 'needsPot'
+            const canRemove = (state.fase !== 'locked' && state.fase !== 'needsPot');
+            removeBtn.style.visibility = canRemove ? "visible" : "hidden";
+            removeBtn.dataset.action = "remove";
         }
     }
 }
@@ -507,11 +527,12 @@ document.addEventListener('click', e => {
 
         if (action === 'use') {
             const state = plotStates.find(s => s.slot_index === index);
-            if (state.fase === 'ready') performAction('harvest', index);
-            else if (state.fase === 'locked') performAction('buy_slot', index);
+            if (state.fase === 'locked') performAction('buy_slot', index);
             else if (itemSelecionadoState.item) performAction('use_item', index, itemSelecionadoState.item);
+        } else if (action === 'harvest') {
+            performAction('harvest', index);
         } else if (action === 'remove') {
-            if (confirm("Deseja realmente remover a planta deste slot? (Nenhum recurso será devolvido)")) {
+            if (confirm("Deseja realmente remover o conteúdo deste slot? (Nenhum recurso será devolvido)")) {
                 performAction('remove_plant', index);
             }
         }
