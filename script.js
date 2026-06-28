@@ -149,19 +149,38 @@ function renderPlotState(index) {
     const state = plotStates.find(s => s.slot_index === index);
     if (!plotEl || !state) return;
 
-    const bg = plotEl.querySelector(".plot-bg");
-    if (state.fase === 'locked') {
-        bg.src = "assets/slot_comprar_terra_v5.png";
-    } else if (state.fase === 'needsPot') {
-        bg.src = "assets/terra_sem_pote.png";
-    } else if (state.fase === 'needsWater') {
-        bg.src = "assets/terra_sem_agua.png";
-    } else {
-        bg.src = "assets/terra_com_agua.png";
-    }
+    const slotPrices = [
+        { type: 'gold', cost: 100 },
+        { type: 'gold', cost: 500 },
+        { type: 'gold', cost: 1000 },
+        { type: 'gold', cost: 2500 },
+        { type: 'gold', cost: 5000 },
+        { type: 'gold', cost: 10000 },
+        { type: 'diamond', cost: 1000 },
+        { type: 'diamond', cost: 4000 }
+    ];
 
+    const bg = plotEl.querySelector(".plot-bg");
     const soil = plotEl.querySelector(".soil");
     soil.innerHTML = "";
+
+    if (state.fase === 'locked') {
+        bg.src = "assets/slot_comprar_terra_v5.png";
+    } else {
+        bg.src = "assets/slot_planta_v5.png";
+
+        // Renderizar a terra baseada na fase
+        const terrainImg = document.createElement("img");
+        terrainImg.className = "terrain-layer";
+        if (state.fase === 'needsPot') {
+            terrainImg.src = "assets/terra_sem_pote.png";
+        } else if (state.fase === 'needsWater') {
+            terrainImg.src = "assets/terra_sem_agua.png";
+        } else {
+            terrainImg.src = "assets/terra_com_agua.png";
+        }
+        soil.appendChild(terrainImg);
+    }
 
     const crop = getCropAsset(state);
     if (crop) {
@@ -171,11 +190,24 @@ function renderPlotState(index) {
         soil.appendChild(img);
     }
 
+    // --- Overlay de Corvo e Praga no Solo (facilitando identificação) ---
     if (state.crow_active) {
         const crow = document.createElement("div");
         crow.className = "danger-sign danger-crow";
         crow.innerHTML = `<div class="danger-plaque">CORVO!</div><img src="assets/corvo.png" alt="Corvo">`;
         soil.appendChild(crow);
+
+        const crowOverlay = document.createElement("img");
+        crowOverlay.src = "assets/corvo.png";
+        crowOverlay.className = "hazard-overlay hazard-crow";
+        soil.appendChild(crowOverlay);
+    }
+
+    if (state.pest_active) {
+        const pestOverlay = document.createElement("img");
+        pestOverlay.src = "assets/larva.png";
+        pestOverlay.className = "hazard-overlay hazard-pest";
+        soil.appendChild(pestOverlay);
     }
 
     // --- Renderização dos 5 Ícones de Status ---
@@ -214,13 +246,14 @@ function renderPlotState(index) {
     }
 
     const timer = plotEl.querySelector(".timer");
-    if (state.fase === 'growing') {
+    if (state.fase === 'locked') {
+        const p = slotPrices[index];
+        timer.innerHTML = `COMPRAR ${p.cost} <img src="assets/${p.type === 'gold' ? 'ouro' : 'diamante'}.png" style="width:14px; vertical-align:middle;">`;
+    } else if (state.fase === 'growing') {
         const remaining = new Date(state.ends_at).getTime() - Date.now();
         timer.textContent = state.crow_active ? "PAUSADO" : `Tempo: ${formatDuration(remaining)}`;
     } else if (state.fase === 'ready') {
         timer.textContent = "COLHER!";
-    } else if (state.fase === 'locked') {
-        timer.textContent = "COMPRAR";
     } else {
         timer.textContent = state.fase.toUpperCase().replace('NEEDS', 'AGUARDANDO ');
     }
@@ -228,14 +261,26 @@ function renderPlotState(index) {
     // --- Controle de Visibilidade dos Botões de Ação ---
     const actions = plotEl.querySelector(".plot-actions");
     if (actions) {
-        // Mostrar botões se não estiver trancado, ou se estiver pronto para colher ou se houver uma planta para remover
-        const showActions = (state.fase !== 'locked' || state.fase === 'ready') || state.crop_id;
+        // Mostrar botões se não estiver trancado
+        const showActions = (state.fase !== 'locked' || state.fase === 'ready');
         actions.style.display = showActions ? "flex" : "none";
+
+        const useBtn = actions.querySelector(".usar");
+        if (useBtn) {
+            // Se estiver pronto para colher, o botão de usar vira o botão de colher visualmente?
+            // O usuário pediu o botão de colher, mas disse que só tem o de usar.
+            // Vamos mudar o fundo do botão se estiver pronto.
+            if (state.fase === 'ready') {
+                useBtn.style.backgroundImage = "url('assets/botao_coletar_tudo.png')"; // Usando o asset de coletar
+            } else {
+                useBtn.style.backgroundImage = "url('assets/botao_usar.png')";
+            }
+        }
 
         const removeBtn = actions.querySelector(".remove");
         if (removeBtn) {
-            // Só mostra o botão remover se houver algo plantado
-            removeBtn.style.visibility = state.crop_id ? "visible" : "hidden";
+            // Mostrar remover se houver planta ou se não estiver bloqueado
+            removeBtn.style.visibility = (state.fase !== 'locked' && state.fase !== 'readyToPlant' && state.fase !== 'needsPot') ? "visible" : "hidden";
         }
     }
 }

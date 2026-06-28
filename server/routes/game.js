@@ -7,7 +7,8 @@ async function ensureUserInitialized(userId) {
     const slots = await db.execute('SELECT * FROM fazenda_plantacoes WHERE usuario_id = $1', [userId]);
     if (slots.rows.length === 0) {
         for (let i = 0; i < 8; i++) {
-            await db.execute('INSERT INTO fazenda_plantacoes (usuario_id, slot_index, fase) VALUES ($1, $2, $3)', [userId, i, i === 0 ? 'needsPot' : 'locked']);
+            // Todos iniciam como locked
+            await db.execute('INSERT INTO fazenda_plantacoes (usuario_id, slot_index, fase) VALUES ($1, $2, $3)', [userId, i, 'locked']);
         }
         await db.execute("INSERT INTO fazenda_inventario (usuario_id, item_id, quantidade) VALUES ($1, 'coins', 1000), ($1, 'energia', 100)", [userId]);
         await db.execute("INSERT INTO fazenda_config (chave, valor) VALUES ('last_energy_sync_' || $1, NOW()::text) ON CONFLICT (chave) DO NOTHING", [userId]);
@@ -176,6 +177,11 @@ router.post('/action', async (req, res) => {
                 const updateRes = await db.execute("UPDATE fazenda_plantacoes SET fase = 'growing', crop_id = $1, started_at = NOW(), ends_at = $2, reward_base = $3, reward_actual = $4, crow_active = FALSE, pest_active = FALSE, total_paused_ms = 0 WHERE usuario_id = $5 AND slot_index = $6 AND fase = 'readyToPlant'", [itemId, endsAt, item.reward_base, item.reward_base, userId, slotIndex]);
                 used = updateRes.rowCount > 0;
             } else if (itemId === 'vasoPequeno' || itemId === 'vasoGrande') {
+                // Restrição: Vaso Grande apenas nos slots 1 e 5 (index 0 e 4)
+                if (itemId === 'vasoGrande' && slotIndex !== 0 && slotIndex !== 4) {
+                    throw new Error('Vaso Grande só pode ser usado nos Slots 1 e 5');
+                }
+
                 const potHours = parseInt((await db.execute("SELECT valor FROM fazenda_config WHERE chave = 'pot_duration_hours'")).rows[0]?.valor || 168);
                 const expiresAt = new Date(Date.now() + potHours * 3600000);
                 const updateRes = await db.execute(`
@@ -227,10 +233,36 @@ router.post('/action', async (req, res) => {
         }
 
         if (action === 'buy_slot') {
-            const configsRes = await db.execute("SELECT valor FROM fazenda_config WHERE chave = 'slot_price_base'");
-            const cost = parseInt(configsRes.rows[0].valor || 500);
-            if ((inventory['coins'] || 0) < cost) throw new Error('Saldo insuficiente');
-            await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade - $1 WHERE usuario_id = $2 AND item_id = 'coins'", [cost, userId]);
+            const slotPrices = [
+                { type: 'gold', cost: 100 },
+                { type: 'gold', cost: 500 },
+                { type: 'gold', cost: 1000 },
+                { type: 'gold', cost: 2500 },
+                { type: 'gold', cost: 5000 },
+                { type: 'gold', cost: 10000 },
+                { type: 'diamond', cost: 1000 },
+                { type: 'diamond', cost: 4000 }
+            ];
+
+            const price = slotPrices[slotIndex];
+            if (!price) throw new Error('Slot inválido');
+
+            // Regra: Slots de ouro (0-5) devem ser comprados em ordem
+            if (price.type === 'gold' && slotIndex > 0) {
+                const prevSlot = await db.execute('SELECT fase FROM fazenda_plantacoes WHERE usuario_id = $1 AND slot_index = $2', [userId, slotIndex - 1]);
+                if (prevSlot.rows[0]?.fase === 'locked') {
+                    throw new Error('Você deve comprar os slots anteriores de ouro primeiro');
+                }
+            }
+
+            if (price.type === 'gold') {
+                if ((inventory['coins'] || 0) < price.cost) throw new Error('Ouro insuficiente');
+                await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade - $1 WHERE usuario_id = $2 AND item_id = 'coins'", [price.cost, userId]);
+            } else {
+                if ((inventory['diamante'] || 0) < price.cost) throw new Error('Diamantes insuficientes');
+                await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade - $1 WHERE usuario_id = $2 AND item_id = 'diamante'", [price.cost, userId]);
+            }
+
             await db.execute("UPDATE fazenda_plantacoes SET fase = 'needsPot' WHERE usuario_id = $1 AND slot_index = $2 AND fase = 'locked'", [userId, slotIndex]);
         }
 
