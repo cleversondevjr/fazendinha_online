@@ -205,37 +205,45 @@ function renderPlotState(index) {
 
     // --- Renderização dos 5 Ícones de Status ---
     const slots = plotEl.querySelectorAll(".status-slot");
-    slots.forEach(s => s.innerHTML = ""); // Limpar
+    slots.forEach(s => {
+        s.innerHTML = ""; // Limpar
+        s.style.visibility = "hidden"; // Ocultar quadradinhos vazios
+    });
 
     // 1. Pote (Slot 1)
     if (state.pot_type) {
         const potImg = document.createElement("img");
         potImg.src = `assets/${state.pot_type === 'vasoGrande' ? 'vaso_grande.png' : 'vaso_pequeno.png'}`;
         slots[0].appendChild(potImg);
+        slots[0].style.visibility = "visible";
     }
     // 2. Água (Slot 2)
     if (state.fase !== 'needsWater' && state.fase !== 'needsPot' && state.fase !== 'locked') {
         const waterImg = document.createElement("img");
         waterImg.src = "assets/agua.png";
         slots[1].appendChild(waterImg);
+        slots[1].style.visibility = "visible";
     }
     // 3. Corvo (Slot 3)
     if (state.crow_active) {
         const crowIcon = document.createElement("img");
         crowIcon.src = "assets/corvo.png";
         slots[2].appendChild(crowIcon);
+        slots[2].style.visibility = "visible";
     }
     // 4. Praga (Slot 4)
     if (state.pest_active) {
         const pestIcon = document.createElement("img");
         pestIcon.src = "assets/larva.png";
         slots[3].appendChild(pestIcon);
+        slots[3].style.visibility = "visible";
     }
     // 5. Espantalho (Slot 5)
     if (state.scarecrow_until && new Date(state.scarecrow_until).getTime() > Date.now()) {
         const scIcon = document.createElement("img");
         scIcon.src = "assets/espantalho.png";
         slots[4].appendChild(scIcon);
+        slots[4].style.visibility = "visible";
     }
 
     const timer = plotEl.querySelector(".timer");
