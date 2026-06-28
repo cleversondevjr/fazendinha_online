@@ -149,6 +149,9 @@ function renderPlotState(index) {
     const state = plotStates.find(s => s.slot_index === index);
     if (!plotEl || !state) return;
 
+    // Atualizar classes para CSS
+    plotEl.className = `plot phase-${state.fase} ${state.fase}`;
+
     const slotPrices = [
         { type: 'gold', cost: 100 },
         { type: 'gold', cost: 500 },
@@ -261,26 +264,27 @@ function renderPlotState(index) {
     // --- Controle de Visibilidade dos Botões de Ação ---
     const actions = plotEl.querySelector(".plot-actions");
     if (actions) {
-        // Mostrar botões se não estiver trancado
-        const showActions = (state.fase !== 'locked' || state.fase === 'ready');
-        actions.style.display = showActions ? "flex" : "none";
+        // Mostrar ações se não estiver bloqueado
+        const isLocked = state.fase === 'locked';
+        actions.style.display = isLocked ? "none" : "flex";
 
         const useBtn = actions.querySelector(".usar");
         if (useBtn) {
-            // Se estiver pronto para colher, o botão de usar vira o botão de colher visualmente?
-            // O usuário pediu o botão de colher, mas disse que só tem o de usar.
-            // Vamos mudar o fundo do botão se estiver pronto.
             if (state.fase === 'ready') {
-                useBtn.style.backgroundImage = "url('assets/botao_coletar_tudo.png')"; // Usando o asset de coletar
+                useBtn.style.backgroundImage = "url('assets/botao_coletar_tudo.png')";
+                useBtn.style.visibility = "visible";
             } else {
                 useBtn.style.backgroundImage = "url('assets/botao_usar.png')";
+                // Se for um item selecionado ou se puder plantar/regar, fica visível
+                useBtn.style.visibility = "visible";
             }
         }
 
         const removeBtn = actions.querySelector(".remove");
         if (removeBtn) {
-            // Mostrar remover se houver planta ou se não estiver bloqueado
-            removeBtn.style.visibility = (state.fase !== 'locked' && state.fase !== 'readyToPlant' && state.fase !== 'needsPot') ? "visible" : "hidden";
+            // Mostrar remover apenas se houver uma planta (growing, needsWater ou ready)
+            const hasPlant = (state.fase === 'growing' || state.fase === 'needsWater' || state.fase === 'ready');
+            removeBtn.style.visibility = hasPlant ? "visible" : "hidden";
         }
     }
 }

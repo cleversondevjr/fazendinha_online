@@ -1,50 +1,66 @@
 import os
-import subprocess
-import re
+import psycopg2
+from dotenv import load_dotenv
 
-def run_command(cmd):
+def check_db():
+    load_dotenv(dotenv_path='server/.env')
+
+    host = os.getenv('PGHOST', 'localhost')
+    user = os.getenv('PGUSER', 'postgres')
+    password = os.getenv('PGPASSWORD', '')
+    database = os.getenv('PGDATABASE', 'farm')
+    port = os.getenv('PGPORT', '5432')
+
+    print(f"--- Iniciando Diagnóstico da Fazendinha Online ---")
+    print(f"Conectando ao banco: {database} em {host}:{port}...")
+
     try:
-        return subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT).decode('utf-8')
+        conn = psycopg2.connect(
+            host=host,
+            user=user,
+            password=password,
+            dbname=database,
+            port=port
+        )
+        cur = conn.cursor()
+        print("[OK] Conexão estabelecida com sucesso.")
+
+        # Check tables
+        tables = [
+            'fazenda_plantacoes',
+            'fazenda_inventario',
+            'fazenda_config',
+            'fazenda_missoes_template',
+            'fazenda_missoes_jogador',
+            'fazenda_itens_config'
+        ]
+
+        for table in tables:
+            cur.execute(f"SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = '{table}');")
+            exists = cur.fetchone()[0]
+            status = "[OK]" if exists else "[ERRO]"
+            print(f"{status} Tabela '{table}' encontrada.")
+
+        # Check Migration 004 columns
+        print("\nVerificando Migração 004 (Lógica de Pausa):")
+        columns_to_check = ['total_paused_ms', 'pause_started_at', 'pot_expires_at', 'water_expires_at']
+        for col in columns_to_check:
+            cur.execute(f"SELECT EXISTS (SELECT FROM information_schema.columns WHERE table_name='fazenda_plantacoes' AND column_name='{col}');")
+            exists = cur.fetchone()[0]
+            status = "[OK]" if exists else "[ERRO]"
+            print(f"{status} Coluna '{col}' em fazenda_plantacoes.")
+
+        # Check Mission Templates
+        cur.execute("SELECT count(*) FROM fazenda_missoes_template;")
+        mission_count = cur.fetchone()[0]
+        print(f"\n[INFO] {mission_count} modelos de missões encontrados.")
+
+        cur.close()
+        conn.close()
+        print("\n--- Diagnóstico Concluído ---")
+
     except Exception as e:
-        return str(e)
+        print(f"\n[FALHA CRÍTICA] Erro ao conectar ou diagnosticar: {e}")
 
-print("=== DIAGNÓSTICO DE REDIRECIONAMENTO - FAZENDINHA ===")
-
-# 1. Procurar no Nginx
-print("\n[1] Procurando domínio antigo no Nginx...")
-nginx_search = run_command('sudo grep -r "farm.sgiptv.com.br" /etc/nginx/')
-if "farm.sgiptv.com.br" in nginx_search:
-    print("ACHADO NO NGINX!")
-    print(nginx_search)
-else:
-    print("Nada encontrado nas configs do Nginx.")
-
-# 2. Verificar processos na porta 3002 e 80
-print("\n[2] Verificando portas...")
-print("Porta 3002 (Backend):")
-print(run_command('sudo lsof -i :3002'))
-print("Porta 80 (Nginx):")
-print(run_command('sudo lsof -i :80'))
-
-# 3. Verificar PM2
-print("\n[3] Processos no PM2:")
-print(run_command('pm2 list'))
-
-# 4. Verificar conteúdo da pasta servida
-print("\n[4] Verificando arquivos em /home/pi/fazendinha_online:")
-if os.path.exists('/home/pi/fazendinha_online/index.html'):
-    with open('/home/pi/fazendinha_online/index.html', 'r') as f:
-        content = f.read()
-        if 'base href' in content:
-            print("index.html parece atualizado (tem 'base href').")
-        else:
-            print("AVISO: index.html parece ANTIGO (não tem 'base href')!")
-else:
-    print("ERRO: index.html não encontrado no caminho esperado!")
-
-# 5. Procurar em TODA a pasta home por scripts de redirecionamento
-print("\n[5] Procurando redirecionamentos ocultos nos arquivos JS/HTML...")
-grep_home = run_command('grep -r "location.href" /home/pi/fazendinha_online/ --exclude-dir=node_modules')
-print(grep_home)
-
-print("\n=== FIM DO DIAGNÓSTICO ===")
+if __name__ == "__main__":
+    check_db()
