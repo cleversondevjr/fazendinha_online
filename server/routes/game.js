@@ -245,7 +245,8 @@ router.post('/action', async (req, res) => {
                 const updateRes = await db.execute("UPDATE fazenda_plantacoes SET scarecrow_until = $1 WHERE usuario_id = $2 AND slot_index = $3", [until, userId, slotIndex]);
                 used = updateRes.rowCount > 0;
             } else if (itemId === 'pesticida') {
-                const updateRes = await db.execute("UPDATE fazenda_plantacoes SET pest_active = FALSE WHERE usuario_id = $1 AND slot_index = $2 AND pest_active = TRUE", [userId, slotIndex]);
+                console.log(`User ${userId} using pesticide on slot ${slotIndex}`);
+                const updateRes = await db.execute("UPDATE fazenda_plantacoes SET pest_active = FALSE WHERE usuario_id = $1 AND slot_index = $2", [userId, slotIndex]);
                 used = updateRes.rowCount > 0;
             }
             if (used) await db.execute('UPDATE fazenda_inventario SET quantidade = quantidade - 1 WHERE usuario_id = $1 AND item_id = $2', [userId, itemId]);
