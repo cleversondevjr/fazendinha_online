@@ -169,20 +169,10 @@ function renderPlotState(index) {
 
     if (state.fase === 'locked') {
         bg.src = "assets/slot_comprar_terra_v5.png";
+    } else if (state.fase === 'needsPot') {
+        bg.src = "assets/slot_vazio_v5.png";
     } else {
         bg.src = "assets/slot_planta_v5.png";
-
-        // Renderizar a terra baseada na fase
-        const terrainImg = document.createElement("img");
-        terrainImg.className = "terrain-layer";
-        if (state.fase === 'needsPot') {
-            terrainImg.src = "assets/terra_sem_pote.png";
-        } else if (state.fase === 'needsWater') {
-            terrainImg.src = "assets/terra_sem_agua.png";
-        } else {
-            terrainImg.src = "assets/terra_com_agua.png";
-        }
-        soil.appendChild(terrainImg);
     }
 
     const crop = getCropAsset(state);

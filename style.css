@@ -425,20 +425,10 @@ body {
   pointer-events: none;
 }
 
-.terrain-layer {
-  position: absolute;
-  left: 50%;
-  bottom: 12%;
-  transform: translateX(-50%);
-  width: 90%;
-  height: auto;
-  z-index: 1;
-}
-
 .crop-layer {
   position: absolute;
   left: 50%;
-  bottom: 18%;
+  bottom: 12%;
   transform: translateX(-50%);
   height: auto;
   z-index: 2;

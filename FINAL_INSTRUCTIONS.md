@@ -1,54 +1,71 @@
-# Guia de Comandos: Atualização e Backup
+# Instruções Finais de Deploy - Fazendinha Online
 
-Siga as sequências abaixo para manter seu servidor e seu backup local sempre atualizados com as últimas melhorias (v1.0.3 + Painel Admin Total).
+Este guia resume os passos necessários para ativar as atualizações visuais e estruturais no seu Raspberry Pi 3.
 
----
-
-### 1. Atualização Normal (Raspberry Pi)
-Use este comando quando quiser apenas puxar as novidades do dia.
+## 1. Sincronizar o Código
+No terminal do seu Raspberry Pi (`pi@192.168.0.217`):
 ```bash
 cd /home/pi/fazendinha_online
-git fetch origin
-git checkout main
+git reset --hard HEAD
 git pull origin main
-cd server
-npm install
-pm2 restart fazendinha-backend
-pm2 save
 ```
 
-### 2. Limpeza Profunda / Hard Reset (Raspberry Pi)
-Use este comando se os arquivos não estiverem subindo ou se houver erro de conflito no Git. **Isso forçará o servidor a ficar idêntico ao repositório.**
+## 2. Atualizar o Backend
 ```bash
-cd /home/pi/fazendinha_online
-git fetch origin
-git reset --hard origin/main
-cd server
+cd /home/pi/fazendinha_online/server
 npm install
-pm2 restart fazendinha-backend
-sudo nginx -t && sudo systemctl restart nginx
-# Opcional: Reiniciar o Raspberry Pi por completo
-sudo reboot
+pm2 restart fazendinha-backend || pm2 start index.js --name "fazendinha-backend"
 ```
 
-### 3. Backup e Atualização Local (PC Windows)
-Para manter sua pasta `F:\projetos\fazendinha_online` atualizada como um backup seguro.
-Abra o **PowerShell** ou **Git Bash** no seu PC e execute:
-```powershell
-# Entrar na pasta do projeto
-cd F:\projetos\fazendinha_online
+## 3. Configuração do Nginx (Domínio sgiptv.com.br)
+Certifique-se de que o arquivo `/etc/nginx/sites-available/default` (ou o arquivo correspondente ao seu site principal) contém as rotas para a Fazendinha:
 
-# Puxar as atualizações do GitHub
-git fetch origin
-git pull origin main
+```nginx
+server {
+    listen 80;
+    server_name sgiptv.com.br;
 
-# Confirmar versão v1.0.3 no código
-git log -n 1
+    # Site Principal (SG IPTV)
+    location / {
+        root /home/pi/sgiptv-frontend;
+        index index.html;
+        try_files $uri $uri/ =404;
+    }
+
+    # Jogo Fazendinha (Acesso via sgiptv.com.br/fazendinha)
+    location = /fazendinha {
+        return 301 /fazendinha/;
+    }
+
+    location /fazendinha/ {
+        alias /home/pi/fazendinha_online/;
+        index index.html;
+        # Segurança
+        location ~ ^/fazendinha/(server|migrations|\.git) { deny all; }
+    }
+
+    # API do Jogo
+    location /fazendinha/api/ {
+        proxy_pass http://localhost:3002/api/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+    }
+}
 ```
 
----
+Após editar, valide e reinicie o Nginx:
+```bash
+sudo nginx -t
+sudo systemctl restart nginx
+```
 
-### 🔍 Verificação de Sucesso
-1.  **No Navegador**: Abra [https://sgiptv.com.br/fazendinha/](https://sgiptv.com.br/fazendinha/) em aba anônima.
-2.  **Versão**: Verifique se aparece **v1.0.3** abaixo da logo.
-3.  **Painel Admin**: Teste as novas abas (Conta, Slots, Plantas).
+## 4. Cloudflare
+Como você está usando o domínio `sgiptv.com.br` no Cloudflare, certifique-se de que o tráfego está sendo encaminhado para o IP local do Raspberry Pi (ou via Cloudflare Tunnel configurado para a porta 80). O Nginx cuidará do roteamento interno baseado no subcaminho `/fazendinha`.
+
+## 5. Resumo das Mudanças Visuais (v1.0.3)
+- **Remoção da Terra Redundante:** O jogo agora usa apenas os assets `slot_planta_v5.png` e `slot_vazio_v5.png`, eliminando quadrados de terra gerados por código.
+- **Botões Inteligentes:** O botão "Usar" agora vira "Coletar" automaticamente quando a planta está pronta. O botão "Remover" só aparece quando há algo no slot.
+- **Missões Iniciais:** Novos usuários agora recebem 5 missões automaticamente.
+- **Estabilização:** Refatoração de rotas para evitar duplicidade no painel admin.
