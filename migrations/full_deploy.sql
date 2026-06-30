@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS fazenda_plantacoes (
     fase VARCHAR(50) DEFAULT 'locked', -- locked, needsPot, needsWater, readyToPlant, growing, ready
     pot_type VARCHAR(50),
     pot_expires_at TIMESTAMP,
+    water_expires_at TIMESTAMP,
     crop_id VARCHAR(50),
     reward_base DECIMAL(10, 2) DEFAULT 0,
     reward_actual DECIMAL(10, 2) DEFAULT 0,

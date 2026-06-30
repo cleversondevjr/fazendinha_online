@@ -1223,7 +1223,11 @@ if (adminCloseBtn) {
 
 const logoutBtn = document.querySelector(".logout-btn");
 if (logoutBtn) {
-    logoutBtn.onclick = () => alert("Modo de teste: Logout desativado.");
+    logoutBtn.onclick = () => {
+        if(confirm("Deseja sair da fazenda?")) {
+            logout();
+        }
+    };
 }
 
 document.querySelectorAll(".shop-tab").forEach(tab => {
