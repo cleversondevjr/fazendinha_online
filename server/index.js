@@ -37,12 +37,17 @@ const adminRoutes = require('./routes/admin');
 const authRoutes = require('./routes/auth');
 
 // Middleware de Proteção Admin
-const adminAuth = (req, res, next) => {
-    const adminId = process.env.ADMIN_USER_ID || '1'; // Define quem é admin via .env
-    if (String(req.userId) !== String(adminId)) {
-        return res.status(403).json({ error: 'Acesso negado. Apenas administradores.' });
+const adminAuth = async (req, res, next) => {
+    try {
+        const db = require('./db');
+        const userRes = await db.execute('SELECT is_admin FROM fazenda_usuarios WHERE id = $1', [req.userId]);
+        if (userRes.rows.length === 0 || !userRes.rows[0].is_admin) {
+            return res.status(403).json({ error: 'Acesso negado. Apenas administradores.' });
+        }
+        next();
+    } catch (err) {
+        res.status(500).json({ error: 'Erro ao validar permissões.' });
     }
-    next();
 };
 
 app.use('/api/game', gameRoutes);

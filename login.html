@@ -5,14 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Fazendinha Online</title>
     <style>
+        :root {
+            --login-bg: url('assets/ui/login_manha.png');
+        }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #a8e063 0%, #56ab2f 100%);
+            background-image: var(--login-bg);
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             margin: 0;
+            transition: background-image 0.5s ease-in-out;
         }
         .login-card {
             background: white;
@@ -84,6 +91,15 @@
     </div>
 
     <script>
+        // Sistema de Backgrounds Dinâmicos
+        (function updateBG() {
+            const h = new Date().getHours();
+            let bg = "assets/ui/login_noite.png";
+            if (h >= 6 && h <= 11) bg = "assets/ui/login_manha.png";
+            else if (h >= 12 && h <= 17) bg = "assets/ui/login_tarde.png";
+            document.documentElement.style.setProperty("--login-bg", `url('${bg}')`);
+        })();
+
         function showCard(id) {
             document.querySelectorAll('.login-card').forEach(c => c.style.display = 'none');
             document.getElementById(id).style.display = 'block';
