@@ -34,6 +34,7 @@ app.use((req, res, next) => {
 
 const gameRoutes = require('./routes/game');
 const adminRoutes = require('./routes/admin');
+const authRoutes = require('./routes/auth');
 
 // Middleware de Proteção Admin
 const adminAuth = (req, res, next) => {
@@ -46,6 +47,7 @@ const adminAuth = (req, res, next) => {
 
 app.use('/api/game', gameRoutes);
 app.use('/api/admin', adminAuth, adminRoutes); // Admin routes protected
+app.use('/api/auth', authRoutes);
 
 // Start Cron Jobs
 require('./cron');

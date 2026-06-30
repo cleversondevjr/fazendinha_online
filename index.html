@@ -12,8 +12,8 @@
     <div class="topbar-main">
       <div class="logo">
         <img src="assets/logo_fazendinha_online.png" alt="Fazendinha Online" class="logo-icon">
-        <span style="font-size: 10px; color: rgba(255,255,255,0.3); position: absolute; bottom: -15px; left: 0;">v1.0.5</span>
       </div>
+      <div class="game-version">v1.0.5</div>
     </div>
     <div class="topbar-actions">
       <button class="menu-btn-compact menu-top-btn open-shop" type="button">
@@ -49,11 +49,17 @@
   <!-- Sidebar -->
   <aside class="sidebar">
     <div class="tools-header"><img src="assets/botao_ferramentas.png" alt="Ferramentas"></div>
-    <div class="tool-item"><img src="assets/vaso_pequeno.png" class="tool-icon"><span class="count" id="count-vaso-pequeno">0</span><button class="use-btn" data-item="vasoPequeno" type="button"><img src="assets/botao_usar.png" alt="Usar" draggable="false"></button></div>
-    <div class="tool-item"><img src="assets/vaso_grande.png" class="tool-icon"><span class="count" id="count-vaso-grande">0</span><button class="use-btn" data-item="vasoGrande" type="button"><img src="assets/botao_usar.png" alt="Usar" draggable="false"></button></div>
-    <div class="tool-item"><img src="assets/agua.png" class="tool-icon"><span class="count" id="count-agua">0</span><button class="use-btn" data-item="agua" type="button"><img src="assets/botao_usar.png" alt="Usar" draggable="false"></button></div>
-    <div class="tool-item"><img src="assets/borrifador_inseticida.png" class="tool-icon"><span class="count" id="count-pesticida">0</span><button class="use-btn" data-item="pesticida" type="button"><img src="assets/botao_usar.png" alt="Usar" draggable="false"></button></div>
-    <div class="tool-item"><img src="assets/espantalho.png" class="tool-icon"><span class="count" id="count-espantalho">0</span><button class="use-btn" data-item="espantalho" type="button"><img src="assets/botao_usar.png" alt="Usar" draggable="false"></button></div>
+    <div class="tool-item" data-item="vasoPequeno"><img src="assets/vaso_pequeno.png" class="tool-icon"><span class="count" id="count-vaso-pequeno">0</span></div>
+    <div class="tool-item" data-item="vasoGrande"><img src="assets/vaso_grande.png" class="tool-icon"><span class="count" id="count-vaso-grande">0</span></div>
+    <div class="tool-item" data-item="agua"><img src="assets/agua.png" class="tool-icon"><span class="count" id="count-agua">0</span></div>
+    <div class="tool-item" data-item="pesticida"><img src="assets/borrifador_inseticida.png" class="tool-icon"><span class="count" id="count-pesticida">0</span></div>
+    <div class="tool-item" data-item="espantalho"><img src="assets/espantalho.png" class="tool-icon"><span class="count" id="count-espantalho">0</span></div>
+
+    <!-- Placeholders para Flores, Árvores e Semente Especial -->
+    <div class="tool-item" data-item="flower"><img src="assets/flor.png" class="tool-icon"><span class="count" id="count-flower">0</span></div>
+    <div class="tool-item" data-item="tree"><img src="assets/folha.png" class="tool-icon"><span class="count" id="count-tree">0</span></div>
+    <div class="tool-item" data-item="sementeEspecial"><img src="assets/semente.png" class="tool-icon"><span class="count" id="count-special-seed">0</span></div>
+
     <div class="sidebar-spacer"></div>
     <section class="rewards-panel" id="rewards-panel">
       <div class="panel-title">Recompensas</div>
@@ -115,7 +121,10 @@
     </div>
   </div>
 
-  <button id="admin-open" class="admin-floating-btn" type="button">Admin</button>
+  <div class="admin-floating-container">
+    <div class="game-version-footer">v1.0.5</div>
+    <button id="admin-open" class="admin-floating-btn" type="button">Admin</button>
+  </div>
 
   <div id="admin-modal" class="admin-modal hidden">
     <div class="admin-panel">
@@ -135,6 +144,8 @@
         <button class="admin-tab" data-admin-tab="slots" type="button">Slots</button>
         <button class="admin-tab" data-admin-tab="missoes" type="button">Missões</button>
         <button class="admin-tab" data-admin-tab="regras" type="button">Regras</button>
+        <button class="admin-tab" data-admin-tab="eventos" type="button">Eventos</button>
+        <button class="admin-tab" data-admin-tab="promocoes" type="button">Promoções</button>
         <button class="admin-tab" data-admin-tab="dados" type="button">Dados</button>
       </div>
 

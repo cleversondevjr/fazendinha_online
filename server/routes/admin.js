@@ -73,10 +73,21 @@ router.post('/missions/save', async (req, res) => {
     }
 });
 
-// GET /api/admin/user/:id - Get user financial data and inventory
-router.get('/user/:id', async (req, res) => {
-    const { id } = req.params;
+// GET /api/admin/user/search - Search user by ID or Login
+router.get('/user/search', async (req, res) => {
+    const { q } = req.query;
     try {
+        const userSearch = await db.execute(`
+            SELECT DISTINCT usuario_id
+            FROM fazenda_inventario
+            WHERE CAST(usuario_id AS TEXT) = $1
+            OR usuario_id IN (SELECT id FROM fazenda_usuarios WHERE login ILIKE $2)
+            LIMIT 1
+        `, [q, `%${q}%`]);
+
+        if (userSearch.rows.length === 0) return res.status(404).json({ error: 'Usuário não encontrado' });
+
+        const id = userSearch.rows[0].usuario_id;
         const inventoryRes = await db.execute('SELECT item_id, quantidade FROM fazenda_inventario WHERE usuario_id = $1', [id]);
         const inventory = inventoryRes.rows.reduce((acc, curr) => ({ ...acc, [curr.item_id]: curr.quantidade }), {});
 
