@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
+const session = require('express-session');
+const pgSession = require('connect-pg-simple')(session);
 require('dotenv').config();
 
 const app = express();
@@ -14,21 +16,28 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
-// Middleware to extract User ID
+const db = require('./db');
+
+app.use(session({
+    store: new pgSession({
+        pool: db.pool, // We need to expose the pool
+        tableName: 'session'
+    }),
+    secret: process.env.SESSION_SECRET || 'fazendinha-secret-123',
+    resave: false,
+    saveUninitialized: false,
+    cookie: { maxAge: 30 * 60 * 1000 } // 30 minutos
+}));
+
+// Middleware to extract User ID from Session
 app.use((req, res, next) => {
-    // 1. Prioridade para o Cookie (Usado no site principal)
-    let id = req.cookies.usuario_id;
+    if (req.path.startsWith('/api/auth')) return next();
 
-    // 2. Fallback para Header (Caso de apps ou chamadas de API externas autorizadas)
-    if (!id) id = req.headers['x-user-id'];
-
-    // 3. Segurança: Se não houver ID e não estivermos em ambiente de desenvolvimento, bloquear
-    if (!id && process.env.NODE_ENV === 'production') {
-        return res.status(401).json({ error: 'Não autorizado. Faça login no site principal.' });
+    if (!req.session.userId && process.env.NODE_ENV === 'production') {
+        return res.status(401).json({ error: 'Não autorizado. Faça login.' });
     }
 
-    // Modo Desenvolvimento/Teste: ID 1 se nada for fornecido
-    req.userId = id || '1';
+    req.userId = req.session.userId || '1';
     next();
 });
 

@@ -39,7 +39,6 @@ CREATE TABLE IF NOT EXISTS fazenda_plantacoes (
     fase VARCHAR(50) DEFAULT 'locked', -- locked, needsPot, needsWater, readyToPlant, growing, ready
     pot_type VARCHAR(50),
     pot_expires_at TIMESTAMP,
-    water_expires_at TIMESTAMP,
     crop_id VARCHAR(50),
     reward_base DECIMAL(10, 2) DEFAULT 0,
     reward_actual DECIMAL(10, 2) DEFAULT 0,
@@ -226,62 +225,40 @@ CREATE TABLE IF NOT EXISTS fazenda_usuarios (
     login VARCHAR(50) UNIQUE NOT NULL,
     senha VARCHAR(255) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
-    created_at TIMESTAMP DEFAULT NOW()
-);
-
--- Inserir usuário padrão se não existir
-INSERT INTO fazenda_usuarios (id, login, senha, email)
-VALUES (1, 'admin', 'Admin@123', 'admin@sgiptv.com.br')
-ON CONFLICT (id) DO NOTHING;
-
--- Garantir que a versão do jogo está no config
-INSERT INTO fazenda_config (chave, valor, descricao)
-VALUES ('game_version', 'v1.0.5', 'Versão atual exibida na topbar')
-ON CONFLICT (chave) DO NOTHING;
--- Migração para suporte a usuários com login e senha
-CREATE TABLE IF NOT EXISTS fazenda_usuarios (
-    id SERIAL PRIMARY KEY,
-    login VARCHAR(50) UNIQUE NOT NULL,
-    senha VARCHAR(255) NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
-    created_at TIMESTAMP DEFAULT NOW()
-);
-
--- Inserir usuário padrão se não existir
-INSERT INTO fazenda_usuarios (id, login, senha, email)
-VALUES (1, 'admin', 'Admin@123', 'admin@sgiptv.com.br')
-ON CONFLICT (id) DO NOTHING;
-
--- Usuário Admin específico solicitado
-INSERT INTO fazenda_usuarios (login, senha, email)
-VALUES ('CleversonS', 'Wincster@194060le', 'cleverson@sgiptv.com.br')
-ON CONFLICT (login) DO NOTHING;
-
--- Garantir que a versão do jogo está no config
-INSERT INTO fazenda_config (chave, valor, descricao)
-VALUES ('game_version', 'v1.0.5', 'Versão atual exibida na topbar')
-ON CONFLICT (chave) DO NOTHING;
--- Migração para suporte a usuários com login e senha
-CREATE TABLE IF NOT EXISTS fazenda_usuarios (
-    id SERIAL PRIMARY KEY,
-    login VARCHAR(50) UNIQUE NOT NULL,
-    senha VARCHAR(255) NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
     is_admin BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT NOW()
 );
 
 -- Inserir usuário padrão se não existir
 INSERT INTO fazenda_usuarios (id, login, senha, email, is_admin)
-VALUES (1, 'admin', 'Admin@123', 'admin@sgiptv.com.br', TRUE)
+VALUES (1, 'admin', '$2b$10$L07O.E.oU/XpMvK3wUeRveY9YjXvQ0Z2kYjY6XpYjY6XpYjY6XpYj', 'admin@sgiptv.com.br', TRUE)
 ON CONFLICT (id) DO NOTHING;
 
--- Usuário Admin específico solicitado
+-- Usuário Admin específico solicitado (Senha com Hashing Bcrypt)
 INSERT INTO fazenda_usuarios (login, senha, email, is_admin)
-VALUES ('CleversonS', 'Wincster@194060le', 'cleverson@sgiptv.com.br', TRUE)
-ON CONFLICT (login) DO NOTHING;
+VALUES ('CleversonS', '$2b$10$lgfvlbEtjbg2fYeM6oiwJ.Ex3YapDgJ3RXDVN7KIiCdxsub2eHQ0S', 'cleverson@sgiptv.com.br', TRUE)
+ON CONFLICT (login) DO UPDATE SET
+    senha = EXCLUDED.senha,
+    is_admin = TRUE;
 
 -- Garantir que a versão do jogo está no config
 INSERT INTO fazenda_config (chave, valor, descricao)
 VALUES ('game_version', 'v1.0.5', 'Versão atual exibida na topbar')
 ON CONFLICT (chave) DO NOTHING;
+
+-- Session Table for connect-pg-simple
+CREATE TABLE IF NOT EXISTS "session" (
+  "sid" varchar NOT NULL COLLATE "default",
+  "sess" json NOT NULL,
+  "expire" timestamp(6) NOT NULL
+)
+WITH (OIDS=FALSE);
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'session_pkey') THEN
+        ALTER TABLE "session" ADD CONSTRAINT "session_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE;
+    END IF;
+END $$;
+
+CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "session" ("expire");
