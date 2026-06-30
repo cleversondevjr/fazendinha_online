@@ -14,8 +14,9 @@ html {
 body {
   font-family: 'Luckiest Guy', cursive, Arial, sans-serif;
   background:
-    linear-gradient(rgba(8, 10, 18, 0.55), rgba(8, 10, 18, 0.55)),
-    url('assets/praia_bg.jpg') center/cover no-repeat fixed;
+    linear-gradient(rgba(8, 10, 18, 0.35), rgba(8, 10, 18, 0.35)),
+    url('assets/grama_v1.png') repeat,
+    #4e7e2e;
   color: #fff;
   overflow-x: hidden;
   overflow-y: hidden;
