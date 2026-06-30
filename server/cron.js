@@ -74,6 +74,16 @@ cron.schedule('* * * * *', async () => {
         const weather = configs.current_weather || 'sunny';
 
         for (const plot of growingRes.rows) {
+            // Resource Expiration Pause Check
+            const potExpired = plot.pot_expires_at && new Date(plot.pot_expires_at).getTime() < Date.now();
+            const waterExpired = plot.water_expires_at && new Date(plot.water_expires_at).getTime() < Date.now();
+
+            if ((potExpired || waterExpired) && !plot.pause_started_at) {
+                await db.execute("UPDATE fazenda_plantacoes SET pause_started_at = NOW(), fase = $1 WHERE id = $2",
+                    [potExpired ? 'needsPot' : 'needsWater', plot.id]);
+                continue; // Skip other events if paused now
+            }
+
             let currentCrowChance = crowChance;
             let currentPestChance = pestChance;
 
@@ -82,7 +92,8 @@ cron.schedule('* * * * *', async () => {
             if (weather === 'rainy') currentPestChance *= 0.5; // Rain helps wash away some pests?
 
             // Crow Event
-            if (!plot.crow_active && !plot.scarecrow_until && Math.random() < (currentCrowChance / 60)) {
+            const scarecrowExpired = plot.scarecrow_until && new Date(plot.scarecrow_until).getTime() < Date.now();
+            if (!plot.crow_active && (!plot.scarecrow_until || scarecrowExpired) && Math.random() < (currentCrowChance / 60)) {
                 await db.execute("UPDATE fazenda_plantacoes SET crow_active = TRUE, pause_started_at = NOW() WHERE id = $1", [plot.id]);
             }
             // Pest Event

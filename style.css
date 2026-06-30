@@ -14,7 +14,6 @@ html {
 body {
   font-family: 'Luckiest Guy', cursive, Arial, sans-serif;
   background:
-    linear-gradient(rgba(8, 10, 18, 0.35), rgba(8, 10, 18, 0.35)),
     url('assets/grama_v1.png') repeat,
     #4e7e2e;
   color: #fff;
@@ -31,39 +30,41 @@ body {
   top: 10px;
   right: 12px;
   z-index: 1000;
-  width: calc(100vw - 300px);
+  width: calc(100% - 262px);
   height: 108px;
   background: url('assets/topbar_purple.png') center/100% 100% no-repeat;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
 }
 
 .topbar-main {
-  position: absolute;
-  left: 14px;
-  top: 10px;
-  width: 112px;
-  height: 46px;
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  gap: 15px;
 }
 
 .logo-icon {
-  height: 34px;
+  height: 60px;
   width: auto;
   background: transparent;
   display: block;
 }
 
+.game-version {
+  font-size: 18px;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
 .topbar-actions {
-  position: absolute;
-  left: 124px;
-  right: 26px;
-  top: 26px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 12px;
-  height: 52px;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: nowrap;
 }
 
 .resource {
@@ -177,22 +178,37 @@ body {
 
 .tool-item {
   display: grid;
-  grid-template-columns: 42px 30px 104px;
+  grid-template-columns: 60px 1fr;
   align-items: center;
-  padding: 4px 2px;
+  padding: 8px 12px;
   margin-bottom: 8px;
-  gap: 10px;
+  gap: 15px;
+  cursor: pointer;
+  border-radius: 12px;
+  transition: all 0.2s;
 }
+
+.tool-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.tool-item.selected {
+  background: rgba(255, 225, 80, 0.2);
+  border: 2px solid #ffeb3b;
+  box-shadow: 0 0 15px rgba(255, 225, 80, 0.4);
+}
+
 .tool-icon {
-  width: 38px;
-  height: 38px;
+  width: 45px;
+  height: 45px;
   background: transparent;
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
 }
 .tool-item .count {
-  text-align: center;
+  text-align: left;
   color: #ffeb3b;
-  font-size: 20px;
+  font-size: 24px;
+  font-weight: 900;
 }
 
 .use-btn {
@@ -408,13 +424,17 @@ body {
 
 .soil {
   position: absolute;
-  left: 12%;
-  top: 12%;
-  width: 62%;
-  height: 68%;
+  left: 50%;
+  top: 48%;
+  width: 80%;
+  height: 70%;
+  transform: translate(-50%, -50%);
   background: transparent;
   overflow: visible;
   z-index: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
 }
 
 .soil img {
@@ -429,9 +449,9 @@ body {
 .terrain-layer {
   position: absolute;
   left: 50%;
-  bottom: 5%;
+  bottom: 15%;
   transform: translateX(-50%);
-  width: 100%;
+  width: 90%;
   height: auto;
   z-index: 1;
 }
@@ -439,7 +459,7 @@ body {
 .crop-layer {
   position: absolute;
   left: 50%;
-  bottom: 12%;
+  bottom: 22%;
   transform: translateX(-50%);
   height: auto;
   z-index: 2;
@@ -608,7 +628,7 @@ body {
 .shop-modal, .inventory-modal, .worldtree-modal {
   display: none;
   position: fixed;
-  z-index: 2000;
+  z-index: 8000;
   left: 0; top: 0;
   width: 100%; height: 100%;
   background: rgba(0,0,0,0.7);
@@ -776,7 +796,7 @@ body {
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,0.62);
-  z-index: 5000;
+  z-index: 10000;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -824,11 +844,25 @@ body {
 }
 
 /* Painel Admin */
-.admin-floating-btn {
+.admin-floating-container {
   position: fixed;
   right: 18px;
   bottom: 18px;
   z-index: 4500;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.game-version-footer {
+  font-size: 20px;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 2px 4px #000;
+}
+
+.admin-floating-btn {
+  position: relative;
   min-width: 96px;
   height: 42px;
   border: 2px solid #f7c84b;

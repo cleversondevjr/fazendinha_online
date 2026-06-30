@@ -77,12 +77,12 @@ async function loadGameState() {
     }
 }
 
-async function performAction(action, slotIndex = null, itemId = null, missionId = null) {
+async function performAction(action, slotIndex = null, itemId = null, missionId = null, quantity = 1) {
     try {
         const res = await apiFetch(`${API_BASE_URL}/action`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action, slotIndex, itemId, missionId })
+            body: JSON.stringify({ action, slotIndex, itemId, missionId, quantity })
         });
         if (res.success) {
             await loadGameState();
@@ -139,7 +139,7 @@ function getCropAsset(state) {
     const type = config.tipo || 'flower';
 
     let stage = "semente";
-    // Regra: Estágio 1 (0-40%), Estágio 2 (40-80%), Estágio 3 (80-100%)
+    // Regra: Estágio 1 (0-39% semente), Estágio 2 (40-79% broto), Estágio 3 (80-100% adulta)
     if (progress >= 0.80) stage = "adulta";
     else if (progress >= 0.40) stage = "broto";
     else stage = "semente";
@@ -231,15 +231,27 @@ function renderPlotState(index) {
     if (state.pot_type) {
         const potImg = document.createElement("img");
         potImg.src = `assets/${state.pot_type === 'vasoGrande' ? 'vaso_grande.png' : 'vaso_pequeno.png'}`;
+        potImg.title = `Pote: ${formatDuration(new Date(state.pot_expires_at).getTime() - Date.now())} restantes`;
+        potImg.onclick = (e) => {
+            e.stopPropagation();
+            showDialog({title: "Info Pote", message: `Falta ${formatDuration(new Date(state.pot_expires_at).getTime() - Date.now())} para o pote quebrar.`});
+        };
         slots[0].appendChild(potImg);
         slots[0].style.visibility = "visible";
+        slots[0].style.cursor = "pointer";
     }
     // 2. Água (Slot 2)
     if (state.fase !== 'needsWater' && state.fase !== 'needsPot' && state.fase !== 'locked') {
         const waterImg = document.createElement("img");
         waterImg.src = "assets/agua.png";
+        waterImg.title = `Água: ${formatDuration(new Date(state.water_expires_at).getTime() - Date.now())} restantes`;
+        waterImg.onclick = (e) => {
+            e.stopPropagation();
+            showDialog({title: "Info Água", message: `Falta ${formatDuration(new Date(state.water_expires_at).getTime() - Date.now())} para a terra secar.`});
+        };
         slots[1].appendChild(waterImg);
         slots[1].style.visibility = "visible";
+        slots[1].style.cursor = "pointer";
     }
     // 3. Corvo (Slot 3)
     if (state.crow_active) {
@@ -273,6 +285,8 @@ function renderPlotState(index) {
         timer.textContent = isPaused ? "PAUSADO" : `Tempo: ${formatDuration(remaining)}`;
     } else if (state.fase === 'ready') {
         timer.textContent = "COLHER!";
+    } else if (state.fase === 'readyToPlant') {
+        timer.textContent = "Terra Pronta";
     } else {
         timer.textContent = state.fase.toUpperCase().replace('NEEDS', 'AGUARDANDO ');
     }
@@ -280,13 +294,18 @@ function renderPlotState(index) {
     // --- Controle de Visibilidade dos Botões de Ação ---
     const actions = plotEl.querySelector(".plot-actions");
     if (actions) {
+        const p = slotPrices[index];
         // Mostrar ações se não estiver bloqueado
         const isLocked = state.fase === 'locked';
         actions.style.display = isLocked ? "none" : "flex";
 
         const useBtn = actions.querySelector(".usar");
         if (useBtn) {
-            if (state.fase === 'ready') {
+            if (state.fase === 'locked') {
+                useBtn.style.backgroundImage = "url('assets/botao_base.png')";
+                useBtn.style.visibility = "visible";
+                useBtn.dataset.action = "buy_slot";
+            } else if (state.fase === 'ready') {
                 useBtn.style.backgroundImage = "url('assets/botao_coletar_tudo.png')";
                 useBtn.style.visibility = "visible";
                 useBtn.dataset.action = "harvest";
@@ -360,7 +379,10 @@ function getItemAsset(itemId) {
         'vasoGrande': 'vaso_grande.png',
         'agua': 'agua.png',
         'pesticida': 'borrifador_inseticida.png',
-        'espantalho': 'espantalho.png'
+        'espantalho': 'espantalho.png',
+        'flower': 'flor.png',
+        'tree': 'folha.png',
+        'sementeEspecial': 'semente.png'
     };
 
     if (mappings[itemId]) return mappings[itemId];
@@ -411,9 +433,37 @@ function renderShopTab(tabName) {
             <img src="assets/${getItemAsset(item.item_id)}" onerror="this.src='assets/flores/${item.item_id}.png'">
             <p>${item.label}</p>
             <p>${item.price_coins > 0 ? item.price_coins + ' Ouro' : item.price_diamonds + ' Diamantes'}</p>
-            <button class="buy-btn" onclick="performAction('buy_item', null, '${item.item_id}')">Comprar</button>
+            <input type="number" class="shop-qty" id="qty-${item.item_id}" value="1" min="1" max="99">
+            <button class="buy-btn" onclick="confirmPurchase('${item.item_id}')">Comprar</button>
         </div>
     `).join("");
+}
+
+function confirmPurchase(itemId) {
+    const qtyInput = document.getElementById(`qty-${itemId}`);
+    const quantity = parseInt(qtyInput.value) || 1;
+    const item = itemShopPrices[itemId] || cropCatalog[itemId];
+
+    if (!item) return;
+
+    const totalCoins = (item.price_coins || 0) * quantity;
+    const totalDiamonds = (item.price_diamonds || 0) * quantity;
+    const totalText = totalCoins > 0 ? `${totalCoins} Ouro` : `${totalDiamonds} Diamantes`;
+
+    const dialog = document.getElementById("game-dialog");
+    document.getElementById("game-dialog-title").textContent = "Confirmar Compra";
+    document.getElementById("game-dialog-message").textContent = `Deseja comprar ${quantity}x ${item.label} por um total de ${totalText}?`;
+
+    dialog.classList.remove("hidden");
+
+    document.getElementById("game-dialog-confirm").onclick = () => {
+        performAction('buy_item', null, itemId, null, quantity);
+        dialog.classList.add("hidden");
+    };
+
+    document.getElementById("game-dialog-cancel").onclick = () => {
+        dialog.classList.add("hidden");
+    };
 }
 
 function renderInventory() {
@@ -431,10 +481,17 @@ function renderInventory() {
 
 function selectItem(id) {
     itemSelecionadoState.item = id;
-    document.querySelectorAll(".sidebar .use-btn").forEach(b => {
-        if (b.dataset.item === id) b.classList.add("selected");
-        else b.classList.remove("selected");
+
+    // Atualizar feedback visual na sidebar
+    document.querySelectorAll(".sidebar .tool-item").forEach(item => {
+        if (item.dataset.item === id) item.classList.add("selected");
+        else item.classList.remove("selected");
     });
+
+    // Fechar modal de inventário automaticamente se aberto
+    const invModal = document.getElementById("inventory-modal");
+    if (invModal) invModal.style.display = "none";
+
     renderInventory();
 }
 
@@ -452,6 +509,12 @@ function renderAll() {
     updateSidebarCounts();
     renderWeather();
 
+    // Atualizar Versão do Jogo na Topbar e Footer
+    const versionEls = document.querySelectorAll(".game-version, .game-version-footer");
+    versionEls.forEach(el => {
+        if (configs.game_version) el.textContent = configs.game_version;
+    });
+
     // Atualiza a árvore mundial se o modal estiver aberto
     const treeModal = document.getElementById("worldtree-modal");
     if (treeModal && treeModal.style.display === "block") {
@@ -464,9 +527,10 @@ function renderWeather() {
     if (!icon) return;
     const weather = configs.current_weather || 'sunny';
     const mappings = {
-        'sunny': 'clima_sol_v1.png',
-        'rainy': 'clima_chuva_v1.png',
-        'windy': 'clima_vento_v1.png'
+        'sunny': 'clima_verao.png',
+        'rainy': 'clima_primavera.png',
+        'windy': 'clima_outono.png',
+        'snowy': 'clima_inverno.png'
     };
     icon.src = `assets/${mappings[weather] || 'caixa_clima.png'}`;
 }
@@ -477,7 +541,10 @@ function updateSidebarCounts() {
         'vasoGrande': 'count-vaso-grande',
         'agua': 'count-agua',
         'pesticida': 'count-pesticida',
-        'espantalho': 'count-espantalho'
+        'espantalho': 'count-espantalho',
+        'flower': 'count-flower',
+        'tree': 'count-tree',
+        'sementeEspecial': 'count-special-seed'
     };
     for (const [item, id] of Object.entries(mappings)) {
         const el = document.getElementById(id);
@@ -531,6 +598,8 @@ document.addEventListener('click', e => {
             else if (itemSelecionadoState.item) performAction('use_item', index, itemSelecionadoState.item);
         } else if (action === 'harvest') {
             performAction('harvest', index);
+        } else if (action === 'harvest_all') {
+            performAction('harvest_all');
         } else if (action === 'remove') {
             if (confirm("Deseja realmente remover o conteúdo deste slot? (Nenhum recurso será devolvido)")) {
                 performAction('remove_plant', index);
@@ -549,10 +618,11 @@ document.addEventListener('click', e => {
     }
 });
 
-document.querySelectorAll(".sidebar .use-btn").forEach(btn => {
-    btn.onclick = () => {
-        const item = btn.dataset.item;
-        selectItem(item === itemSelecionadoState.item ? null : item);
+document.querySelectorAll(".sidebar .tool-item").forEach(item => {
+    item.onclick = () => {
+        const id = item.dataset.item;
+        if (!id || id.includes('placeholder')) return;
+        selectItem(id === itemSelecionadoState.item ? null : id);
     };
 });
 
@@ -573,6 +643,17 @@ setupModal(".open-shop", "shop-modal", ".close-btn");
 setupModal(".open-inventory", "inventory-modal", ".close-inventory");
 setupModal(".open-worldtree", "worldtree-modal", ".close-worldtree");
 setupModal("#admin-open", "admin-modal", "#admin-close");
+
+// Forçar recarregamento do inventário ao abrir o modal
+const openInvBtn = document.querySelector(".open-inventory");
+if (openInvBtn) {
+    const originalClick = openInvBtn.onclick;
+    openInvBtn.onclick = async () => {
+        await loadGameState();
+        if (originalClick) originalClick();
+        renderInventory();
+    };
+}
 
 // Ensure setupModal calls renderWorldTree
 const openTreeBtn = document.querySelector(".open-worldtree");
@@ -634,11 +715,11 @@ async function renderAdminTab(tabName) {
             <div class="admin-account-manager">
                 <h3>Gerenciar Recursos do Jogador</h3>
                 <div class="admin-inline-actions">
-                    <input type="number" id="admin-user-search-id" placeholder="ID do Usuário">
+                    <input type="text" id="admin-user-search-query" placeholder="ID ou Login do Usuário">
                     <button class="admin-action primary" onclick="searchUserAccount()">Buscar</button>
                 </div>
                 <div id="admin-user-result" class="admin-grid" style="margin-top: 20px;">
-                    <p>Digite um ID e clique em buscar.</p>
+                    <p>Digite um ID ou Login e clique em buscar.</p>
                 </div>
             </div>
         `;
@@ -796,11 +877,17 @@ async function renderAdminTab(tabName) {
     } else if (tabName === 'regras') {
         const adminData = await apiFetch(`${ADMIN_API_BASE_URL}/config`);
         const currentLayout = adminData.configs.find(c => c.chave === 'active_layout')?.valor || 'default';
+        const currentVersion = adminData.configs.find(c => c.chave === 'game_version')?.valor || 'v1.0.5';
 
         content.innerHTML = `
             <div class="admin-rules-manager">
                 <h3>Aparência e Layout</h3>
                 <div class="admin-card" style="margin-bottom: 20px; border: 2px solid #ffeb3b;">
+                    <div class="admin-field">
+                        <label>Versão do Jogo</label>
+                        <input type="text" id="config-game_version" value="${currentVersion}">
+                        <button class="admin-action" onclick="saveConfig('game_version')">Atualizar Versão</button>
+                    </div>
                     <div class="admin-field">
                         <label>Escolher Layout do Jogo</label>
                         <select id="config-active_layout" onchange="applyLayout(this.value)">
@@ -833,6 +920,29 @@ async function renderAdminTab(tabName) {
                 </div>
             </div>
         `;
+    } else if (tabName === 'eventos') {
+        content.innerHTML = `
+            <div class="admin-events">
+                <h3>Gerenciar Eventos Ativos</h3>
+                <div class="admin-card" style="border: 2px dashed #ffeb3b; text-align: center; padding: 40px;">
+                    <p>Módulo de Eventos Temporários</p>
+                    <small>Em breve: Eventos de Natal, Carnaval e Aniversário.</small>
+                </div>
+            </div>
+        `;
+    } else if (tabName === 'promocoes') {
+        content.innerHTML = `
+            <div class="admin-promos">
+                <h3>Promoções e Descontos</h3>
+                <div class="admin-card">
+                    <div class="admin-field">
+                        <label>Desconto Global na Loja (%)</label>
+                        <input type="number" id="config-global_discount" value="${adminData.configs.find(c => c.chave === 'global_discount')?.valor || 0}">
+                        <button class="admin-action primary" onclick="saveConfig('global_discount')">Aplicar Desconto</button>
+                    </div>
+                </div>
+            </div>
+        `;
     } else if (tabName === 'dados') {
         const stats = await apiFetch(`${ADMIN_API_BASE_URL}/stats`);
         content.innerHTML = `
@@ -851,17 +961,15 @@ async function renderAdminTab(tabName) {
                 </div>
             </div>
         `;
-    } else {
-        content.innerHTML = `<p>Aba ${tabName} em desenvolvimento.</p>`;
     }
 }
 
 async function searchUserAccount() {
-    const id = document.getElementById("admin-user-search-id").value;
-    if (!id) return alert("Digite um ID válido.");
+    const query = document.getElementById("admin-user-search-query").value;
+    if (!query) return alert("Digite um ID ou Login válido.");
 
     try {
-        const data = await apiFetch(`${ADMIN_API_BASE_URL}/user/${id}`);
+        const data = await apiFetch(`${ADMIN_API_BASE_URL}/user/search?q=${query}`);
         const resultDiv = document.getElementById("admin-user-result");
 
         // Build inventory list
