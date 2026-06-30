@@ -21,10 +21,9 @@ GRANT ALL PRIVILEGES ON DATABASE farm TO pi;
 \q
 ```
 
-Execute as migrações:
+Execute as migrações (utilize o script consolidado para uma instalação limpa):
 ```bash
-psql -h localhost -U pi -d farm -f migrations/001_initial_schema.sql
-psql -h localhost -U pi -d farm -f migrations/002_seed_data.sql
+psql -h localhost -U pi -d farm -f migrations/full_deploy.sql
 ```
 
 ## 3. Configuração do Backend

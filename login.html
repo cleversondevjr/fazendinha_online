@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Fazendinha Online</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #a8e063 0%, #56ab2f 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .login-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        h1 { color: #2d5a27; margin-bottom: 1.5rem; }
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #56ab2f;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:hover { background: #458a25; }
+        .footer { margin-top: 1.5rem; font-size: 14px; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <img src="assets/logo_fazendinha_online.png" alt="Logo" style="width: 150px; margin-bottom: 1rem;">
+        <h1>Acessar Fazenda</h1>
+        <p>Insira seu ID de Usuário para continuar</p>
+        <input type="number" id="userId" placeholder="Ex: 1" value="1">
+        <button onclick="fazerLogin()">Entrar na Fazenda</button>
+        <div class="footer">
+            SGI IPTV - Fazendinha Online v1.0.4
+        </div>
+    </div>
+
+    <script>
+        function fazerLogin() {
+            const id = document.getElementById('userId').value;
+            if (!id) return alert('Por favor, insira um ID válido.');
+
+            // Define o cookie para expirar em 30 dias
+            const data = new Date();
+            data.setTime(data.getTime() + (30 * 24 * 60 * 60 * 1000));
+            document.cookie = `usuario_id=${id}; expires=${data.toUTCString()}; path=/`;
+
+            // Redireciona para o jogo
+            window.location.href = './index.html';
+        }
+    </script>
+</body>
+</html>
