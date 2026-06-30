@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# Auto Deploy Script - Fazendinha Online v1.0.5
+# Auto Deploy Script - Fazendinha Online v1.1.0
 # Execute este script para atualizar tudo automaticamente
 
-echo "--- Iniciando Deploy Automático (v1.0.5) ---"
+echo "--- Iniciando Deploy Automático (v1.1.0) ---"
 
 # 1. Sincronizar Código
 echo "[1/5] Sincronizando código com o repositório..."

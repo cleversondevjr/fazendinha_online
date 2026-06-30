@@ -1,13 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const bcrypt = require('bcryptjs');
 
 router.post('/register', async (req, res) => {
     const { login, email, password } = req.body;
     try {
+        const hashedPassword = await bcrypt.hash(password, 10);
         const result = await db.execute(
             'INSERT INTO fazenda_usuarios (login, email, senha) VALUES ($1, $2, $3) RETURNING id',
-            [login, email, password]
+            [login, email, hashedPassword]
         );
         res.json({ success: true, userId: result.rows[0].id });
     } catch (err) {
@@ -19,11 +21,17 @@ router.post('/login', async (req, res) => {
     const { login, password } = req.body;
     try {
         const result = await db.execute(
-            'SELECT id FROM fazenda_usuarios WHERE login = $1 AND senha = $2',
-            [login, password]
+            'SELECT id, senha FROM fazenda_usuarios WHERE LOWER(login) = LOWER($1)',
+            [login]
         );
+
         if (result.rows.length > 0) {
-            res.json({ success: true, userId: result.rows[0].id });
+            const user = result.rows[0];
+            const match = await bcrypt.compare(password, user.senha);
+            if (!match) return res.status(401).json({ error: 'Credenciais inválidas.' });
+
+            req.session.userId = user.id;
+            res.json({ success: true, userId: user.id });
         } else {
             res.status(401).json({ error: 'Credenciais inválidas.' });
         }
