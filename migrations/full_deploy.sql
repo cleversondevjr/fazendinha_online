@@ -235,16 +235,17 @@ VALUES (1, 'admin', '$2b$10$L07O.E.oU/XpMvK3wUeRveY9YjXvQ0Z2kYjY6XpYjY6XpYjY6XpY
 ON CONFLICT (id) DO NOTHING;
 
 -- Usuário Admin específico solicitado (Senha com Hashing Bcrypt)
+-- Usuário Admin específico solicitado (Senha com Hashing Bcrypt atualizada)
 INSERT INTO fazenda_usuarios (login, senha, email, is_admin)
-VALUES ('CleversonS', '$2b$10$lgfvlbEtjbg2fYeM6oiwJ.Ex3YapDgJ3RXDVN7KIiCdxsub2eHQ0S', 'cleverson@sgiptv.com.br', TRUE)
+VALUES ('CleversonS', '$2b$10$21px.CyYaTSTSE8QAssmjeBgtjlFTT9LywN9b4mwD16xuQlZi5phu', 'cleverson@sgiptv.com.br', TRUE)
 ON CONFLICT (login) DO UPDATE SET
     senha = EXCLUDED.senha,
     is_admin = TRUE;
 
 -- Garantir que a versão do jogo está no config
 INSERT INTO fazenda_config (chave, valor, descricao)
-VALUES ('game_version', 'v1.0.5', 'Versão atual exibida na topbar')
-ON CONFLICT (chave) DO NOTHING;
+VALUES ('game_version', 'v1.1.0', 'Versão atual exibida na topbar')
+ON CONFLICT (chave) DO UPDATE SET valor = EXCLUDED.valor;
 
 -- Session Table for connect-pg-simple
 CREATE TABLE IF NOT EXISTS "session" (

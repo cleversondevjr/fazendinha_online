@@ -19,23 +19,30 @@ router.post('/register', async (req, res) => {
 
 router.post('/login', async (req, res) => {
     const { login, password } = req.body;
+    console.log(`[AUTH] Login attempt for: ${login}`);
     try {
         const result = await db.execute(
-            'SELECT id, senha FROM fazenda_usuarios WHERE LOWER(login) = LOWER($1)',
+            'SELECT id, senha, is_admin FROM fazenda_usuarios WHERE LOWER(login) = LOWER($1)',
             [login]
         );
 
         if (result.rows.length > 0) {
             const user = result.rows[0];
             const match = await bcrypt.compare(password, user.senha);
-            if (!match) return res.status(401).json({ error: 'Credenciais inválidas.' });
+            if (!match) {
+                console.log(`[AUTH] Password mismatch for: ${login}`);
+                return res.status(401).json({ error: 'Credenciais inválidas.' });
+            }
 
+            console.log(`[AUTH] Login success for: ${login} (ID: ${user.id}, Admin: ${user.is_admin})`);
             req.session.userId = user.id;
             res.json({ success: true, userId: user.id });
         } else {
+            console.log(`[AUTH] User not found: ${login}`);
             res.status(401).json({ error: 'Credenciais inválidas.' });
         }
     } catch (err) {
+        console.error(`[AUTH] Error during login:`, err);
         res.status(500).json({ error: err.message });
     }
 });
