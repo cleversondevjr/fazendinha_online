@@ -541,15 +541,38 @@ function updateSidebarCounts() {
         'vasoGrande': 'count-vaso-grande',
         'agua': 'count-agua',
         'pesticida': 'count-pesticida',
-        'espantalho': 'count-espantalho',
-        'flower': 'count-flower',
-        'tree': 'count-tree',
-        'sementeEspecial': 'count-special-seed'
+        'espantalho': 'count-espantalho'
     };
-    for (const [item, id] of Object.entries(mappings)) {
+
+    // Reset basic items counts
+    for (const id of Object.values(mappings)) {
         const el = document.getElementById(id);
-        if (el) el.textContent = inventario[item] || 0;
+        if (el) el.textContent = 0;
     }
+
+    let flowerCount = 0;
+    let treeCount = 0;
+    let specialSeedCount = 0;
+
+    for (const [itemId, qty] of Object.entries(inventario)) {
+        if (mappings[itemId]) {
+            const el = document.getElementById(mappings[itemId]);
+            if (el) el.textContent = qty;
+        } else if (cropCatalog[itemId]) {
+            if (cropCatalog[itemId].tipo === 'flower') flowerCount += qty;
+            else if (cropCatalog[itemId].tipo === 'tree') treeCount += qty;
+        } else if (itemId === 'sementeEspecial') {
+            specialSeedCount += qty;
+        }
+    }
+
+    const fEl = document.getElementById('count-flower');
+    const tEl = document.getElementById('count-tree');
+    const sEl = document.getElementById('count-special-seed');
+
+    if (fEl) fEl.textContent = flowerCount;
+    if (tEl) tEl.textContent = treeCount;
+    if (sEl) sEl.textContent = specialSeedCount;
 }
 
 function formatDuration(ms) {
@@ -584,6 +607,17 @@ function showDialog({ title, message }) {
 document.getElementById("game-dialog-confirm").onclick = () => document.getElementById("game-dialog").classList.add("hidden");
 document.getElementById("game-dialog-cancel").onclick = () => document.getElementById("game-dialog").classList.add("hidden");
 
+const openHarvestBtn = document.querySelector(".open-harvest");
+if (openHarvestBtn) {
+    openHarvestBtn.onclick = () => {
+        const readySlots = plotStates.filter(s => s.fase === 'ready');
+        if (readySlots.length === 0) {
+            return showDialog({ title: "Colheita", message: "Não há plantas prontas para colher!" });
+        }
+        performAction('harvest_all');
+    };
+}
+
 // Interactions
 document.addEventListener('click', e => {
     const btn = e.target.closest('.plot-action-btn');
@@ -592,7 +626,7 @@ document.addEventListener('click', e => {
         const index = parseInt(plot.dataset.plotIndex);
         const action = btn.dataset.action;
 
-        if (action === 'use') {
+        if (action === 'use' || action === 'buy_slot') {
             const state = plotStates.find(s => s.slot_index === index);
             if (state.fase === 'locked') performAction('buy_slot', index);
             else if (itemSelecionadoState.item) performAction('use_item', index, itemSelecionadoState.item);
@@ -612,7 +646,8 @@ document.addEventListener('click', e => {
     if (plot) {
         const index = parseInt(plot.dataset.plotIndex);
         const state = plotStates.find(s => s.slot_index === index);
-        if (state.fase === 'ready') performAction('harvest', index);
+        if (state.crow_active) performAction('remove_crow', index);
+        else if (state.fase === 'ready') performAction('harvest', index);
         else if (state.fase === 'locked') performAction('buy_slot', index);
         else if (itemSelecionadoState.item) performAction('use_item', index, itemSelecionadoState.item);
     }

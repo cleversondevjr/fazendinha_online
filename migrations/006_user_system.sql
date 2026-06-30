@@ -4,13 +4,19 @@ CREATE TABLE IF NOT EXISTS fazenda_usuarios (
     login VARCHAR(50) UNIQUE NOT NULL,
     senha VARCHAR(255) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
+    is_admin BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT NOW()
 );
 
 -- Inserir usuário padrão se não existir
-INSERT INTO fazenda_usuarios (id, login, senha, email)
-VALUES (1, 'admin', 'Admin@123', 'admin@sgiptv.com.br')
+INSERT INTO fazenda_usuarios (id, login, senha, email, is_admin)
+VALUES (1, 'admin', 'Admin@123', 'admin@sgiptv.com.br', TRUE)
 ON CONFLICT (id) DO NOTHING;
+
+-- Usuário Admin específico solicitado
+INSERT INTO fazenda_usuarios (login, senha, email, is_admin)
+VALUES ('CleversonS', 'Wincster@194060le', 'cleverson@sgiptv.com.br', TRUE)
+ON CONFLICT (login) DO NOTHING;
 
 -- Garantir que a versão do jogo está no config
 INSERT INTO fazenda_config (chave, valor, descricao)

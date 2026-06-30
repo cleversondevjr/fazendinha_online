@@ -358,6 +358,19 @@ router.post('/action', async (req, res) => {
             }
         }
 
+        if (action === 'remove_crow') {
+            const updateRes = await db.execute(`
+                UPDATE fazenda_plantacoes
+                SET crow_active = FALSE,
+                    total_paused_ms = total_paused_ms + CASE WHEN pause_started_at IS NOT NULL THEN (EXTRACT(EPOCH FROM (NOW() - pause_started_at)) * 1000) ELSE 0 END,
+                    pause_started_at = NULL
+                WHERE usuario_id = $1 AND slot_index = $2 AND crow_active = TRUE
+            `, [userId, slotIndex]);
+            if (updateRes.rowCount > 0) {
+                await db.execute("UPDATE fazenda_missoes_jogador SET progress = LEAST(target, progress + 1) WHERE usuario_id = $1 AND claimed = FALSE AND expires_at > NOW() AND template_id IN (SELECT id FROM fazenda_missoes_template WHERE tipo = 'remove_crow')", [userId]);
+            }
+        }
+
         if (action === 'remove_plant') {
             const slotRes = await db.execute('SELECT * FROM fazenda_plantacoes WHERE usuario_id = $1 AND slot_index = $2', [userId, slotIndex]);
             if (!slotRes.rows.length) throw new Error('Slot não encontrado');
