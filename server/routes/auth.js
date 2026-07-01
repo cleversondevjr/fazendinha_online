@@ -19,7 +19,7 @@ router.post('/register', async (req, res) => {
 
 router.post('/login', async (req, res) => {
     const { login, password } = req.body;
-    console.log(`[AUTH] Login attempt for: ${login}`);
+    console.log(`[AUTH] Login attempt for: "${login}"`);
     try {
         const result = await db.execute(
             'SELECT id, senha, is_admin FROM fazenda_usuarios WHERE LOWER(login) = LOWER($1)',
@@ -28,14 +28,22 @@ router.post('/login', async (req, res) => {
 
         if (result.rows.length > 0) {
             const user = result.rows[0];
+            console.log(`[AUTH] User found: ${user.id}, hashed pass length: ${user.senha ? user.senha.length : 0}`);
+
             const match = await bcrypt.compare(password, user.senha);
             if (!match) {
                 console.log(`[AUTH] Password mismatch for: ${login}`);
+                // Debug password length if mismatch
+                console.log(`[AUTH] Input password length: ${password ? password.length : 0}`);
                 return res.status(401).json({ error: 'Credenciais inválidas.' });
             }
 
             console.log(`[AUTH] Login success for: ${login} (ID: ${user.id}, Admin: ${user.is_admin})`);
             req.session.userId = user.id;
+
+            // Log session after setting
+            console.log(`[AUTH] Session userId set to: ${req.session.userId}`);
+
             res.json({ success: true, userId: user.id });
         } else {
             console.log(`[AUTH] User not found: ${login}`);

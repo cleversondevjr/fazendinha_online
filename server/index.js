@@ -8,6 +8,9 @@ require('dotenv').config();
 const app = express();
 const port = process.env.PORT || 3002;
 
+// Confia no proxy para sessões seguras via Cloudflare/Nginx
+app.set('trust proxy', 1);
+
 // Update CORS to allow credentials from the main domain
 app.use(cors({
     origin: ['https://sgiptv.com.br', 'http://sgiptv.com.br', 'http://localhost:3000'],
@@ -19,6 +22,7 @@ app.use(cookieParser());
 const db = require('./db');
 
 app.use(session({
+    name: 'fazendinha_sid',
     store: new pgSession({
         pool: db.pool, // We need to expose the pool
         tableName: 'session'
@@ -26,7 +30,11 @@ app.use(session({
     secret: process.env.SESSION_SECRET || 'fazendinha-secret-123',
     resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 30 * 60 * 1000 } // 30 minutos
+    cookie: {
+        maxAge: 30 * 60 * 1000,
+        secure: false, // Em um Pi, as vezes o SSL termina no Cloudflare e causa problemas se true
+        sameSite: 'lax'
+    }
 }));
 
 // Middleware to extract User ID from Session
