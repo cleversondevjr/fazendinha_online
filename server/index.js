@@ -41,8 +41,8 @@ app.use(session({
     proxy: true, // Necessário para Cloudflare
     cookie: {
         maxAge: 24 * 60 * 60 * 1000, // Aumentado para 24h para melhor UX
-        secure: process.env.NODE_ENV === 'production', // true se estiver em produção com HTTPS via Cloudflare
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 'none' permite cookies cross-site (importante para iframes ou domínios mistos no CF)
+        secure: true, // Sempre true pois o domínio tem SSL via Cloudflare
+        sameSite: 'none', // Necessário para funcionar em subdiretórios e iframes via Cloudflare
         path: '/fazendinha' // Garante que o cookie é restrito ao subcaminho do jogo
     }
 }));

@@ -23,6 +23,7 @@ fi
 echo "Executando migrações (PostgreSQL)..."
 # Assumindo que o usuário tem o psql instalado e configurado
 psql -h localhost -U pi -d farm -f ../migrations/full_deploy.sql
+psql -h localhost -U pi -d farm -f ../migrations/007_fix_users_table.sql
 
 # 5. Reiniciar o Servidor via PM2
 echo "Reiniciando servidor backend..."
