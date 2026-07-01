@@ -2,18 +2,31 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const bcrypt = require('bcryptjs');
+const { ensureUserInitialized } = require('../utils/player_init');
 
 router.post('/register', async (req, res) => {
     const { login, email, password } = req.body;
+    console.log(`[AUTH] Register attempt: ${login} (${email})`);
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
         const result = await db.execute(
             'INSERT INTO fazenda_usuarios (login, email, senha) VALUES ($1, $2, $3) RETURNING id',
             [login, email, hashedPassword]
         );
-        res.json({ success: true, userId: result.rows[0].id });
+
+        const userId = result.rows[0].id;
+        console.log(`[AUTH] User created successfully: ${userId}`);
+
+        // Inicializa dados do jogador imediatamente
+        await ensureUserInitialized(userId);
+
+        res.json({ success: true, userId });
     } catch (err) {
-        res.status(500).json({ error: 'Erro ao criar conta. Login ou E-mail já existem.' });
+        console.error(`[AUTH] Registration error for ${login}:`, err);
+        if (err.code === '23505') { // Unique violation em Postgres
+            return res.status(400).json({ error: 'Login ou E-mail já estão em uso.' });
+        }
+        res.status(500).json({ error: 'Erro interno ao criar conta: ' + err.message });
     }
 });
 
