@@ -12,8 +12,22 @@ const port = process.env.PORT || 3002;
 app.set('trust proxy', 1);
 
 // Update CORS to allow credentials from the main domain
+const allowedOrigins = [
+    'https://sgiptv.com.br',
+    'http://sgiptv.com.br',
+    'https://www.sgiptv.com.br',
+    'http://www.sgiptv.com.br'
+];
+
 app.use(cors({
-    origin: ['https://sgiptv.com.br', 'http://sgiptv.com.br', 'http://localhost:3000'],
+    origin: function (origin, callback) {
+        // Permitir requisições sem origin (como mobile apps ou curl) ou se estiver na lista permitida
+        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('Bloqueado pelo CORS'));
+        }
+    },
     credentials: true
 }));
 app.use(express.json());
@@ -40,10 +54,12 @@ app.use(session({
     saveUninitialized: false,
     proxy: true, // Necessário para Cloudflare
     cookie: {
-        maxAge: 24 * 60 * 60 * 1000, // Aumentado para 24h para melhor UX
-        secure: true, // Sempre true pois o domínio tem SSL via Cloudflare
-        sameSite: 'none', // Necessário para funcionar em subdiretórios e iframes via Cloudflare
-        path: '/fazendinha' // Garante que o cookie é restrito ao subcaminho do jogo
+        maxAge: 24 * 60 * 60 * 1000,
+        // Secure apenas se estiver em produção com HTTPS.
+        // Se testar via IP local (HTTP), o cookie não seria salvo se fosse true.
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        path: '/fazendinha'
     }
 }));
 
@@ -51,11 +67,18 @@ app.use(session({
 app.use((req, res, next) => {
     if (req.path.startsWith('/api/auth')) return next();
 
+    // Bloqueia acesso sem sessão se estiver em produção
     if (!req.session.userId && process.env.NODE_ENV === 'production') {
         return res.status(401).json({ error: 'Não autorizado. Faça login.' });
     }
 
-    req.userId = req.session.userId || '1';
+    // Fallback apenas para desenvolvimento
+    req.userId = req.session.userId || (process.env.NODE_ENV === 'production' ? null : '1');
+
+    if (!req.userId && !req.path.startsWith('/api/auth')) {
+        return res.status(401).json({ error: 'Sessão inválida.' });
+    }
+
     next();
 });
 

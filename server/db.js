@@ -9,11 +9,30 @@ const pool = new Pool({
   port: process.env.PGPORT || 5432,
   max: 10,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  connectionTimeoutMillis: 5000, // Aumentado para lidar com possíveis lentidões no Raspberry
+});
+
+// Tratamento de erro na conexão inicial do pool
+pool.on('error', (err, client) => {
+  console.error('[DATABASE POOL ERROR] Erro inesperado em um cliente ocioso:', err);
 });
 
 module.exports = {
   pool,
-  query: (text, params) => pool.query(text, params),
-  execute: (text, params) => pool.query(text, params), // Compatibility wrapper
+  query: async (text, params) => {
+    try {
+      return await pool.query(text, params);
+    } catch (err) {
+      console.error('[DATABASE QUERY ERROR]', { text, error: err.message });
+      throw err;
+    }
+  },
+  execute: async (text, params) => {
+    try {
+      return await pool.query(text, params);
+    } catch (err) {
+      console.error('[DATABASE EXECUTE ERROR]', { text, error: err.message });
+      throw err;
+    }
+  }, // Compatibility wrapper
 };

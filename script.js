@@ -62,8 +62,7 @@ async function loadGameState() {
             applyLayout(configs.active_layout);
         }
 
-        const adminData = await apiFetch(`${ADMIN_API_BASE_URL}/config`).catch(() => ({ items: [] }));
-        const allItems = adminData.items || [];
+        const allItems = data.items || [];
 
         itemShopPrices = allItems.filter(i => i.tipo === 'item').reduce((acc, i) => ({ ...acc, [i.item_id]: i }), {});
         cropCatalog = allItems.filter(i => i.tipo === 'flower' || i.tipo === 'tree').reduce((acc, i) => ({ ...acc, [i.item_id]: i }), {});
