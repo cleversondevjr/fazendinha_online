@@ -77,11 +77,12 @@ router.post('/missions/save', async (req, res) => {
 router.get('/user/search', async (req, res) => {
     const { q } = req.query;
     try {
+        // Busca direta na tabela de usuários para garantir que novos usuários apareçam
         const userSearch = await db.execute(`
-            SELECT DISTINCT usuario_id
-            FROM fazenda_inventario
-            WHERE CAST(usuario_id AS TEXT) = $1
-            OR usuario_id IN (SELECT id FROM fazenda_usuarios WHERE login ILIKE $2)
+            SELECT id as usuario_id
+            FROM fazenda_usuarios
+            WHERE CAST(id AS TEXT) = $1
+            OR login ILIKE $2
             LIMIT 1
         `, [q, `%${q}%`]);
 

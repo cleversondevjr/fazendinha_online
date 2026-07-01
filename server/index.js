@@ -21,19 +21,29 @@ app.use(cookieParser());
 
 const db = require('./db');
 
+const sessionStore = new pgSession({
+    pool: db.pool,
+    tableName: 'session',
+    createTableIfMissing: false // Já lidamos com isso nas migrações
+});
+
+// Captura erros no store de sessão para evitar crash do servidor
+sessionStore.on('error', (error) => {
+    console.error('[SESSION STORE ERROR]', error);
+});
+
 app.use(session({
     name: 'fazendinha_sid',
-    store: new pgSession({
-        pool: db.pool, // We need to expose the pool
-        tableName: 'session'
-    }),
+    store: sessionStore,
     secret: process.env.SESSION_SECRET || 'fazendinha-secret-123',
     resave: false,
     saveUninitialized: false,
+    proxy: true, // Necessário para Cloudflare
     cookie: {
-        maxAge: 30 * 60 * 1000,
-        secure: false, // Em um Pi, as vezes o SSL termina no Cloudflare e causa problemas se true
-        sameSite: 'lax'
+        maxAge: 24 * 60 * 60 * 1000, // Aumentado para 24h para melhor UX
+        secure: false, // SSL termina no Cloudflare
+        sameSite: 'lax',
+        path: '/fazendinha' // Garante que o cookie é restrito ao subcaminho do jogo
     }
 }));
 
