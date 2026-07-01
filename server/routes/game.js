@@ -104,7 +104,17 @@ router.get('/state', async (req, res) => {
             await db.execute('INSERT INTO fazenda_arvore_meta (data_dia, meta_agua) VALUES (CURRENT_DATE, $1) ON CONFLICT DO NOTHING', [dailyMeta]);
         }
 
-        res.json({ inventory, slots, missions: missionsRes.rows, configs: configsMap, worldTree: treeMeta });
+        // Adiciona catálogo de itens público para o frontend
+        const itemsRes = await db.execute('SELECT * FROM fazenda_itens_config ORDER BY tipo, item_id');
+
+        res.json({
+            inventory,
+            slots,
+            missions: missionsRes.rows,
+            configs: configsMap,
+            worldTree: treeMeta,
+            items: itemsRes.rows
+        });
     } catch (err) {
         console.error("State Error:", err);
         res.status(500).json({ error: err.message });

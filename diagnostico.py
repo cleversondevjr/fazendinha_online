@@ -1,66 +1,79 @@
 import os
-import psycopg2
-from dotenv import load_dotenv
+import sys
+import subprocess
+import json
 
-def check_db():
-    load_dotenv(dotenv_path='server/.env')
+def check_env():
+    print("[1] Verificando arquivo .env...")
+    env_path = "server/.env"
+    if not os.path.exists(env_path):
+        print("  - FALHA: server/.env não encontrado. Use server/.env.example como base.")
+        return False
 
-    host = os.getenv('PGHOST', 'localhost')
-    user = os.getenv('PGUSER', 'postgres')
-    password = os.getenv('PGPASSWORD', '')
-    database = os.getenv('PGDATABASE', 'farm')
-    port = os.getenv('PGPORT', '5432')
+    with open(env_path, 'r') as f:
+        lines = f.readlines()
+        keys = [line.split('=')[0].strip() for line in lines if '=' in line]
 
-    print(f"--- Iniciando Diagnóstico da Fazendinha Online ---")
-    print(f"Conectando ao banco: {database} em {host}:{port}...")
+    required_keys = ["PGHOST", "PGUSER", "PGDATABASE", "PGPORT", "PORT"]
+    missing = [k for k in required_keys if k not in keys]
 
+    if missing:
+        print(f"  - FALHA: Chaves faltando no .env: {', '.join(missing)}")
+        return False
+
+    print("  - OK: Arquivo .env configurado.")
+    return True
+
+def check_node():
+    print("[2] Verificando Node.js e Dependências...")
     try:
-        conn = psycopg2.connect(
-            host=host,
-            user=user,
-            password=password,
-            dbname=database,
-            port=port
-        )
-        cur = conn.cursor()
-        print("[OK] Conexão estabelecida com sucesso.")
+        node_version = subprocess.check_output(["node", "-v"]).decode().strip()
+        print(f"  - OK: Node.js {node_version} instalado.")
+    except Exception:
+        print("  - FALHA: Node.js não encontrado.")
+        return False
 
-        # Check tables
-        tables = [
-            'fazenda_plantacoes',
-            'fazenda_inventario',
-            'fazenda_config',
-            'fazenda_missoes_template',
-            'fazenda_missoes_jogador',
-            'fazenda_itens_config'
-        ]
+    if not os.path.exists("server/node_modules"):
+        print("  - AVISO: node_modules não encontrado no server. Rode 'npm install'.")
+    else:
+        print("  - OK: Dependências do backend parecem estar instaladas.")
+    return True
 
-        for table in tables:
-            cur.execute(f"SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = '{table}');")
-            exists = cur.fetchone()[0]
-            status = "[OK]" if exists else "[ERRO]"
-            print(f"{status} Tabela '{table}' encontrada.")
+def check_frontend_paths():
+    print("[3] Verificando caminhos do Frontend...")
+    if not os.path.exists("index.html"):
+        print("  - FALHA: index.html não encontrado.")
+        return False
 
-        # Check Migration 004 columns
-        print("\nVerificando Migração 004 (Lógica de Pausa):")
-        columns_to_check = ['total_paused_ms', 'pause_started_at', 'pot_expires_at', 'water_expires_at']
-        for col in columns_to_check:
-            cur.execute(f"SELECT EXISTS (SELECT FROM information_schema.columns WHERE table_name='fazenda_plantacoes' AND column_name='{col}');")
-            exists = cur.fetchone()[0]
-            status = "[OK]" if exists else "[ERRO]"
-            print(f"{status} Coluna '{col}' em fazenda_plantacoes.")
+    with open("index.html", 'r') as f:
+        content = f.read()
+        if '<base href="/fazendinha/">' not in content:
+            print("  - AVISO: <base href='/fazendinha/'> não encontrado no index.html. Isso pode causar erro nas rotas.")
+        else:
+            print("  - OK: Tag <base> configurada corretamente.")
 
-        # Check Mission Templates
-        cur.execute("SELECT count(*) FROM fazenda_missoes_template;")
-        mission_count = cur.fetchone()[0]
-        print(f"\n[INFO] {mission_count} modelos de missões encontrados.")
+    print("  - OK: Arquivos estáticos verificados.")
+    return True
 
-        cur.close()
-        conn.close()
-        print("\n--- Diagnóstico Concluído ---")
+def main():
+    print("=== Diagnóstico de Deploy - Fazendinha Online ===\n")
+    success = True
 
-    except Exception as e:
-        print(f"\n[FALHA CRÍTICA] Erro ao conectar ou diagnosticar: {e}")
+    if not check_env(): success = False
+    print()
+    if not check_node(): success = False
+    print()
+    if not check_frontend_paths(): success = False
+    print()
+
+    if success:
+        print("=== TUDO PRONTO PARA O DEPLOY! ===")
+        print("Para colocar online:")
+        print("1. Certifique-se que o Postgres está rodando.")
+        print("2. Execute as migrações: psql -U seu_usuario -d seu_banco -f migrations/full_deploy.sql")
+        print("3. No diretório server: pm2 start index.js --name fazendinha-backend")
+    else:
+        print("=== EXISTEM PENDÊNCIAS. CORRIJA OS ITENS ACIMA. ===")
 
 if __name__ == "__main__":
-    check_db()
+    main()
