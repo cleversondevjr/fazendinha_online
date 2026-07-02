@@ -55,11 +55,10 @@ app.use(session({
     proxy: true, // Necessário para Cloudflare
     cookie: {
         maxAge: 24 * 60 * 60 * 1000,
-        // Secure apenas se estiver em produção com HTTPS.
-        // Se testar via IP local (HTTP), o cookie não seria salvo se fosse true.
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-        path: '/fazendinha'
+        // Secure e SameSite None são necessários para Cloudflare HTTPS
+        secure: true,
+        sameSite: 'none',
+        path: '/'
     }
 }));
 

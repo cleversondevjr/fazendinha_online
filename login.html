@@ -68,7 +68,7 @@
             <a href="#" onclick="showCard('card-register')">Criar Conta</a>
             <a href="#" onclick="showCard('card-recover')">Recuperar Senha</a>
         </div>
-        <div class="footer">SGI IPTV - Fazendinha Online v1.1.0</div>
+        <div class="footer">SGI IPTV - Fazendinha Online V.2.0.0</div>
     </div>
 
     <div class="login-card" id="card-register" style="display:none;">
@@ -78,7 +78,7 @@
         <input type="email" id="reg-email-conf" placeholder="Confirmar E-mail">
         <input type="password" id="reg-pass" placeholder="Senha">
         <input type="password" id="reg-pass-conf" placeholder="Confirmar Senha">
-        <p style="font-size:10px; color:#666; text-align:left;">Mín. 8 chars, 1 maiúscula, 1 minúscula, 1 número e 1 especial.</p>
+        <p style="font-size:10px; color:#666; text-align:left;">Mínimo de 6 caracteres.</p>
         <button onclick="registrar()">Cadastrar</button>
         <button onclick="showCard('card-login')" style="background:#888; margin-top:10px;">Voltar</button>
     </div>
@@ -107,8 +107,8 @@
         }
 
         function validarSenha(senha) {
-            const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,24}$/;
-            return regex.test(senha);
+            // Simplificado para facilitar o cadastro: mínimo 6 caracteres
+            return senha.length >= 6;
         }
 
         async function fazerLogin() {
