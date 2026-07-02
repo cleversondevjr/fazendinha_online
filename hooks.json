@@ -1,0 +1,8 @@
+[
+  {
+    "id": "deploy-fazendinha",
+    "execute-command": "/home/pi/fazendinha_online/deploy.sh",
+    "command-working-directory": "/home/pi/fazendinha_online",
+    "response-message": "Deploy iniciado no Raspberry Pi..."
+  }
+]
