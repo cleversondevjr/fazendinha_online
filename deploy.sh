@@ -13,18 +13,20 @@ git reset --hard origin/main
 git clean -fd
 
 # 2. Banco de Dados (PostgreSQL)
-# O usuário pi deve ter permissão para rodar sem senha via peer ou .pgpass
+# Usando variáveis de ambiente se disponíveis, ou confiando no .pgpass/peer
+export PGPASSWORD=${PGPASSWORD:-""}
 psql -h localhost -U pi -d farm -f migrations/full_deploy.sql > /dev/null 2>&1
 psql -h localhost -U pi -d farm -f migrations/007_fix_users_table.sql > /dev/null 2>&1
 
 # 3. Backend (PM2)
 cd server
 npm install --production > /dev/null 2>&1
-pm2 restart fazendinha-backend || pm2 start index.js --name "fazendinha-backend"
-pm2 save
+# Reinicia o backend sem pedir confirmação
+pm2 restart fazendinha-backend --update-env || pm2 start index.js --name "fazendinha-backend"
+pm2 save --force
 cd ..
 
-# 4. Nginx (Opcional - só reinicia se houver permissão de sudo sem senha)
-sudo systemctl restart nginx > /dev/null 2>&1
+# 4. Nginx (Opcional - tenta reiniciar de forma silenciosa)
+sudo systemctl restart nginx > /dev/null 2>&1 || true
 
 echo "Deploy finalizado em $(date)" >> /home/pi/fazendinha_online/deploy.log
