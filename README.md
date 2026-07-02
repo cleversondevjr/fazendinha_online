@@ -1,69 +1,26 @@
-# farm2.0 - Instruções de Deploy e Manutenção (Raspberry Pi)
+# Fazendinha Online v1.2.0
 
-Este guia contém os comandos exatos para configurar e manter o seu servidor de jogo.
+Projeto baseado na economia do PvU 2021, adaptado para ser jogado online via Raspberry Pi.
 
-## 1. Configuração Inicial (Primeira vez)
+## Como Atualizar o Servidor
 
-Acesse seu Raspberry Pi via SSH e siga estes passos:
+Para realizar a atualização completa do sistema (Frontend, Assets, Banco de Dados e Backend), execute o seguinte comando no terminal do seu Raspberry Pi:
 
-### Instalar dependências do sistema
 ```bash
-sudo apt update
-sudo apt install nodejs npm postgresql
+cd /home/pi/fazendinha_online && ./deploy.sh
 ```
 
-### Configurar o Banco de Dados (PostgreSQL)
-```bash
-# Crie o banco de dados
-sudo -u postgres createdb farm
+**Este é o único comando necessário.** Ele irá:
+1. Sincronizar o código com o GitHub.
+2. Atualizar as tabelas do Banco de Dados.
+3. Reiniciar o servidor Backend (PM2).
+4. Reiniciar o Servidor Web (Nginx).
 
-# Execute as migrações (na raiz do projeto)
-psql -h localhost -U postgres -d farm -f migrations/001_initial_schema.sql
-psql -h localhost -U postgres -d farm -f migrations/002_seed_data.sql
-```
+## Estrutura
+- `index.html`: Frontend Principal.
+- `server/`: Backend em Node.js (API).
+- `assets/`: Imagens e sons do jogo.
+- `migrations/`: Scripts de banco de dados.
 
-### Configurar o Backend
-```bash
-cd server
-npm install
-cp .env.example .env
-# Edite o .env com suas credenciais do Postgres
-nano .env
-```
-
----
-
-## 2. Comandos de Manutenção Diária
-
-### Iniciar o Servidor (Background)
-Para garantir que o jogo continue online após fechar o SSH:
-```bash
-cd server
-nohup node index.js > server.log 2>&1 &
-```
-
-### Ver Logs do Servidor
-```bash
-tail -f server/server.log
-```
-
-### Parar o Servidor
-```bash
-kill $(lsof -t -i :3000)
-```
-
----
-
-## 3. Estrutura do Projeto
-- `/server`: Lógica da API e Cronjobs (Porta 3000).
-- `/migrations`: Scripts SQL para atualização do banco.
-- `/assets`: Imagens e animações.
-- `index.html`, `script.js`: Frontend do jogo.
-
----
-
-## 4. Notas Importantes
-- **Crows/Pests:** São processados automaticamente pelo servidor a cada minuto.
-- **Missões:** Rotacionam a cada 4 horas automaticamente.
-- **Backup:** Recomenda-se fazer backup do banco de dados periodicamente:
-  `pg_dump -U postgres farm2 > backup_farm.sql`
+## Suporte
+Acesse através de: [https://sgiptv.com.br/fazendinha/](https://sgiptv.com.br/fazendinha/)
