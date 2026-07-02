@@ -100,6 +100,10 @@ const adminAuth = async (req, res, next) => {
     }
 };
 
+app.get('/api/health', (req, res) => {
+    res.json({ status: 'ok', uptime: process.uptime(), env: process.env.NODE_ENV });
+});
+
 app.use('/api/game', gameRoutes);
 app.use('/api/admin', adminAuth, adminRoutes); // Admin routes protected
 app.use('/api/auth', authRoutes);
