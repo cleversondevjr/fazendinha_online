@@ -387,7 +387,10 @@ function getItemAsset(itemId) {
     if (mappings[itemId]) return mappings[itemId];
 
     // Fallback para flores que não estão no mapeamento estático mas seguem o padrão de nome
-    if (cropCatalog[itemId]) return `flores/${itemId}_adulta.png`;
+    if (cropCatalog[itemId]) {
+        if (itemId.includes('_adulta')) return `flores/${itemId}.png`;
+        return `flores/${itemId}_adulta.png`;
+    }
 
     return `${itemId}.png`;
 }
