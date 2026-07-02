@@ -2,17 +2,24 @@
 
 Siga estes passos no seu Raspberry Pi para ativar o deploy automático.
 
-### 1. Instalar o Webhook no Raspberry Pi
+### 1. Instalar dependências no Raspberry Pi
 ```bash
 sudo apt-get update
-sudo apt-get install webhook
+sudo apt-get install webhook screen -y
 ```
 
 ### 2. Rodar o servidor de Webhook
-Execute o comando abaixo para iniciar o escutador (recomendo usar o `screen` ou `tmux` para deixar rodando):
+Se a porta 9000 já estiver em uso, você pode liberar ela primeiro:
 ```bash
-webhook -hooks /home/pi/fazendinha_online/hooks.json -verbose -port 9000 &
+sudo fuser -k 9000/tcp
 ```
+
+Execute o comando abaixo para iniciar o escutador dentro de uma sessão `screen`:
+```bash
+screen -S fazendinha_webhook
+webhook -hooks /home/pi/fazendinha_online/hooks.json -verbose -port 9000
+```
+*(Aperte `Ctrl+A` depois `D` para sair do screen e manter rodando).*
 
 ### 3. Configurar no GitHub
 1. Vá no seu repositório no GitHub -> **Settings** -> **Webhooks** -> **Add webhook**.
