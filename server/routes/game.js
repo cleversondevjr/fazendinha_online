@@ -180,7 +180,12 @@ router.post('/action', async (req, res) => {
                 used = updateRes.rowCount > 0;
                 if (used) {
                     const missionType = item.tipo === 'flower' ? 'plant_flowers' : 'plant_trees';
-                    await db.execute("UPDATE fazenda_missoes_jogador SET progress = LEAST(target, progress + 1) WHERE usuario_id = $1 AND claimed = FALSE AND expires_at > NOW() AND template_id IN (SELECT id FROM fazenda_missoes_template WHERE tipo = $2)", [userId, missionType]);
+                    await db.execute(`
+                        UPDATE fazenda_missoes_jogador
+                        SET progress = LEAST((SELECT target FROM fazenda_missoes_template WHERE id = template_id), progress + 1)
+                        WHERE usuario_id = $1 AND claimed = FALSE AND expires_at > NOW()
+                        AND template_id IN (SELECT id FROM fazenda_missoes_template WHERE tipo = $2)
+                    `, [userId, missionType]);
                 }
             } else if (itemId === 'vasoPequeno' || itemId === 'vasoGrande') {
                 // Restrição: Vaso Grande apenas nos slots 1 e 5 (index 0 e 4)
@@ -230,7 +235,12 @@ router.post('/action', async (req, res) => {
                 `, [newExpiresAt, userId, slotIndex]);
                 used = updateRes.rowCount > 0;
                 if (used) {
-                    await db.execute("UPDATE fazenda_missoes_jogador SET progress = LEAST(target, progress + 1) WHERE usuario_id = $1 AND claimed = FALSE AND expires_at > NOW() AND template_id IN (SELECT id FROM fazenda_missoes_template WHERE tipo = 'water_slots')", [userId]);
+                    await db.execute(`
+                        UPDATE fazenda_missoes_jogador
+                        SET progress = LEAST((SELECT target FROM fazenda_missoes_template WHERE id = template_id), progress + 1)
+                        WHERE usuario_id = $1 AND claimed = FALSE AND expires_at > NOW()
+                        AND template_id IN (SELECT id FROM fazenda_missoes_template WHERE tipo = 'water_slots')
+                    `, [userId]);
                 }
             } else if (itemId === 'espantalho') {
                 const until = new Date(Date.now() + 7 * 24 * 3600000);
@@ -241,7 +251,12 @@ router.post('/action', async (req, res) => {
                 const updateRes = await db.execute("UPDATE fazenda_plantacoes SET pest_active = FALSE WHERE usuario_id = $1 AND slot_index = $2", [userId, slotIndex]);
                 used = updateRes.rowCount > 0;
                 if (used) {
-                    await db.execute("UPDATE fazenda_missoes_jogador SET progress = LEAST(target, progress + 1) WHERE usuario_id = $1 AND claimed = FALSE AND expires_at > NOW() AND template_id IN (SELECT id FROM fazenda_missoes_template WHERE tipo = 'use_pesticide')", [userId]);
+                    await db.execute(`
+                        UPDATE fazenda_missoes_jogador
+                        SET progress = LEAST((SELECT target FROM fazenda_missoes_template WHERE id = template_id), progress + 1)
+                        WHERE usuario_id = $1 AND claimed = FALSE AND expires_at > NOW()
+                        AND template_id IN (SELECT id FROM fazenda_missoes_template WHERE tipo = 'use_pesticide')
+                    `, [userId]);
                 }
             }
             if (used) await db.execute('UPDATE fazenda_inventario SET quantidade = quantidade - 1 WHERE usuario_id = $1 AND item_id = $2', [userId, itemId]);
@@ -254,7 +269,12 @@ router.post('/action', async (req, res) => {
             if (slot.fase !== 'ready') throw new Error('Não está pronto');
             await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade + $1 WHERE usuario_id = $2 AND item_id = 'coins'", [Math.floor(slot.reward_actual), userId]);
             await db.execute("UPDATE fazenda_plantacoes SET fase = $1, crop_id = NULL, started_at = NULL, ends_at = NULL, crow_active = FALSE, pest_active = FALSE, reward_actual = 0 WHERE id = $2", [slot.pot_type ? 'readyToPlant' : 'needsPot', slot.id]);
-            await db.execute("UPDATE fazenda_missoes_jogador SET progress = LEAST(target, progress + 1) WHERE usuario_id = $1 AND claimed = FALSE AND expires_at > NOW() AND template_id IN (SELECT id FROM fazenda_missoes_template WHERE tipo = 'harvest_count')", [userId]);
+            await db.execute(`
+                UPDATE fazenda_missoes_jogador
+                SET progress = LEAST((SELECT target FROM fazenda_missoes_template WHERE id = template_id), progress + 1)
+                WHERE usuario_id = $1 AND claimed = FALSE AND expires_at > NOW()
+                AND template_id IN (SELECT id FROM fazenda_missoes_template WHERE tipo = 'harvest_count')
+            `, [userId]);
         }
 
         if (action === 'harvest_all') {
@@ -273,7 +293,12 @@ router.post('/action', async (req, res) => {
 
             if (harvestedCount > 0) {
                 await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade + $1 WHERE usuario_id = $2 AND item_id = 'coins'", [totalReward, userId]);
-                await db.execute("UPDATE fazenda_missoes_jogador SET progress = LEAST(target, progress + $1) WHERE usuario_id = $2 AND claimed = FALSE AND expires_at > NOW() AND template_id IN (SELECT id FROM fazenda_missoes_template WHERE tipo = 'harvest_count')", [harvestedCount, userId]);
+                await db.execute(`
+                    UPDATE fazenda_missoes_jogador
+                    SET progress = LEAST((SELECT target FROM fazenda_missoes_template WHERE id = template_id), progress + $1)
+                    WHERE usuario_id = $2 AND claimed = FALSE AND expires_at > NOW()
+                    AND template_id IN (SELECT id FROM fazenda_missoes_template WHERE tipo = 'harvest_count')
+                `, [harvestedCount, userId]);
             } else {
                 throw new Error('Nenhuma planta pronta para colher');
             }
@@ -323,7 +348,12 @@ router.post('/action', async (req, res) => {
 
             const updateRes = await db.execute("UPDATE fazenda_plantacoes SET fase = 'needsPot' WHERE usuario_id = $1 AND slot_index = $2 AND fase = 'locked'", [userId, slotIndex]);
             if (updateRes.rowCount > 0) {
-                await db.execute("UPDATE fazenda_missoes_jogador SET progress = LEAST(target, progress + 1) WHERE usuario_id = $1 AND claimed = FALSE AND expires_at > NOW() AND template_id IN (SELECT id FROM fazenda_missoes_template WHERE tipo = 'unlock_slot')", [userId]);
+                await db.execute(`
+                    UPDATE fazenda_missoes_jogador
+                    SET progress = LEAST((SELECT target FROM fazenda_missoes_template WHERE id = template_id), progress + 1)
+                    WHERE usuario_id = $1 AND claimed = FALSE AND expires_at > NOW()
+                    AND template_id IN (SELECT id FROM fazenda_missoes_template WHERE tipo = 'unlock_slot')
+                `, [userId]);
             }
         }
 
@@ -336,7 +366,12 @@ router.post('/action', async (req, res) => {
                 WHERE usuario_id = $1 AND slot_index = $2 AND crow_active = TRUE
             `, [userId, slotIndex]);
             if (updateRes.rowCount > 0) {
-                await db.execute("UPDATE fazenda_missoes_jogador SET progress = LEAST(target, progress + 1) WHERE usuario_id = $1 AND claimed = FALSE AND expires_at > NOW() AND template_id IN (SELECT id FROM fazenda_missoes_template WHERE tipo = 'remove_crow')", [userId]);
+                await db.execute(`
+                    UPDATE fazenda_missoes_jogador
+                    SET progress = LEAST((SELECT target FROM fazenda_missoes_template WHERE id = template_id), progress + 1)
+                    WHERE usuario_id = $1 AND claimed = FALSE AND expires_at > NOW()
+                    AND template_id IN (SELECT id FROM fazenda_missoes_template WHERE tipo = 'remove_crow')
+                `, [userId]);
             }
         }
 

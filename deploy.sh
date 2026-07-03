@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ==============================================================================
-# SCRIPT DE DEPLOY AUTOMATIZADO - FAZENDINHA ONLINE (v1.3.0)
+# SCRIPT DE DEPLOY AUTOMATIZADO - FAZENDINHA ONLINE (v2.1.0)
 # ==============================================================================
 
 # Navegar para a pasta do projeto
@@ -13,30 +13,30 @@ git reset --hard origin/main
 git clean -fd
 
 # 2. Banco de Dados (PostgreSQL)
-# Garante que o .env no servidor use a senha correta
-echo "PORT=3002
-PGHOST=localhost
-PGUSER=pi
-PGPASSWORD=Wincster194060le
-PGDATABASE=farm
-PGPORT=5432
-SESSION_SECRET=fazendinha-secret-998
-NODE_ENV=production" > server/.env
+# O arquivo .env deve ser mantido localmente no servidor por segurança.
+# Caso não exista, ele será criado a partir do exemplo, mas as credenciais
+# reais devem ser configuradas manualmente uma única vez no servidor.
+if [ ! -f server/.env ]; then
+    cp server/.env.example server/.env
+    echo "AVISO: Arquivo .env criado a partir do exemplo. Configure as credenciais reais no servidor."
+fi
 
-# Usando a senha do usuário pi para rodar as migrações
-export PGPASSWORD="Wincster194060le"
-psql -h localhost -U pi -d farm -f migrations/full_deploy.sql > /dev/null 2>&1
-psql -h localhost -U pi -d farm -f migrations/007_fix_users_table.sql > /dev/null 2>&1
+# Carrega as variáveis do .env para as migrações
+export $(grep -v '^#' server/.env | xargs)
+
+# Execução das migrações
+psql -h $PGHOST -U $PGUSER -d $PGDATABASE -f migrations/full_deploy.sql > /dev/null 2>&1
+psql -h $PGHOST -U $PGUSER -d $PGDATABASE -f migrations/007_fix_users_table.sql > /dev/null 2>&1
+psql -h $PGHOST -U $PGUSER -d $PGDATABASE -f migrations/008_cleanup_users.sql > /dev/null 2>&1
 
 # 3. Backend (PM2)
 cd server
 npm install --production > /dev/null 2>&1
-# Reinicia o backend sem pedir confirmação
 pm2 restart fazendinha-backend --update-env || pm2 start index.js --name "fazendinha-backend"
 pm2 save --force
 cd ..
 
-# 4. Nginx (Opcional - tenta reiniciar de forma silenciosa)
+# 4. Nginx
 sudo systemctl restart nginx > /dev/null 2>&1 || true
 
 echo "Deploy finalizado em $(date)" >> /home/pi/fazendinha_online/deploy.log

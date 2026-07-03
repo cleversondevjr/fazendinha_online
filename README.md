@@ -1,26 +1,29 @@
-# Fazendinha Online v1.2.0
+# Fazendinha Online v2.1.0
 
-Projeto baseado na economia do PvU 2021, adaptado para ser jogado online via Raspberry Pi.
+Projeto baseado na economia do PvU 2021, adaptado para ser jogado online via Raspberry Pi 3.
 
-## Como Atualizar o Servidor
+## Acesso
+- **Domínio:** [https://sgiptv.com.br/fazendinha/](https://sgiptv.com.br/fazendinha/)
+- **Infraestrutura:** Servidor local no Raspberry Pi 3 acessível via SSH e túnel Cloudflare.
 
-Para realizar a atualização completa do sistema (Frontend, Assets, Banco de Dados e Backend), execute o seguinte comando no terminal do seu Raspberry Pi:
+## Automação de Deploy
+O projeto está configurado com **Auto-Merge** e **Webhook**.
+- Ao fazer o `submit` das alterações, o GitHub realiza o merge automático para a branch `main`.
+- O Webhook sinaliza o Raspberry Pi, que executa o script `./deploy.sh`.
 
+## Como Atualizar Manualmente (se necessário)
 ```bash
 cd /home/pi/fazendinha_online && ./deploy.sh
 ```
 
-**Este é o único comando necessário.** Ele irá:
-1. Sincronizar o código com o GitHub.
-2. Atualizar as tabelas do Banco de Dados.
-3. Reiniciar o servidor Backend (PM2).
-4. Reiniciar o Servidor Web (Nginx).
+## Estrutura do Projeto
+- `index.html`: Frontend Principal (v2.1.0).
+- `server/`: Backend em Node.js com Express e PostgreSQL.
+- `assets/`: Recursos visuais (Padrão Praia/PvU).
+- `migrations/`: Scripts de atualização do Banco de Dados.
 
-## Estrutura
-- `index.html`: Frontend Principal.
-- `server/`: Backend em Node.js (API).
-- `assets/`: Imagens e sons do jogo.
-- `migrations/`: Scripts de banco de dados.
-
-## Suporte
-Acesse através de: [https://sgiptv.com.br/fazendinha/](https://sgiptv.com.br/fazendinha/)
+## Novidades v2.1.0
+- Nova Interface baseada em Praia (PvU Style).
+- Sistema de Missões com correção de bugs de SQL.
+- Painel Administrativo com Gestão de Usuários.
+- Limpeza de banco para reset de ambiente.

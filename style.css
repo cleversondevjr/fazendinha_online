@@ -14,7 +14,7 @@ html {
 body {
   font-family: 'Luckiest Guy', cursive, Arial, sans-serif;
   background:
-    url('assets/grama_v1.png') repeat,
+    url('assets/praia_bg.jpg') center/cover no-repeat fixed,
     #4e7e2e;
   color: #fff;
   overflow-x: hidden;
@@ -30,7 +30,7 @@ body {
   top: 10px;
   right: 12px;
   z-index: 1000;
-  width: calc(100% - 262px);
+  width: calc(100% - 282px);
   height: 108px;
   background: url('assets/topbar_purple.png') center/100% 100% no-repeat;
   display: flex;
@@ -155,8 +155,8 @@ body {
 .sidebar {
   position: fixed;
   top: 10px;
-  left: 10px;
-  width: 236px;
+  left: 12px;
+  width: 260px;
   background: url('assets/sidebar_purple.png') center/100% 100% no-repeat;
   height: calc(100vh - 20px);
   padding: 16px 14px 18px;
@@ -525,12 +525,12 @@ body {
 .status-icons {
   position: absolute;
   top: 14%;
-  right: 14.5%;
-  width: 13%;
+  right: 16%;
+  width: 16%;
   height: 56%;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  gap: 4px;
   z-index: 10;
 }
 
