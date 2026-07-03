@@ -604,10 +604,11 @@ function showDialog({ title, message }) {
     document.getElementById("game-dialog-title").textContent = title;
     document.getElementById("game-dialog-message").textContent = message;
     dialog.classList.remove("hidden");
-}
 
-document.getElementById("game-dialog-confirm").onclick = () => document.getElementById("game-dialog").classList.add("hidden");
-document.getElementById("game-dialog-cancel").onclick = () => document.getElementById("game-dialog").classList.add("hidden");
+    // Reset buttons to just close
+    document.getElementById("game-dialog-confirm").onclick = () => dialog.classList.add("hidden");
+    document.getElementById("game-dialog-cancel").onclick = () => dialog.classList.add("hidden");
+}
 
 const openHarvestBtn = document.querySelector(".open-harvest");
 if (openHarvestBtn) {
@@ -998,6 +999,58 @@ async function renderAdminTab(tabName) {
                 </div>
             </div>
         `;
+    } else if (tabName === 'usuarios') {
+        const users = await apiFetch(`${ADMIN_API_BASE_URL}/users/list`);
+        content.innerHTML = `
+            <div class="admin-users-manager">
+                <h3>Lista de Usuários</h3>
+                <div class="admin-table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Login</th>
+                                <th>Email</th>
+                                <th>Admin</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${users.map(u => `
+                                <tr>
+                                    <td>${u.id}</td>
+                                    <td>${u.login}</td>
+                                    <td>${u.email || '-'}</td>
+                                    <td>${u.is_admin ? 'Sim' : 'Não'}</td>
+                                    <td>
+                                        <button onclick="searchUserAccountById(${u.id})">Editar Recursos</button>
+                                        ${u.id !== 1 ? `<button class="admin-danger" onclick="deleteUserAdmin(${u.id})">Excluir</button>` : ''}
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+}
+
+async function searchUserAccountById(userId) {
+    document.querySelector('[data-admin-tab="conta"]').click();
+    setTimeout(() => {
+        document.getElementById("admin-user-search-query").value = userId;
+        searchUserAccount();
+    }, 100);
+}
+
+async function deleteUserAdmin(userId) {
+    if (!confirm(`Tem certeza que deseja excluir o usuário ID ${userId}? Esta ação é irreversível.`)) return;
+    try {
+        await apiFetch(`${ADMIN_API_BASE_URL}/user/${userId}`, { method: 'DELETE' });
+        renderAdminTab('usuarios');
+    } catch (err) {
+        alert("Erro ao excluir usuário: " + err.message);
     }
 }
 
