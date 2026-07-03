@@ -32,6 +32,10 @@ psql -h $PGHOST -U $PGUSER -d $PGDATABASE -f migrations/008_cleanup_users.sql > 
 # 3. Backend (PM2)
 cd server
 npm install --production > /dev/null 2>&1
+
+# Garantir que a porta 3002 está livre antes de reiniciar
+sudo fuser -k 3002/tcp > /dev/null 2>&1 || true
+
 pm2 restart fazendinha-backend --update-env || pm2 start index.js --name "fazendinha-backend"
 pm2 save --force
 cd ..
