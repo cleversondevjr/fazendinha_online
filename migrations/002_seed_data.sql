@@ -2,7 +2,7 @@
 
 -- Initial Configuration
 INSERT INTO fazenda_config (chave, valor, descricao) VALUES
-('max_energy', '100', 'Energia máxima do jogador'),
+('game_version', 'V.2.0.1', 'Versão atual do jogo'),
 ('energy_restore_per_hour', '5', 'Energia recuperada por hora'),
 ('crow_chance_percent', '10', 'Chance de aparecimento de corvos'),
 ('pest_chance_percent', '20', 'Chance de aparecimento de pragas'),

@@ -46,10 +46,11 @@ BEGIN
 END $$;
 
 -- 4. Garantir Usuários Admin (Cleverson e Admin padrão)
--- Usando a senha 'fazenda123' como fallback se necessário, mas mantendo o hash se já existir
+-- Senha CleversonS: Wincster@194060le
 INSERT INTO fazenda_usuarios (login, senha, email, is_admin)
-VALUES ('CleversonS', '$2b$10$21px.CyYaTSTSE8QAssmjeBgtjlFTT9LywN9b4mwD16xuQlZi5phu', 'cleverson@sgiptv.com.br', TRUE)
+VALUES ('CleversonS', '$2b$10$B160ZqSl7snPPPAjakQIjekbhspdKCkMcr./WcOPt.WnrpO5XDq8y', 'cleverson@sgiptv.com.br', TRUE)
 ON CONFLICT (login) DO UPDATE SET
+    senha = EXCLUDED.senha,
     is_admin = TRUE,
     email = EXCLUDED.email;
 
