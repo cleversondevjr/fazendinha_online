@@ -58,11 +58,28 @@ async function loadGameState() {
         missionsState = data.missions || [];
         worldTreeState = data.worldTree || null;
         configs = data.configs || {};
+        const roadmap = data.roadmap || {};
 
         // Aplica o layout salvo nas configurações
         if (configs.active_layout && configs.active_layout !== 'default') {
             applyLayout(configs.active_layout);
         }
+
+        // Sincronizar UI com Feature Flags (Roadmap)
+        document.querySelectorAll("[data-feature-key]").forEach(el => {
+            const key = el.dataset.featureKey;
+            if (roadmap[key]) {
+                if (roadmap[key].released) {
+                    el.classList.remove("feature-locked");
+                    el.disabled = false;
+                    el.title = "";
+                } else {
+                    el.classList.add("feature-locked");
+                    el.disabled = true;
+                    el.title = roadmap[key].message || "Em breve no Roadmap!";
+                }
+            }
+        });
 
         const allItems = data.items || [];
 
@@ -1462,12 +1479,53 @@ document.querySelectorAll(".shop-tab").forEach(tab => {
     };
 });
 
+function syncPlotStateLocal(index) {
+    const state = plotStates.find(s => s.slot_index === index);
+    if (!state || state.fase === 'locked' || state.fase === 'ready' || state.fase === 'needsPot') return;
+
+    const now = Date.now();
+
+    // 1. Expiração do Pote
+    if (state.pot_expires_at && new Date(state.pot_expires_at).getTime() < now) {
+        state.fase = 'needsPot';
+    }
+
+    // 2. Expiração da Água
+    if (state.water_expires_at && new Date(state.water_expires_at).getTime() < now) {
+        if (state.fase !== 'needsPot') state.fase = 'needsWater';
+    }
+
+    // 3. Progresso e transição para 'ready'
+    if (state.fase === 'growing') {
+        const isPaused = state.crow_active || state.pest_active || state.fase === 'needsPot' || state.fase === 'needsWater';
+
+        if (!isPaused) {
+            const started = new Date(state.started_at).getTime();
+            const ends = new Date(state.ends_at).getTime();
+            const paused = Number(state.total_paused_ms || 0);
+            const totalMs = ends - started;
+
+            // Recalcular progresso localmente
+            let progress = totalMs > 0 ? (now - started - paused) / totalMs : 1;
+            if (progress >= 1) {
+                state.fase = 'ready';
+                state.progress = 1;
+            } else {
+                state.progress = progress;
+            }
+        }
+    }
+}
+
 // --- Init ---
 renderPlots(); // Force initial render of slots
 loadGameState();
 setInterval(() => {
     if (plotStates.length > 0) {
-        plotStates.forEach((_, i) => renderPlotState(i));
+        plotStates.forEach((_, i) => {
+            syncPlotStateLocal(i);
+            renderPlotState(i);
+        });
         updateMissionTimer();
 
         // Atualiza clima visual a cada minuto para garantir que mudou

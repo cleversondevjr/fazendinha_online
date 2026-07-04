@@ -38,19 +38,25 @@ function calculatePlotState(plot, configs) {
     }
     // 2. Verificar se a água expirou
     if (plot.water_expires_at && new Date(plot.water_expires_at).getTime() < now) {
-        if (fase === 'readyToPlant' || fase === 'growing' || fase === 'ready') {
+        // Se a água expirou, o slot deve estar no estado needsWater, exceto se já estiver bloqueado ou sem pote
+        if (fase !== 'locked' && fase !== 'needsPot') {
             fase = 'needsWater';
         }
     }
 
-    const isActuallyPaused = plot.crow_active || fase === 'needsPot' || fase === 'needsWater';
+    // Corvos e Pragas também pausam o crescimento no PvU 2021
+    const isActuallyPaused = plot.crow_active || plot.pest_active || fase === 'needsPot' || fase === 'needsWater';
 
-    if (plot.fase === 'growing' && isActuallyPaused && !pauseStartedAt) {
+    // Se mudou para um estado de pausa e ainda não registramos o início da pausa
+    if (isActuallyPaused && !pauseStartedAt) {
         pauseStartedAt = new Date();
+    } else if (!isActuallyPaused && pauseStartedAt) {
+        // Se saiu do estado de pausa, o tempo pausado será somado no cálculo abaixo ou na próxima ação de escrita
+        // No GET state apenas visualizamos, não alteramos o banco
     }
 
     if (fase !== 'growing' && fase !== 'ready') {
-        return { ...plot, fase, pause_started_at: pauseStartedAt };
+        return { ...plot, fase, pause_started_at: pauseStartedAt, progress: plot.progress || 0 };
     }
 
     const started = new Date(plot.started_at).getTime();
@@ -217,15 +223,22 @@ router.post('/action', async (req, res) => {
                 const expiresAt = new Date(Date.now() + potHours * 3600000);
                 const updateRes = await db.execute(`
                     UPDATE fazenda_plantacoes
-                    SET fase = 'needsWater', pot_type = $1, pot_expires_at = $2,
-                        total_paused_ms = total_paused_ms + CASE WHEN pause_started_at IS NOT NULL THEN (EXTRACT(EPOCH FROM (NOW() - pause_started_at)) * 1000) ELSE 0 END,
-                        pause_started_at = NULL
-                    WHERE usuario_id = $3 AND slot_index = $4 AND (fase = 'needsPot' OR fase = 'growing')
+                    SET fase = CASE WHEN water_expires_at > NOW() THEN (CASE WHEN crop_id IS NOT NULL THEN 'growing' ELSE 'readyToPlant' END) ELSE 'needsWater' END,
+                        pot_type = $1, pot_expires_at = $2,
+                        total_paused_ms = total_paused_ms + CASE
+                            WHEN pause_started_at IS NOT NULL AND water_expires_at > NOW() AND crow_active = FALSE AND pest_active = FALSE
+                            THEN (EXTRACT(EPOCH FROM (NOW() - pause_started_at)) * 1000)
+                            ELSE 0 END,
+                        pause_started_at = CASE
+                            WHEN water_expires_at <= NOW() OR crow_active = TRUE OR pest_active = TRUE
+                            THEN COALESCE(pause_started_at, NOW())
+                            ELSE NULL END
+                    WHERE usuario_id = $3 AND slot_index = $4 AND (fase = 'needsPot' OR fase = 'growing' OR fase = 'needsWater')
                 `, [itemId, expiresAt, userId, slotIndex]);
                 used = updateRes.rowCount > 0;
             } else if (itemId === 'agua') {
                 const maxWater = (slotIndex >= 6) ? 4 : 2;
-                const slotRes = await db.execute('SELECT water_expires_at, fase, crow_active, crop_id FROM fazenda_plantacoes WHERE usuario_id = $1 AND slot_index = $2', [userId, slotIndex]);
+                const slotRes = await db.execute('SELECT water_expires_at, fase, crow_active, pest_active, crop_id, pot_expires_at FROM fazenda_plantacoes WHERE usuario_id = $1 AND slot_index = $2', [userId, slotIndex]);
                 const slot = slotRes.rows[0];
 
                 let currentWaterEnd = slot.water_expires_at ? new Date(slot.water_expires_at).getTime() : Date.now();
@@ -242,17 +255,18 @@ router.post('/action', async (req, res) => {
                 const updateRes = await db.execute(`
                     UPDATE fazenda_plantacoes
                     SET fase = CASE
-                            WHEN crop_id IS NOT NULL AND crow_active = FALSE AND pot_expires_at > NOW() THEN 'growing'
-                            WHEN crop_id IS NULL AND fase = 'needsWater' THEN 'readyToPlant'
+                            WHEN crop_id IS NOT NULL AND crow_active = FALSE AND pest_active = FALSE AND (pot_expires_at IS NULL OR pot_expires_at > NOW()) THEN 'growing'
+                            WHEN crop_id IS NULL AND (pot_expires_at IS NULL OR pot_expires_at > NOW()) THEN 'readyToPlant'
                             ELSE fase END,
                         water_expires_at = $1,
                         total_paused_ms = total_paused_ms + CASE
-                            WHEN pause_started_at IS NOT NULL AND crow_active = FALSE AND pot_expires_at > NOW()
+                            WHEN pause_started_at IS NOT NULL
+                                 AND crow_active = FALSE AND pest_active = FALSE AND (pot_expires_at IS NULL OR pot_expires_at > NOW())
                             THEN (EXTRACT(EPOCH FROM (NOW() - pause_started_at)) * 1000)
                             ELSE 0 END,
                         pause_started_at = CASE
-                            WHEN crow_active = TRUE OR pot_expires_at <= NOW()
-                            THEN NOW()
+                            WHEN crow_active = TRUE OR pest_active = TRUE OR (pot_expires_at IS NOT NULL AND pot_expires_at <= NOW())
+                            THEN COALESCE(pause_started_at, NOW())
                             ELSE NULL END
                     WHERE usuario_id = $2 AND slot_index = $3 AND (fase = 'needsWater' OR fase = 'readyToPlant' OR fase = 'growing')
                 `, [newExpiresAt, userId, slotIndex]);
@@ -270,8 +284,19 @@ router.post('/action', async (req, res) => {
                 const updateRes = await db.execute("UPDATE fazenda_plantacoes SET scarecrow_until = $1 WHERE usuario_id = $2 AND slot_index = $3", [until, userId, slotIndex]);
                 used = updateRes.rowCount > 0;
             } else if (itemId === 'pesticida') {
-                console.log(`User ${userId} using pesticide on slot ${slotIndex}`);
-                const updateRes = await db.execute("UPDATE fazenda_plantacoes SET pest_active = FALSE WHERE usuario_id = $1 AND slot_index = $2", [userId, slotIndex]);
+                const updateRes = await db.execute(`
+                    UPDATE fazenda_plantacoes
+                    SET pest_active = FALSE,
+                        total_paused_ms = total_paused_ms + CASE
+                            WHEN pause_started_at IS NOT NULL AND crow_active = FALSE AND water_expires_at > NOW() AND (pot_expires_at IS NULL OR pot_expires_at > NOW())
+                            THEN (EXTRACT(EPOCH FROM (NOW() - pause_started_at)) * 1000)
+                            ELSE 0 END,
+                        pause_started_at = CASE
+                            WHEN crow_active = TRUE OR water_expires_at <= NOW() OR (pot_expires_at IS NOT NULL AND pot_expires_at <= NOW())
+                            THEN COALESCE(pause_started_at, NOW())
+                            ELSE NULL END
+                    WHERE usuario_id = $1 AND slot_index = $2 AND pest_active = TRUE
+                `, [userId, slotIndex]);
                 used = updateRes.rowCount > 0;
                 if (used) {
                     await db.execute(`
@@ -391,8 +416,14 @@ router.post('/action', async (req, res) => {
             const updateRes = await db.execute(`
                 UPDATE fazenda_plantacoes
                 SET crow_active = FALSE,
-                    total_paused_ms = total_paused_ms + CASE WHEN pause_started_at IS NOT NULL THEN (EXTRACT(EPOCH FROM (NOW() - pause_started_at)) * 1000) ELSE 0 END,
-                    pause_started_at = NULL
+                    total_paused_ms = total_paused_ms + CASE
+                        WHEN pause_started_at IS NOT NULL AND pest_active = FALSE AND water_expires_at > NOW() AND (pot_expires_at IS NULL OR pot_expires_at > NOW())
+                        THEN (EXTRACT(EPOCH FROM (NOW() - pause_started_at)) * 1000)
+                        ELSE 0 END,
+                    pause_started_at = CASE
+                        WHEN pest_active = TRUE OR water_expires_at <= NOW() OR (pot_expires_at IS NOT NULL AND pot_expires_at <= NOW())
+                        THEN COALESCE(pause_started_at, NOW())
+                        ELSE NULL END
                 WHERE usuario_id = $1 AND slot_index = $2 AND crow_active = TRUE
             `, [userId, slotIndex]);
             if (updateRes.rowCount > 0) {
