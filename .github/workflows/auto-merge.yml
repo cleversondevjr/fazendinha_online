@@ -3,36 +3,46 @@ name: Auto Merge PR
 on:
   pull_request:
     types:
-      - labeled
-      - unlabeled
-      - synchronize
       - opened
-      - edited
-      - ready_for_review
+      - synchronize
       - reopened
-      - unlocked
-  pull_request_review:
-    types:
-      - submitted
-  check_suite:
-    types:
-      - completed
-  status: {}
-
-permissions:
-  contents: write
-  pull-requests: write
 
 jobs:
   automerge:
     runs-on: ubuntu-latest
+    if: github.actor == 'google-labs-jules[bot]' || github.actor == 'cleversondevjr'
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
-      - name: automerge
-        uses: "pascalgn/automerge-action@v0.16.2"
-        env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-          MERGE_LABELS: ""
-          MERGE_METHOD: "squash"
-          MERGE_COMMIT_MESSAGE: "pull-request-title"
-          MERGE_RETRIES: "10"
-          MERGE_RETRY_SLEEP: "10000"
+      - name: Automerge PR
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            const repository = context.repo;
+
+            console.log(`Tentando mesclar PR #${prNumber} de ${github.actor}...`);
+
+            try {
+              await github.rest.pulls.merge({
+                owner: repository.owner,
+                repo: repository.repo,
+                pull_number: prNumber,
+                merge_method: 'squash'
+              });
+              console.log(`PR #${prNumber} mesclado com sucesso!`);
+            } catch (error) {
+              console.error(`Falha no merge direto, habilitando auto-merge:`, error.message);
+              try {
+                await github.rest.pulls.update({
+                  owner: repository.owner,
+                  repo: repository.repo,
+                  pull_number: prNumber,
+                  auto_merge_allowed: true
+                });
+                console.log(`Auto-merge habilitado para PR #${prNumber}`);
+              } catch (e) {
+                console.error(`Erro ao configurar auto-merge:`, e.message);
+              }
+            }
