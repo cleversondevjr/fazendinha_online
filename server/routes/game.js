@@ -225,7 +225,7 @@ router.post('/action', async (req, res) => {
                 used = updateRes.rowCount > 0;
             } else if (itemId === 'agua') {
                 const maxWater = (slotIndex >= 6) ? 4 : 2;
-                const slotRes = await db.execute('SELECT water_expires_at, fase, crow_active FROM fazenda_plantacoes WHERE usuario_id = $1 AND slot_index = $2', [userId, slotIndex]);
+                const slotRes = await db.execute('SELECT water_expires_at, fase, crow_active, crop_id FROM fazenda_plantacoes WHERE usuario_id = $1 AND slot_index = $2', [userId, slotIndex]);
                 const slot = slotRes.rows[0];
 
                 let currentWaterEnd = slot.water_expires_at ? new Date(slot.water_expires_at).getTime() : Date.now();
@@ -241,7 +241,10 @@ router.post('/action', async (req, res) => {
 
                 const updateRes = await db.execute(`
                     UPDATE fazenda_plantacoes
-                    SET fase = CASE WHEN crop_id IS NOT NULL AND crow_active = FALSE AND pot_expires_at > NOW() THEN 'growing' ELSE fase END,
+                    SET fase = CASE
+                            WHEN crop_id IS NOT NULL AND crow_active = FALSE AND pot_expires_at > NOW() THEN 'growing'
+                            WHEN crop_id IS NULL AND fase = 'needsWater' THEN 'readyToPlant'
+                            ELSE fase END,
                         water_expires_at = $1,
                         total_paused_ms = total_paused_ms + CASE
                             WHEN pause_started_at IS NOT NULL AND crow_active = FALSE AND pot_expires_at > NOW()
@@ -288,7 +291,8 @@ router.post('/action', async (req, res) => {
             const slot = calculatePlotState(slotRes.rows[0], {});
             if (slot.fase !== 'ready') throw new Error('Não está pronto');
             await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade + $1 WHERE usuario_id = $2 AND item_id = 'coins'", [Math.floor(slot.reward_actual), userId]);
-            await db.execute("UPDATE fazenda_plantacoes SET fase = $1, crop_id = NULL, started_at = NULL, ends_at = NULL, crow_active = FALSE, pest_active = FALSE, reward_actual = 0 WHERE id = $2", [slot.pot_type ? 'readyToPlant' : 'needsPot', slot.id]);
+            // PvU 2021 Style: After harvest, if pot remains, land needs water again.
+            await db.execute("UPDATE fazenda_plantacoes SET fase = $1, crop_id = NULL, started_at = NULL, ends_at = NULL, crow_active = FALSE, pest_active = FALSE, reward_actual = 0 WHERE id = $2", [slot.pot_type ? 'needsWater' : 'needsPot', slot.id]);
             await db.execute(`
                 UPDATE fazenda_missoes_jogador
                 SET progress = LEAST((SELECT target FROM fazenda_missoes_template WHERE id = template_id), progress + 1)
@@ -307,7 +311,7 @@ router.post('/action', async (req, res) => {
                 if (slot.fase === 'ready') {
                     totalReward += Math.floor(slot.reward_actual);
                     harvestedCount++;
-                    await db.execute("UPDATE fazenda_plantacoes SET fase = $1, crop_id = NULL, started_at = NULL, ends_at = NULL, crow_active = FALSE, pest_active = FALSE, reward_actual = 0 WHERE id = $2", [slot.pot_type ? 'readyToPlant' : 'needsPot', slot.id]);
+                    await db.execute("UPDATE fazenda_plantacoes SET fase = $1, crop_id = NULL, started_at = NULL, ends_at = NULL, crow_active = FALSE, pest_active = FALSE, reward_actual = 0 WHERE id = $2", [slot.pot_type ? 'needsWater' : 'needsPot', slot.id]);
                 }
             }
 
@@ -412,7 +416,7 @@ router.post('/action', async (req, res) => {
                 SET fase = $1, crop_id = NULL, started_at = NULL, ends_at = NULL,
                     crow_active = FALSE, pest_active = FALSE, reward_actual = 0
                 WHERE id = $2
-            `, [slot.pot_type ? 'readyToPlant' : 'needsPot', slot.id]);
+            `, [slot.pot_type ? 'needsWater' : 'needsPot', slot.id]);
         }
 
         if (action === 'water_world_tree') {

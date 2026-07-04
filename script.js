@@ -22,7 +22,9 @@ function resetInactivityTimer() {
 }
 
 function logout() {
+    // Clear cookies for both possible auth systems
     document.cookie = "usuario_id=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
+    document.cookie = "fazendinha_sid=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
     window.location.href = "login.html";
 }
 
