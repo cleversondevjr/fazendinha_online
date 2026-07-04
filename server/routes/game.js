@@ -3,6 +3,7 @@ const router = express.Router();
 const db = require('../db');
 
 const { ensureUserInitialized } = require('../utils/player_init');
+const { isFeatureEnabled } = require('../utils/feature_check');
 
 // --- Helper: Energy Restore ---
 async function syncEnergy(userId, configs) {
@@ -107,13 +108,22 @@ router.get('/state', async (req, res) => {
         // Adiciona catálogo de itens público para o frontend
         const itemsRes = await db.execute('SELECT * FROM fazenda_itens_config ORDER BY tipo, item_id');
 
+        // Feature Flags para o Roadmap
+        const featuresRes = await db.execute('SELECT chave, ativa, data_lancamento, mensagem_bloqueio FROM fazenda_features');
+        const featuresMap = featuresRes.rows.reduce((acc, f) => {
+            const isReleased = f.ativa && new Date() >= new Date(f.data_lancamento);
+            acc[f.chave] = { released: isReleased, message: f.mensagem_bloqueio };
+            return acc;
+        }, {});
+
         res.json({
             inventory,
             slots,
             missions: missionsRes.rows,
             configs: configsMap,
             worldTree: treeMeta,
-            items: itemsRes.rows
+            items: itemsRes.rows,
+            roadmap: featuresMap
         });
     } catch (err) {
         console.error("State Error:", err);
@@ -137,6 +147,9 @@ router.post('/action', async (req, res) => {
             const discount = parseInt((await db.execute("SELECT valor FROM fazenda_config WHERE chave = 'global_discount'")).rows[0].valor || 0);
 
             if (item.price_diamonds > 0) {
+                const check = await isFeatureEnabled('LOJA_DIAMANTE');
+                if (!check.ativa) throw new Error(check.mensagem);
+
                 const totalDiamonds = item.price_diamonds * qty;
                 if ((inventory['diamante'] || 0) < totalDiamonds) throw new Error('Diamantes insuficientes');
                 await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade - $1 WHERE usuario_id = $2 AND item_id = 'diamante'", [totalDiamonds, userId]);
@@ -158,6 +171,13 @@ router.post('/action', async (req, res) => {
                 if ((inventory['diamante'] || 0) < 50) throw new Error('Diamantes insuficientes');
                 await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade - 50 WHERE usuario_id = $1 AND item_id = 'diamante'", [userId]);
                 await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade + 6000 WHERE usuario_id = $1 AND item_id = 'coins'", [userId]);
+            } else if (itemId === 'convert_gold_to_diamond') {
+                const check = await isFeatureEnabled('CONVERSAO_DIAMANTE');
+                if (!check.ativa) throw new Error(check.mensagem);
+
+                if ((inventory['coins'] || 0) < 50000) throw new Error('Ouro insuficiente (Necessário 50.000)');
+                await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade - 50000 WHERE usuario_id = $1 AND item_id = 'coins'", [userId]);
+                await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade + 10 WHERE usuario_id = $1 AND item_id = 'diamante'", [userId]);
             }
         }
 
@@ -312,6 +332,12 @@ router.post('/action', async (req, res) => {
         }
 
         if (action === 'buy_slot') {
+            // Validar se slots premium (7 e 8, indices 6 e 7) estão liberados
+            if (slotIndex >= 6) {
+                const check = await isFeatureEnabled('SLOTS_PREMIUM');
+                if (!check.ativa) throw new Error(check.mensagem);
+            }
+
             const slotPrices = [
                 { type: 'gold', cost: 100 },
                 { type: 'gold', cost: 500 },

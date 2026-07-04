@@ -999,6 +999,30 @@ async function renderAdminTab(tabName) {
                 </div>
             </div>
         `;
+    } else if (tabName === 'logs') {
+        const logs = await apiFetch(`${ADMIN_API_BASE_URL}/logs`);
+        content.innerHTML = `
+            <div class="admin-logs">
+                <h3>Logs de Auditoria</h3>
+                <div class="admin-table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr><th>Data</th><th>Admin</th><th>Ação</th><th>Detalhes</th></tr>
+                        </thead>
+                        <tbody>
+                            ${logs.map(l => `
+                                <tr>
+                                    <td>${new Date(l.created_at).toLocaleString()}</td>
+                                    <td>${l.login || 'Sistema'}</td>
+                                    <td>${l.acao}</td>
+                                    <td><small>${JSON.stringify(l.detalhes)}</small></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
     } else if (tabName === 'usuarios') {
         const users = await apiFetch(`${ADMIN_API_BASE_URL}/users/list`);
         content.innerHTML = `

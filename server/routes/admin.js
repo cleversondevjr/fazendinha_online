@@ -10,11 +10,35 @@ router.get('/config', async (req, res) => {
         const configsRes = await db.execute('SELECT * FROM fazenda_config');
         const itemsRes = await db.execute('SELECT * FROM fazenda_itens_config ORDER BY tipo, item_id');
         const missionsRes = await db.execute('SELECT * FROM fazenda_missoes_template ORDER BY id');
+        const roadmapRes = await db.execute('SELECT * FROM fazenda_features ORDER BY fase, id');
         res.json({
             configs: configsRes.rows,
             items: itemsRes.rows,
-            missions: missionsRes.rows
+            missions: missionsRes.rows,
+            roadmap: roadmapRes.rows
         });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// POST /api/admin/roadmap/update - Update feature flags
+router.post('/roadmap/update', async (req, res) => {
+    const { id, ativa, data_lancamento, mensagem_bloqueio } = req.body;
+    try {
+        await db.execute(`
+            UPDATE fazenda_features
+            SET ativa = $1, data_lancamento = $2, mensagem_bloqueio = $3, updated_at = NOW()
+            WHERE id = $4
+        `, [ativa, data_lancamento, mensagem_bloqueio, id]);
+
+        // Registrar Log de Auditoria
+        await db.execute(`
+            INSERT INTO fazenda_admin_logs (usuario_id, acao, detalhes, ip_address)
+            VALUES ($1, $2, $3, $4)
+        `, [req.userId, 'UPDATE_ROADMAP', JSON.stringify(req.body), req.ip]);
+
+        res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -194,6 +218,44 @@ router.delete('/missions/:id', async (req, res) => {
         await db.execute('DELETE FROM fazenda_missoes_jogador WHERE template_id = $1', [id]);
         await db.execute('DELETE FROM fazenda_missoes_template WHERE id = $1', [id]);
         res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET /api/admin/users/list - List all users
+router.get('/users/list', async (req, res) => {
+    try {
+        const users = await db.execute('SELECT id, login, email, is_admin, created_at FROM fazenda_usuarios ORDER BY id');
+        res.json(users.rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// DELETE /api/admin/user/:id - Delete a user
+router.delete('/user/:id', async (req, res) => {
+    const { id } = req.params;
+    if (id == 1) return res.status(403).json({ error: 'Não é possível excluir o administrador principal.' });
+    try {
+        await db.execute('DELETE FROM fazenda_usuarios WHERE id = $1', [id]);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET /api/admin/logs - Get admin audit logs
+router.get('/logs', async (req, res) => {
+    try {
+        const logs = await db.execute(`
+            SELECT l.*, u.login
+            FROM fazenda_admin_logs l
+            LEFT JOIN fazenda_usuarios u ON l.usuario_id = u.id
+            ORDER BY l.created_at DESC
+            LIMIT 100
+        `);
+        res.json(logs.rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
