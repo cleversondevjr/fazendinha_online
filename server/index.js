@@ -55,10 +55,9 @@ app.use(session({
     proxy: true, // Necessário para Cloudflare
     cookie: {
         maxAge: 24 * 60 * 60 * 1000,
-        // Force secure and sameSite none for Cloudflare
         secure: true,
-        sameSite: 'none',
-        path: '/'
+        sameSite: 'lax',
+        path: '/fazendinha/'
     }
 }));
 

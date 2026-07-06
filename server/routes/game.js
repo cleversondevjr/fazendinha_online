@@ -238,10 +238,7 @@ router.post('/action', async (req, res) => {
                 used = updateRes.rowCount > 0;
             } else if (itemId === 'agua') {
                 const maxWater = (slotIndex >= 6) ? 4 : 2;
-<<<<<< feature/deploy-setup-fazendinha-online-17290538717656269941
                 const slotRes = await db.execute('SELECT water_expires_at, fase, crow_active, pest_active, crop_id, pot_expires_at FROM fazenda_plantacoes WHERE usuario_id = $1 AND slot_index = $2', [userId, slotIndex]);
-                const slotRes = await db.execute('SELECT water_expires_at, fase, crow_active, crop_id FROM fazenda_plantacoes WHERE usuario_id = $1 AND slot_index = $2', [userId, slotIndex]);
->>>>>> main
                 const slot = slotRes.rows[0];
 
                 let currentWaterEnd = slot.water_expires_at ? new Date(slot.water_expires_at).getTime() : Date.now();
@@ -258,13 +255,8 @@ router.post('/action', async (req, res) => {
                 const updateRes = await db.execute(`
                     UPDATE fazenda_plantacoes
                     SET fase = CASE
-<<<<<< feature/deploy-setup-fazendinha-online-17290538717656269941
                             WHEN crop_id IS NOT NULL AND crow_active = FALSE AND pest_active = FALSE AND (pot_expires_at IS NULL OR pot_expires_at > NOW()) THEN 'growing'
                             WHEN crop_id IS NULL AND (pot_expires_at IS NULL OR pot_expires_at > NOW()) THEN 'readyToPlant'
-======
-                            WHEN crop_id IS NOT NULL AND crow_active = FALSE AND pot_expires_at > NOW() THEN 'growing'
-                            WHEN crop_id IS NULL AND fase = 'needsWater' THEN 'readyToPlant'
->>>>> main
                             ELSE fase END,
                         water_expires_at = $1,
                         total_paused_ms = total_paused_ms + CASE
