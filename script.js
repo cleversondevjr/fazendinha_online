@@ -60,6 +60,15 @@ async function loadGameState() {
         worldTreeState = data.worldTree || null;
         configs = data.configs || {};
         roadmap = data.roadmap || {};
+<<<<<< feature/v3.0.1-final-sync-14719019057366838169
+
+        // Controle de visibilidade do botão Admin
+        const adminBtn = document.querySelector(".admin-floating-container");
+        if (adminBtn) {
+            adminBtn.style.display = data.is_admin ? "flex" : "none";
+        }
+=======
+>>>>>> main
 
         // Aplica o layout salvo nas configurações
         if (configs.active_layout && configs.active_layout !== 'default') {
@@ -1026,6 +1035,42 @@ async function renderAdminTab(tabName) {
                 </div>
             </div>
         `;
+    } else if (tabName === 'roadmap') {
+        const adminData = await apiFetch(`${ADMIN_API_BASE_URL}/config`);
+        content.innerHTML = `
+            <div class="admin-roadmap-manager">
+                <h3>Gestão de Roadmap e Feature Flags</h3>
+                <div class="admin-table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Feature</th>
+                                <th>Status</th>
+                                <th>Lançamento</th>
+                                <th>Mensagem de Bloqueio</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${adminData.roadmap.map(f => `
+                                <tr>
+                                    <td><strong>${f.label}</strong><br><small>${f.chave}</small></td>
+                                    <td>
+                                        <select id="roadmap-status-${f.id}">
+                                            <option value="true" ${f.ativa ? 'selected' : ''}>Ativo (ON)</option>
+                                            <option value="false" ${!f.ativa ? 'selected' : ''}>Inativo (OFF)</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="datetime-local" id="roadmap-date-${f.id}" value="${new Date(f.data_lancamento).toISOString().slice(0, 16)}"></td>
+                                    <td><input type="text" id="roadmap-msg-${f.id}" value="${f.mensagem_bloqueio || ''}"></td>
+                                    <td><button class="admin-action primary" onclick="updateRoadmapAdmin(${f.id})">Salvar</button></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
     } else if (tabName === 'logs') {
         const logs = await apiFetch(`${ADMIN_API_BASE_URL}/logs`);
         content.innerHTML = `
@@ -1295,6 +1340,25 @@ async function saveConfig(chave) {
         renderAdminTab('regras');
     } catch (err) {
         alert('Erro ao salvar: ' + err.message);
+    }
+}
+
+async function updateRoadmapAdmin(id) {
+    const ativa = document.getElementById(`roadmap-status-${id}`).value === "true";
+    const data_lancamento = document.getElementById(`roadmap-date-${id}`).value;
+    const mensagem_bloqueio = document.getElementById(`roadmap-msg-${id}`).value;
+
+    try {
+        await apiFetch(`${ADMIN_API_BASE_URL}/roadmap/update`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, ativa, data_lancamento, mensagem_bloqueio })
+        });
+        alert('Roadmap atualizado!');
+        loadGameState(); // Refresh client roadmap state
+        renderAdminTab('roadmap');
+    } catch (err) {
+        alert('Erro ao atualizar roadmap: ' + err.message);
     }
 }
 

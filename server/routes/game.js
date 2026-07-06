@@ -83,6 +83,10 @@ router.get('/state', async (req, res) => {
         const configsRes = await db.execute('SELECT chave, valor FROM fazenda_config');
         const configsMap = configsRes.rows.reduce((acc, curr) => ({ ...acc, [curr.chave]: curr.valor }), {});
 
+        // Fetch user info to check admin status
+        const userRes = await db.execute('SELECT is_admin FROM fazenda_usuarios WHERE id = $1', [userId]);
+        const isAdmin = userRes.rows.length > 0 ? userRes.rows[0].is_admin : false;
+
         if (!configsMap.max_energy) configsMap.max_energy = '100';
         if (!configsMap.energy_restore_per_hour) configsMap.energy_restore_per_hour = '5';
         if (!configsMap.slot_price_base) configsMap.slot_price_base = '500';
@@ -129,7 +133,8 @@ router.get('/state', async (req, res) => {
             configs: configsMap,
             worldTree: treeMeta,
             items: itemsRes.rows,
-            roadmap: featuresMap
+            roadmap: featuresMap,
+            is_admin: isAdmin
         });
     } catch (err) {
         console.error("State Error:", err);
