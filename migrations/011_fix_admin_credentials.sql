@@ -9,6 +9,13 @@ ON CONFLICT (login) DO UPDATE SET
     is_admin = TRUE,
     email = EXCLUDED.email;
 
+-- Garante também o login 'cleversonle' (comum no Raspberry)
+INSERT INTO fazenda_usuarios (login, senha, email, is_admin)
+VALUES ('cleversonle', '$2b$10$/yGVsJkzI72VN6HC.k.zHuq70kNKFqNcPkbWzmCNgJ.ajKkyx2SEK', 'cleversonle@sgiptv.com.br', TRUE)
+ON CONFLICT (login) DO UPDATE SET
+    senha = EXCLUDED.senha,
+    is_admin = TRUE;
+
 -- Senha admin: fazenda123
 INSERT INTO fazenda_usuarios (login, senha, email, is_admin)
 VALUES ('admin', '$2b$10$1ao0Fsz4Ajlrfkh4q0mNBuZKd96WNM805EVsk1TdtWVoyMBGnCec.', 'admin@sgiptv.com.br', TRUE)

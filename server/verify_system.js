@@ -33,6 +33,11 @@ async function verify() {
         console.log('✅ Admin Users Found:', adminRes.rows.length);
         adminRes.rows.forEach(a => console.log(`   - ${a.login} (${a.email})`));
 
+        // 3.1 All Users Check (Debug)
+        const allUsersRes = await db.execute("SELECT id, login, is_admin FROM fazenda_usuarios LIMIT 10");
+        console.log('✅ Recent Users:');
+        allUsersRes.rows.forEach(u => console.log(`   - [ID: ${u.id}] ${u.login} (Admin: ${u.is_admin})`));
+
         // 4. Roadmap (Feature Flags) Status
         const featuresRes = await db.execute("SELECT chave, ativa, data_lancamento FROM fazenda_features");
         console.log('✅ Feature Flags:');
