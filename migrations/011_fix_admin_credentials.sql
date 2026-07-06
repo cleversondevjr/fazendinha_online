@@ -3,14 +3,14 @@
 
 -- Senha CleversonS: Wincster@194060le
 UPDATE fazenda_usuarios
-SET senha = '$2b$10$3KeeHPBR2/1ANFqBbbFT0ukF1ITSZWsx9Lu/mL5YnFByVwrpS1R6S',
+SET senha = '$2b$10$vsAacXh//CO1RR0ogxhoU.29/oTlnO7XJcZ1FKJF1dKFrL8oI8SA.',
     is_admin = TRUE,
     email = 'cleverson@sgiptv.com.br'
 WHERE login = 'CleversonS';
 
 -- Senha admin: fazenda123
 UPDATE fazenda_usuarios
-SET senha = '$2b$10$LYVsI04zHR5PhYFU3oAlEO/WySH8/dmC7kL5SyewJVrqGfm6h2Idu',
+SET senha = '$2b$10$0NxJKn6qXaPLtNVC7m4saOgrfQrophBxpKdHJQu1NpJk5oG0wWOYi',
     is_admin = TRUE,
     email = 'admin@sgiptv.com.br'
 WHERE login = 'admin';
