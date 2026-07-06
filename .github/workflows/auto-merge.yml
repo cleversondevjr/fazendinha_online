@@ -10,7 +10,10 @@ on:
 jobs:
   automerge:
     runs-on: ubuntu-latest
-    if: github.actor == 'google-labs-jules[bot]' || github.actor == 'cleversondevjr'
+    # Permitir que a Jules e o proprietário disparem o auto-merge
+    if: |
+      github.event.pull_request.user.login == 'google-labs-jules[bot]' ||
+      github.event.pull_request.user.login == 'Cleversondevjr'
     permissions:
       contents: write
       pull-requests: write
@@ -22,27 +25,34 @@ jobs:
             const prNumber = context.payload.pull_request.number;
             const repository = context.repo;
 
-            console.log(`Tentando mesclar PR #${prNumber} de ${github.actor}...`);
+            console.log(`Verificando PR #${prNumber} enviado por ${context.payload.pull_request.user.login}...`);
 
             try {
+              // Tenta o merge imediato
               await github.rest.pulls.merge({
                 owner: repository.owner,
                 repo: repository.repo,
                 pull_number: prNumber,
                 merge_method: 'squash'
               });
-              console.log(`PR #${prNumber} mesclado com sucesso!`);
+              console.log(`✅ PR #${prNumber} mesclado com sucesso via Squash!`);
             } catch (error) {
-              console.error(`Falha no merge direto, habilitando auto-merge:`, error.message);
+              console.log(`⚠️ Merge direto falhou (pode haver restrições de branch): ${error.message}`);
+
+              // Tenta habilitar a flag de auto-merge do GitHub (requer que a opção esteja ativa no Repo)
               try {
-                await github.rest.pulls.update({
-                  owner: repository.owner,
-                  repo: repository.repo,
-                  pull_number: prNumber,
-                  auto_merge_allowed: true
-                });
-                console.log(`Auto-merge habilitado para PR #${prNumber}`);
-              } catch (e) {
-                console.error(`Erro ao configurar auto-merge:`, e.message);
+                const query = `
+                  mutation($id: ID!) {
+                    enablePullRequestAutoMerge(input: {pullRequestId: $id, mergeMethod: SQUASH}) {
+                      pullRequest { autoMergeRequest { enabledAt } }
+                    }
+                  }
+                `;
+                const variables = { id: context.payload.pull_request.node_id };
+                await github.graphql(query, variables);
+                console.log(`🚀 Auto-merge ativado via GraphQL para o PR #${prNumber}`);
+              } catch (graphQLError) {
+                console.error(`❌ Não foi possível ativar auto-merge:`, graphQLError.message);
+                console.log(`DICA: Verifique se "Allow auto-merge" está marcado em Settings -> General do GitHub.`);
               }
             }
