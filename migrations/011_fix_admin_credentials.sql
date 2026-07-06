@@ -1,34 +1,37 @@
 -- Migração 011: Correção de Credenciais Administrativas
 -- Garante que o login do CleversonS e do admin padrão funcionem com as senhas corretas
 
--- Senha CleversonS: Wincster@194060le
-INSERT INTO fazenda_usuarios (login, senha, email, is_admin)
-VALUES ('CleversonS', '$2b$10$/yGVsJkzI72VN6HC.k.zHuq70kNKFqNcPkbWzmCNgJ.ajKkyx2SEK', 'cleverson@sgiptv.com.br', TRUE)
-ON CONFLICT (login) DO UPDATE SET
-    senha = EXCLUDED.senha,
+-- Atualiza CleversonS (Senha: Wincster@194060le)
+UPDATE fazenda_usuarios
+SET senha = '$2b$10$vsAacXh//CO1RR0ogxhoU.29/oTlnO7XJcZ1FKJF1dKFrL8oI8SA.',
     is_admin = TRUE,
-    email = EXCLUDED.email;
+    email = 'cleverson@sgiptv.com.br'
+WHERE login = 'CleversonS';
 
--- Senha admin: fazenda123
-INSERT INTO fazenda_usuarios (login, senha, email, is_admin)
-VALUES ('admin', '$2b$10$1ao0Fsz4Ajlrfkh4q0mNBuZKd96WNM805EVsk1TdtWVoyMBGnCec.', 'admin@sgiptv.com.br', TRUE)
-ON CONFLICT (login) DO UPDATE SET
-    senha = EXCLUDED.senha,
+-- Atualiza admin (Senha: fazenda123)
+UPDATE fazenda_usuarios
+SET senha = '$2b$10$0NxJKn6qXaPLtNVC7m4saOgrfQrophBxpKdHJQu1NpJk5oG0wWOYi',
     is_admin = TRUE,
-    email = EXCLUDED.email;
+    email = 'admin@sgiptv.com.br'
+WHERE login = 'admin';
 
 -- Garante que o ID 1 seja do CleversonS de forma segura
 DO $$
 BEGIN
     -- Se o login existe, tentamos garantir o ID 1
     IF EXISTS (SELECT 1 FROM fazenda_usuarios WHERE login = 'CleversonS') THEN
-        -- Se o ID 1 já estiver ocupado por outro login, movemos o outro para o próximo ID disponível
+        
+        -- Se o ID 1 já estiver ocupado por outro login, movemos o outro usuário para um novo ID
         IF EXISTS (SELECT 1 FROM fazenda_usuarios WHERE id = 1 AND login != 'CleversonS') THEN
-            UPDATE fazenda_usuarios SET id = (SELECT COALESCE(MAX(id), 0) + 2 FROM fazenda_usuarios) WHERE id = 1;
+            UPDATE fazenda_usuarios 
+            SET id = (SELECT MAX(id) + 1 FROM fazenda_usuarios) 
+            WHERE id = 1;
         END IF;
 
+        -- Define CleversonS como ID 1
         UPDATE fazenda_usuarios SET id = 1 WHERE login = 'CleversonS';
-        -- Sincroniza a sequência
-        PERFORM setval('fazenda_usuarios_id_seq', (SELECT MAX(id) FROM fazenda_usuarios));
+        
+        -- Sincroniza a sequência da tabela para evitar conflitos de ID em inserções futuras
+        PERFORM setval(pg_get_serial_sequence('fazenda_usuarios', 'id'), COALESCE((SELECT MAX(id) FROM fazenda_usuarios), 1), true);
     END IF;
 END $$;
