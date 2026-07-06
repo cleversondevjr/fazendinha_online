@@ -7,6 +7,7 @@ let plotStates = [];
 let missionsState = [];
 let worldTreeState = null;
 let configs = {};
+let roadmap = {};
 let cropCatalog = {};
 let itemShopPrices = {};
 
@@ -58,28 +59,12 @@ async function loadGameState() {
         missionsState = data.missions || [];
         worldTreeState = data.worldTree || null;
         configs = data.configs || {};
-        const roadmap = data.roadmap || {};
+        roadmap = data.roadmap || {};
 
         // Aplica o layout salvo nas configurações
         if (configs.active_layout && configs.active_layout !== 'default') {
             applyLayout(configs.active_layout);
         }
-
-        // Sincronizar UI com Feature Flags (Roadmap)
-        document.querySelectorAll("[data-feature-key]").forEach(el => {
-            const key = el.dataset.featureKey;
-            if (roadmap[key]) {
-                if (roadmap[key].released) {
-                    el.classList.remove("feature-locked");
-                    el.disabled = false;
-                    el.title = "";
-                } else {
-                    el.classList.add("feature-locked");
-                    el.disabled = true;
-                    el.title = roadmap[key].message || "Em breve no Roadmap!";
-                }
-            }
-        });
 
         const allItems = data.items || [];
 
@@ -88,6 +73,7 @@ async function loadGameState() {
 
         renderPlots();
         renderAll();
+        applyRoadmapFlags();
     } catch (err) {
         console.error("Erro ao carregar estado:", err);
         // Fallback render to at least show the interface
@@ -115,8 +101,9 @@ async function performAction(action, slotIndex = null, itemId = null, missionId 
 
 // --- DOM Generation ---
 function createPlot(index) {
+    const featureAttr = index >= 6 ? 'data-feature-key="SLOTS_PREMIUM"' : '';
     return `
-        <section class="plot" data-plot-index="${index}">
+        <section class="plot" data-plot-index="${index}" ${featureAttr}>
             <div class="plot-frame">
                 <img class="plot-bg" src="" alt="" draggable="false">
                 <div class="plot-content">
@@ -414,6 +401,24 @@ function getItemAsset(itemId) {
     return `${itemId}.png`;
 }
 
+function applyRoadmapFlags() {
+    // Sincronizar UI com Feature Flags (Roadmap)
+    document.querySelectorAll("[data-feature-key]").forEach(el => {
+        const key = el.dataset.featureKey;
+        if (roadmap[key]) {
+            if (roadmap[key].released) {
+                el.classList.remove("feature-locked");
+                el.disabled = false;
+                el.title = "";
+            } else {
+                el.classList.add("feature-locked");
+                el.disabled = true;
+                el.title = roadmap[key].message || "Em breve no Roadmap!";
+            }
+        }
+    });
+}
+
 function renderShopTab(tabName) {
     const grid = document.getElementById("shop-grid");
     if (!grid) return;
@@ -458,6 +463,7 @@ function renderShopTab(tabName) {
             <button class="buy-btn" onclick="confirmPurchase('${item.item_id}')">Comprar</button>
         </div>
     `).join("");
+    applyRoadmapFlags();
 }
 
 function confirmPurchase(itemId) {
@@ -541,6 +547,8 @@ function renderAll() {
     if (treeModal && treeModal.style.display === "block") {
         renderWorldTree();
     }
+
+    applyRoadmapFlags();
 }
 
 function renderWeather() {
@@ -1526,6 +1534,7 @@ setInterval(() => {
             syncPlotStateLocal(i);
             renderPlotState(i);
         });
+        applyRoadmapFlags();
         updateMissionTimer();
 
         // Atualiza clima visual a cada minuto para garantir que mudou
