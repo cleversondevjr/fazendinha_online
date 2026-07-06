@@ -60,12 +60,15 @@ async function loadGameState() {
         worldTreeState = data.worldTree || null;
         configs = data.configs || {};
         roadmap = data.roadmap || {};
+<<<<<< feature/v3.0.1-final-sync-14719019057366838169
 
         // Controle de visibilidade do botão Admin
         const adminBtn = document.querySelector(".admin-floating-container");
         if (adminBtn) {
             adminBtn.style.display = data.is_admin ? "flex" : "none";
         }
+=======
+>>>>>> main
 
         // Aplica o layout salvo nas configurações
         if (configs.active_layout && configs.active_layout !== 'default') {
