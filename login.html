@@ -71,7 +71,7 @@
             <a href="#" onclick="showCard('card-register')">Criar Conta</a>
             <a href="#" onclick="showCard('card-recover')">Recuperar Senha</a>
         </div>
-        <div class="footer">SG IPTV - <span id="game-version-display">v3.0.4</span></div>
+        <div class="footer">SG IPTV - <span id="game-version-display">v3.0.2</span></div>
     </div>
 
     <div class="login-card" id="card-register" style="display:none;">
@@ -95,6 +95,21 @@
     </div>
 
     <script>
+        // Permitir login se ?admin=true estiver presente
+        (function checkAdminMode() {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('admin') === 'true') {
+                document.getElementById('login-user').disabled = false;
+                document.getElementById('login-pass').disabled = false;
+                const btn = document.querySelector('#card-login button');
+                btn.disabled = false;
+                btn.style.background = '#56ab2f';
+                btn.style.cursor = 'pointer';
+
+                document.querySelector('#card-login h1').innerText = 'Acesso Administrativo';
+            }
+        })();
+
         // Sistema de Backgrounds Dinâmicos
         (function updateBG() {
             const h = new Date().getHours();

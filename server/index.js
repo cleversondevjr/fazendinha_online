@@ -106,6 +106,27 @@ app.use('/api/game', gameRoutes);
 app.use('/api/admin', adminAuth, adminRoutes); // Admin routes protected
 app.use('/api/auth', authRoutes);
 
+// Serve static files securely
+const path = require('path');
+// Serve assets folder
+app.use('/fazendinha/assets', express.static(path.join(__dirname, '../assets')));
+
+// Serve specific frontend files only
+const publicFiles = [
+    { route: '/', file: 'index.html' },
+    { route: '/index.html', file: 'index.html' },
+    { route: '/login.html', file: 'login.html' },
+    { route: '/style.css', file: 'style.css' },
+    { route: '/script.js', file: 'script.js' },
+    { route: '/admin_fazendinha.html', file: 'admin_fazendinha.html' }
+];
+
+publicFiles.forEach(resource => {
+    app.get(`/fazendinha${resource.route}`, (req, res) => {
+        res.sendFile(path.join(__dirname, '..', resource.file));
+    });
+});
+
 // Start Cron Jobs
 require('./cron');
 
