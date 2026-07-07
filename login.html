@@ -71,30 +71,6 @@
         <div class="footer">SG IPTV - <span id="game-version-display">v3.0.1</span></div>
     </div>
 
-    <script>
-        // Lógica de Desbloqueio Admin (Bypass para SGIPTV)
-        (function checkAdminBypass() {
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('admin') === 'true') {
-                console.log("Admin mode detected. Enabling inputs.");
-                const userInp = document.getElementById('login-user');
-                const passInp = document.getElementById('login-pass');
-                const loginBtn = document.querySelector('#card-login button');
-
-                if (userInp) userInp.disabled = false;
-                if (passInp) passInp.disabled = false;
-                if (loginBtn) {
-                    loginBtn.disabled = false;
-                    loginBtn.style.background = '#56ab2f';
-                    loginBtn.style.cursor = 'pointer';
-                }
-
-                const title = document.querySelector('#card-login h1');
-                if (title) title.innerText = 'Login Administrativo';
-            }
-        })();
-    </script>
-
     <div class="login-card" id="card-register" style="display:none;">
         <h1>Criar Conta</h1>
         <input type="text" id="reg-user" placeholder="Login">
