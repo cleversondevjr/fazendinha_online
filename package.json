@@ -1,13 +1,13 @@
 {
   "name": "fazendinha-online",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "description": "Projeto Fazendinha Online baseado em PvU 2021",
   "dependencies": {
     "connect-pg-simple": "^10.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
-    "express": "^5.2.1",
+    "express": "^5.0.1",
     "express-session": "^1.19.0",
     "pg": "^8.22.0"
   }
