@@ -7,7 +7,6 @@ let plotStates = [];
 let missionsState = [];
 let worldTreeState = null;
 let configs = {};
-let roadmap = {};
 let cropCatalog = {};
 let itemShopPrices = {};
 
@@ -59,18 +58,28 @@ async function loadGameState() {
         missionsState = data.missions || [];
         worldTreeState = data.worldTree || null;
         configs = data.configs || {};
-        roadmap = data.roadmap || {};
-
-        // Controle de visibilidade do botão Admin
-        const adminBtn = document.querySelector(".admin-floating-container");
-        if (adminBtn) {
-            adminBtn.style.display = data.is_admin ? "flex" : "none";
-        }
+        const roadmap = data.roadmap || {};
 
         // Aplica o layout salvo nas configurações
         if (configs.active_layout && configs.active_layout !== 'default') {
             applyLayout(configs.active_layout);
         }
+
+        // Sincronizar UI com Feature Flags (Roadmap)
+        document.querySelectorAll("[data-feature-key]").forEach(el => {
+            const key = el.dataset.featureKey;
+            if (roadmap[key]) {
+                if (roadmap[key].released) {
+                    el.classList.remove("feature-locked");
+                    el.disabled = false;
+                    el.title = "";
+                } else {
+                    el.classList.add("feature-locked");
+                    el.disabled = true;
+                    el.title = roadmap[key].message || "Em breve no Roadmap!";
+                }
+            }
+        });
 
         const allItems = data.items || [];
 
@@ -79,7 +88,6 @@ async function loadGameState() {
 
         renderPlots();
         renderAll();
-        applyRoadmapFlags();
     } catch (err) {
         console.error("Erro ao carregar estado:", err);
         // Fallback render to at least show the interface
@@ -107,9 +115,8 @@ async function performAction(action, slotIndex = null, itemId = null, missionId 
 
 // --- DOM Generation ---
 function createPlot(index) {
-    const featureAttr = index >= 6 ? 'data-feature-key="SLOTS_PREMIUM"' : '';
     return `
-        <section class="plot" data-plot-index="${index}" ${featureAttr}>
+        <section class="plot" data-plot-index="${index}">
             <div class="plot-frame">
                 <img class="plot-bg" src="" alt="" draggable="false">
                 <div class="plot-content">
@@ -407,24 +414,6 @@ function getItemAsset(itemId) {
     return `${itemId}.png`;
 }
 
-function applyRoadmapFlags() {
-    // Sincronizar UI com Feature Flags (Roadmap)
-    document.querySelectorAll("[data-feature-key]").forEach(el => {
-        const key = el.dataset.featureKey;
-        if (roadmap[key]) {
-            if (roadmap[key].released) {
-                el.classList.remove("feature-locked");
-                el.disabled = false;
-                el.title = "";
-            } else {
-                el.classList.add("feature-locked");
-                el.disabled = true;
-                el.title = roadmap[key].message || "Em breve no Roadmap!";
-            }
-        }
-    });
-}
-
 function renderShopTab(tabName) {
     const grid = document.getElementById("shop-grid");
     if (!grid) return;
@@ -469,7 +458,6 @@ function renderShopTab(tabName) {
             <button class="buy-btn" onclick="confirmPurchase('${item.item_id}')">Comprar</button>
         </div>
     `).join("");
-    applyRoadmapFlags();
 }
 
 function confirmPurchase(itemId) {
@@ -553,8 +541,6 @@ function renderAll() {
     if (treeModal && treeModal.style.display === "block") {
         renderWorldTree();
     }
-
-    applyRoadmapFlags();
 }
 
 function renderWeather() {
@@ -1032,42 +1018,6 @@ async function renderAdminTab(tabName) {
                 </div>
             </div>
         `;
-    } else if (tabName === 'roadmap') {
-        const adminData = await apiFetch(`${ADMIN_API_BASE_URL}/config`);
-        content.innerHTML = `
-            <div class="admin-roadmap-manager">
-                <h3>Gestão de Roadmap e Feature Flags</h3>
-                <div class="admin-table-container">
-                    <table class="admin-table">
-                        <thead>
-                            <tr>
-                                <th>Feature</th>
-                                <th>Status</th>
-                                <th>Lançamento</th>
-                                <th>Mensagem de Bloqueio</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${adminData.roadmap.map(f => `
-                                <tr>
-                                    <td><strong>${f.label}</strong><br><small>${f.chave}</small></td>
-                                    <td>
-                                        <select id="roadmap-status-${f.id}">
-                                            <option value="true" ${f.ativa ? 'selected' : ''}>Ativo (ON)</option>
-                                            <option value="false" ${!f.ativa ? 'selected' : ''}>Inativo (OFF)</option>
-                                        </select>
-                                    </td>
-                                    <td><input type="datetime-local" id="roadmap-date-${f.id}" value="${new Date(f.data_lancamento).toISOString().slice(0, 16)}"></td>
-                                    <td><input type="text" id="roadmap-msg-${f.id}" value="${f.mensagem_bloqueio || ''}"></td>
-                                    <td><button class="admin-action primary" onclick="updateRoadmapAdmin(${f.id})">Salvar</button></td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        `;
     } else if (tabName === 'logs') {
         const logs = await apiFetch(`${ADMIN_API_BASE_URL}/logs`);
         content.innerHTML = `
@@ -1340,25 +1290,6 @@ async function saveConfig(chave) {
     }
 }
 
-async function updateRoadmapAdmin(id) {
-    const ativa = document.getElementById(`roadmap-status-${id}`).value === "true";
-    const data_lancamento = document.getElementById(`roadmap-date-${id}`).value;
-    const mensagem_bloqueio = document.getElementById(`roadmap-msg-${id}`).value;
-
-    try {
-        await apiFetch(`${ADMIN_API_BASE_URL}/roadmap/update`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id, ativa, data_lancamento, mensagem_bloqueio })
-        });
-        alert('Roadmap atualizado!');
-        loadGameState(); // Refresh client roadmap state
-        renderAdminTab('roadmap');
-    } catch (err) {
-        alert('Erro ao atualizar roadmap: ' + err.message);
-    }
-}
-
 function showMissionForm(mission = null) {
     const dialog = document.getElementById("game-dialog");
     const formHtml = `
@@ -1595,7 +1526,6 @@ setInterval(() => {
             syncPlotStateLocal(i);
             renderPlotState(i);
         });
-        applyRoadmapFlags();
         updateMissionTimer();
 
         // Atualiza clima visual a cada minuto para garantir que mudou

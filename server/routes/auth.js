@@ -1,16 +1,17 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const bcrypt = require('bcryptjs');
 const { ensureUserInitialized } = require('../utils/player_init');
 
 router.post('/register', async (req, res) => {
     const { login, email, password } = req.body;
     console.log(`[AUTH] Register attempt: ${login} (${email})`);
     try {
-        // Armazenamento em texto simples conforme solicitado pelo usuário
+        const hashedPassword = await bcrypt.hash(password, 10);
         const result = await db.execute(
             'INSERT INTO fazenda_usuarios (login, email, senha) VALUES ($1, $2, $3) RETURNING id',
-            [login, email, password]
+            [login, email, hashedPassword]
         );
 
         const userId = result.rows[0].id;
@@ -40,20 +41,25 @@ router.post('/login', async (req, res) => {
 
         if (result.rows.length > 0) {
             const user = result.rows[0];
-        console.log(`[AUTH] User found: ${user.id}`);
+            console.log(`[AUTH] User found: ${user.id}, hashed pass length: ${user.senha ? user.senha.length : 0}`);
 
-        // Comparação em texto simples conforme solicitado pelo usuário
-        const match = (password === user.senha);
+            const match = await bcrypt.compare(password, user.senha);
             if (!match) {
                 console.log(`[AUTH] Password mismatch for: ${login}`);
+                // Debug password length if mismatch
+                console.log(`[AUTH] Input password length: ${password ? password.length : 0}`);
                 return res.status(401).json({ error: 'Credenciais inválidas.' });
             }
 
             console.log(`[AUTH] Login success for: ${login} (ID: ${user.id}, Admin: ${user.is_admin})`);
-            req.session.userId = user.id;
 
-            // Log session after setting
-            console.log(`[AUTH] Session userId set to: ${req.session.userId}`);
+            if (req.session) {
+                req.session.userId = user.id;
+                console.log(`[AUTH] Session userId set to: ${req.session.userId}`);
+            } else {
+                console.error(`[AUTH] ERRO CRÍTICO: req.session está undefined para ${login}`);
+                return res.status(500).json({ error: 'Erro ao inicializar sessão. Verifique o servidor.' });
+            }
 
             res.json({ success: true, userId: user.id });
         } else {
