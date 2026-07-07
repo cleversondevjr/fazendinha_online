@@ -28,19 +28,6 @@ function logout() {
     window.location.href = "login.html";
 }
 
-window.toggleAdminPanel = function(show = true) {
-    const modal = document.getElementById("admin-modal");
-    if (!modal) return;
-    if (show) {
-        modal.classList.remove("hidden");
-        modal.style.display = "block";
-        renderAdminTab('conta');
-    } else {
-        modal.classList.add("hidden");
-        modal.style.display = "none";
-    }
-};
-
 document.addEventListener('mousemove', resetInactivityTimer);
 document.addEventListener('keydown', resetInactivityTimer);
 document.addEventListener('click', resetInactivityTimer);
@@ -1531,20 +1518,6 @@ function syncPlotStateLocal(index) {
 }
 
 // --- Init ---
-(function checkAdminMode() {
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('admin') === 'true') {
-        document.body.classList.add('admin-only-mode');
-        // Espera o estado carregar para abrir o modal
-        const checkState = setInterval(() => {
-            if (configs && Object.keys(configs).length > 0) {
-                clearInterval(checkState);
-                toggleAdminPanel(true);
-            }
-        }, 100);
-    }
-})();
-
 renderPlots(); // Force initial render of slots
 loadGameState();
 setInterval(() => {

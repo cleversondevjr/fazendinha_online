@@ -22,8 +22,9 @@ cd /home/pi/fazendinha_online && ./deploy.sh
 - `assets/`: Recursos visuais (Padrão Praia/PvU).
 - `migrations/`: Scripts de atualização do Banco de Dados.
 
-## Novidades v2.1.0
-- Nova Interface baseada em Praia (PvU Style).
-- Sistema de Missões com correção de bugs de SQL.
-- Painel Administrativo com Gestão de Usuários.
-- Limpeza de banco para reset de ambiente.
+## Novidades v3.0.4
+- Integração com Painel SGIPTV via parâmetro `?admin=true`.
+- Login Restrito por padrão com desbloqueio dinâmico.
+- Autenticação por texto simples (Plain-text) conforme solicitado.
+- Hardening de segurança no servidor Express.
+- Cache-busting automático para assets CSS/JS.
