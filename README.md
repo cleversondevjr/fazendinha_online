@@ -21,9 +21,3 @@ cd /home/pi/fazendinha_online && ./deploy.sh
 - `server/`: Backend em Node.js com Express e PostgreSQL.
 - `assets/`: Recursos visuais (Padrão Praia/PvU).
 - `migrations/`: Scripts de atualização do Banco de Dados.
-
-## Novidades v2.1.0
-- Nova Interface baseada em Praia (PvU Style).
-- Sistema de Missões com correção de bugs de SQL.
-- Painel Administrativo com Gestão de Usuários.
-- Limpeza de banco para reset de ambiente.

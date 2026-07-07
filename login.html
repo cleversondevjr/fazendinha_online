@@ -6,9 +6,7 @@
     <title>Login - Fazendinha Online</title>
     <base href="/fazendinha/">
     <style>
-        :root {
-            --login-bg: url('assets/ui/login_manha.png');
-        }
+        :root { --login-bg: url('assets/ui/login_manha.png'); }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-image: var(--login-bg);
@@ -61,14 +59,15 @@
     <div class="login-card" id="card-login">
         <img src="assets/logo_fazendinha_online.png" alt="Logo" style="width: 150px; margin-bottom: 1rem;">
         <h1>Acessar Fazenda</h1>
-        <input type="text" id="login-user" placeholder="Login">
-        <input type="password" id="login-pass" placeholder="Senha">
-        <button onclick="fazerLogin()">Entrar na Fazenda</button>
+        <p id="restricted-msg" style="color: red; font-size: 12px; display: none;">Acesso restrito. Use o painel SGIPTV.</p>
+        <input type="text" id="login-user" placeholder="Login" disabled>
+        <input type="password" id="login-pass" placeholder="Senha" disabled>
+        <button id="login-btn" onclick="fazerLogin()" disabled>Entrar na Fazenda</button>
         <div style="margin-top:15px; display:flex; justify-content:space-between; font-size:12px;">
             <a href="#" onclick="showCard('card-register')">Criar Conta</a>
             <a href="#" onclick="showCard('card-recover')">Recuperar Senha</a>
         </div>
-        <div class="footer">SG IPTV - <span id="game-version-display">v3.0.1</span></div>
+        <div class="footer">SG IPTV - <span id="game-version-display">v3.0.4</span></div>
     </div>
 
     <div class="login-card" id="card-register" style="display:none;">
@@ -92,7 +91,17 @@
     </div>
 
     <script>
-        // Sistema de Backgrounds Dinâmicos
+        (function checkRestricted() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('admin') === 'true') {
+                document.getElementById('login-user').disabled = false;
+                document.getElementById('login-pass').disabled = false;
+                document.getElementById('login-btn').disabled = false;
+            } else {
+                document.getElementById('restricted-msg').style.display = 'block';
+            }
+        })();
+
         (function updateBG() {
             const h = new Date().getHours();
             let bg = "assets/ui/login_noite.png";
@@ -106,16 +115,10 @@
             document.getElementById(id).style.display = 'block';
         }
 
-        function validarSenha(senha) {
-            return senha.length >= 6;
-        }
-
         async function fazerLogin() {
             const user = document.getElementById('login-user').value;
             const pass = document.getElementById('login-pass').value;
             if (!user || !pass) return alert('Preencha todos os campos.');
-
-            console.log("Tentando login para:", user);
             try {
                 const res = await fetch('api/auth/login', {
                     method: 'POST',
@@ -123,13 +126,8 @@
                     body: JSON.stringify({ login: user, password: pass })
                 });
                 const data = await res.json();
-                if (data.success) {
-                    // O cookie de sessão (fazendinha_sid) é gerenciado pelo servidor.
-                    // Redireciona para o jogo
-                    window.location.href = './index.html';
-                } else {
-                    alert(data.error || 'Erro no login');
-                }
+                if (data.success) window.location.href = './index.html';
+                else alert(data.error || 'Erro no login');
             } catch (err) { alert('Erro na conexão'); }
         }
 
@@ -139,12 +137,8 @@
             const emailConf = document.getElementById('reg-email-conf').value;
             const pass = document.getElementById('reg-pass').value;
             const passConf = document.getElementById('reg-pass-conf').value;
-
             if (!user || !email || !pass) return alert('Preencha todos os campos.');
-            if (email !== emailConf) return alert('Os e-mails não coincidem.');
-            if (pass !== passConf) return alert('As senhas não coincidem.');
-            if (!validarSenha(pass)) return alert('A senha não atende aos requisitos de segurança.');
-
+            if (email !== emailConf || pass !== passConf) return alert('Confirmação inválida.');
             try {
                 const res = await fetch('api/auth/register', {
                     method: 'POST',
@@ -152,18 +146,14 @@
                     body: JSON.stringify({ login: user, email, password: pass })
                 });
                 const data = await res.json();
-                if (data.success) {
-                    alert('Conta criada com sucesso!');
-                    showCard('card-login');
-                } else { alert(data.error); }
+                if (data.success) { alert('Conta criada!'); showCard('card-login'); }
+                else alert(data.error);
             } catch (err) { alert('Erro no cadastro'); }
         }
 
         async function recuperar() {
             const user = document.getElementById('rec-user').value;
             const email = document.getElementById('rec-email').value;
-            if (!user || !email) return alert('Preencha todos os campos.');
-
             try {
                 const res = await fetch('api/auth/recover', {
                     method: 'POST',

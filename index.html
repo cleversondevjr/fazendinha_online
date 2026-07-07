@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <title>Fazendinha Online</title>
   <base href="/fazendinha/">
-  <link rel="stylesheet" href="style.css?v=3.0.1">
+  <link rel="stylesheet" href="style.css?v=3.0.4">
 </head>
 <body>
   <!-- Barra superior -->
@@ -13,7 +13,7 @@
       <div class="logo">
         <img src="assets/logo_fazendinha_online.png" alt="Fazendinha Online" class="logo-icon">
       </div>
-      <div class="game-version">v3.0.1</div>
+      <div class="game-version">v3.0.4</div>
     </div>
     <div class="topbar-actions">
       <button class="menu-btn-compact menu-top-btn open-shop" type="button">
@@ -46,7 +46,6 @@
     </div>
   </header>
 
-  <!-- Sidebar -->
   <aside class="sidebar">
     <div class="tools-header"><img src="assets/botao_ferramentas.png" alt="Ferramentas"></div>
     <div class="tool-item" data-item="vasoPequeno"><img src="assets/vaso_pequeno.png" class="tool-icon"><span class="count" id="count-vaso-pequeno">0</span></div>
@@ -54,12 +53,9 @@
     <div class="tool-item" data-item="agua"><img src="assets/agua.png" class="tool-icon"><span class="count" id="count-agua">0</span></div>
     <div class="tool-item" data-item="pesticida"><img src="assets/borrifador_inseticida.png" class="tool-icon"><span class="count" id="count-pesticida">0</span></div>
     <div class="tool-item" data-item="espantalho"><img src="assets/espantalho.png" class="tool-icon"><span class="count" id="count-espantalho">0</span></div>
-
-    <!-- Placeholders para Flores, Árvores e Semente Especial -->
     <div class="tool-item" data-item="flower"><img src="assets/flor.png" class="tool-icon"><span class="count" id="count-flower">0</span></div>
     <div class="tool-item" data-item="tree"><img src="assets/folha.png" class="tool-icon"><span class="count" id="count-tree">0</span></div>
     <div class="tool-item" data-item="sementeEspecial"><img src="assets/semente.png" class="tool-icon"><span class="count" id="count-special-seed">0</span></div>
-
     <div class="sidebar-spacer"></div>
     <section class="rewards-panel" id="rewards-panel">
       <div class="panel-title">Recompensas</div>
@@ -68,17 +64,13 @@
       <div class="weather-panel">
         <img src="assets/caixa_clima.png" alt="" class="weather-icon" id="weather-icon">
       </div>
-
-    <!-- Botões principais -->
     <div class="menu-buttons"></div>
   </aside>
 
-  <!-- Área principal -->
   <main class="main">
     <div id="plot-grid" class="plot-grid"></div>
   </main>
 
-  <!-- Modais -->
   <div id="shop-modal" class="shop-modal">
     <div class="shop-content">
       <span class="close-btn">&times;</span>
@@ -122,7 +114,7 @@
   </div>
 
   <div class="admin-floating-container">
-    <div class="game-version-footer">v3.0.1</div>
+    <div class="game-version-footer">v3.0.4</div>
     <button id="admin-open" class="admin-floating-btn" type="button">Admin</button>
   </div>
 
@@ -135,7 +127,6 @@
         </div>
         <button id="admin-close" class="admin-close" type="button">&times;</button>
       </div>
-
       <div class="admin-tabs">
         <button class="admin-tab active" data-admin-tab="conta" type="button">Conta</button>
         <button class="admin-tab" data-admin-tab="usuarios" type="button">Usuários</button>
@@ -150,9 +141,7 @@
         <button class="admin-tab" data-admin-tab="dados" type="button">Dados</button>
         <button class="admin-tab" data-admin-tab="logs" type="button">Logs</button>
       </div>
-
       <div id="admin-content" class="admin-content"></div>
-
       <div class="admin-footer">
         <button id="admin-save" class="admin-action primary" type="button">Salvar Alterações</button>
         <button id="admin-refresh" class="admin-action" type="button">Recarregar Painel</button>
@@ -160,7 +149,6 @@
     </div>
   </div>
 
-  <!-- Script -->
-  <script src="script.js?v=3.0.1"></script>
+  <script src="script.js?v=3.0.4"></script>
 </body>
 </html>
