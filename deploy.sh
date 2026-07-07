@@ -35,7 +35,16 @@ psql -h $PGHOST -U $PGUSER -d $PGDATABASE -f migrations/010_update_version_v301.
 psql -h $PGHOST -U $PGUSER -d $PGDATABASE -f migrations/011_fix_admin_credentials.sql > /dev/null 2>&1
 psql -h $PGHOST -U $PGUSER -d $PGDATABASE -f migrations/012_reset_admin_plain_text.sql > /dev/null 2>&1
 psql -h $PGHOST -U $PGUSER -d $PGDATABASE -f migrations/013_update_version_v302.sql > /dev/null 2>&1
+<<<<<< feature/v3.0.1-final-sync-14719019057366838169
 psql -h $PGHOST -U $PGUSER -d $PGDATABASE -f migrations/014_update_version_v303.sql > /dev/null 2>&1
+=======
+=======
+<<<<<< feature/v3.0.1-final-sync-14719019057366838169
+psql -h $PGHOST -U $PGUSER -d $PGDATABASE -f migrations/013_update_version_v302.sql > /dev/null 2>&1
+=======
+>>>>>> main
+>>>>>> main
+>>>>>> main
 
 # 3. Backend (PM2)
 cd server
