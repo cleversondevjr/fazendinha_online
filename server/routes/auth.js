@@ -1,15 +1,17 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const bcrypt = require('bcryptjs');
 const { ensureUserInitialized } = require('../utils/player_init');
 
 router.post('/register', async (req, res) => {
     const { login, email, password } = req.body;
     console.log(`[AUTH] Register attempt: ${login} (${email})`);
     try {
+        const hashedPassword = await bcrypt.hash(password, 10);
         const result = await db.execute(
             'INSERT INTO fazenda_usuarios (login, email, senha) VALUES ($1, $2, $3) RETURNING id',
-            [login, email, password]
+            [login, email, hashedPassword]
         );
 
         const userId = result.rows[0].id;
@@ -17,10 +19,6 @@ router.post('/register', async (req, res) => {
 
         // Inicializa dados do jogador imediatamente
         await ensureUserInitialized(userId);
-
-        if (req.session) {
-            req.session.userId = userId;
-        }
 
         res.json({ success: true, userId });
     } catch (err) {
@@ -43,10 +41,13 @@ router.post('/login', async (req, res) => {
 
         if (result.rows.length > 0) {
             const user = result.rows[0];
-            console.log(`[AUTH] User found: ${user.id}`);
+            console.log(`[AUTH] User found: ${user.id}, hashed pass length: ${user.senha ? user.senha.length : 0}`);
 
-            if (password !== user.senha) {
+            const match = await bcrypt.compare(password, user.senha);
+            if (!match) {
                 console.log(`[AUTH] Password mismatch for: ${login}`);
+                // Debug password length if mismatch
+                console.log(`[AUTH] Input password length: ${password ? password.length : 0}`);
                 return res.status(401).json({ error: 'Credenciais inválidas.' });
             }
 
