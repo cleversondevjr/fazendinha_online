@@ -1,6 +1,6 @@
 {
   "name": "fazendinha-online",
-  "version": "3.0.4",
+  "version": "3.0.1",
   "description": "Projeto Fazendinha Online baseado em PvU 2021",
   "dependencies": {
     "pg": "^8.22.0"
