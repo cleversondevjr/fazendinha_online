@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ==============================================================================
-# SCRIPT DE DEPLOY AUTOMATIZADO - FAZENDINHA ONLINE (v3.0.3)
+# SCRIPT DE DEPLOY AUTOMATIZADO - FAZENDINHA ONLINE (v3.0.5)
 # ==============================================================================
 
 # Navegar para a pasta do projeto
@@ -13,12 +13,9 @@ git reset --hard origin/main
 git clean -fd
 
 # 2. Banco de Dados (PostgreSQL)
-# O arquivo .env deve ser mantido localmente no servidor por segurança.
-# Caso não exista, ele será criado a partir do exemplo, mas as credenciais
-# reais devem ser configuradas manualmente uma única vez no servidor.
 if [ ! -f server/.env ]; then
     cp server/.env.example server/.env
-    echo "AVISO: Arquivo .env criado a partir do exemplo. Configure as credenciais reais no servidor."
+    echo "AVISO: Arquivo .env criado a partir do exemplo."
 fi
 
 # Carrega as variáveis do .env para as migrações (modo robusto com set -a)
@@ -26,7 +23,8 @@ set -a
 source server/.env
 set +a
 
-# Execução das migrações
+# Execução das migrações sequencialmente
+echo "Executando migrações..."
 psql -h $PGHOST -U $PGUSER -d $PGDATABASE -f migrations/full_deploy.sql > /dev/null 2>&1
 psql -h $PGHOST -U $PGUSER -d $PGDATABASE -f migrations/007_fix_users_table.sql > /dev/null 2>&1
 psql -h $PGHOST -U $PGUSER -d $PGDATABASE -f migrations/008_cleanup_users.sql > /dev/null 2>&1
@@ -35,26 +33,16 @@ psql -h $PGHOST -U $PGUSER -d $PGDATABASE -f migrations/010_update_version_v301.
 psql -h $PGHOST -U $PGUSER -d $PGDATABASE -f migrations/011_fix_admin_credentials.sql > /dev/null 2>&1
 psql -h $PGHOST -U $PGUSER -d $PGDATABASE -f migrations/012_reset_admin_plain_text.sql > /dev/null 2>&1
 psql -h $PGHOST -U $PGUSER -d $PGDATABASE -f migrations/013_update_version_v302.sql > /dev/null 2>&1
-<<<<<< feature/v3.0.1-final-sync-14719019057366838169
 psql -h $PGHOST -U $PGUSER -d $PGDATABASE -f migrations/014_update_version_v303.sql > /dev/null 2>&1
-=======
-=======
-<<<<<< feature/v3.0.1-final-sync-14719019057366838169
-psql -h $PGHOST -U $PGUSER -d $PGDATABASE -f migrations/013_update_version_v302.sql > /dev/null 2>&1
-=======
->>>>>> main
->>>>>> main
->>>>>> main
+psql -h $PGHOST -U $PGUSER -d $PGDATABASE -f migrations/015_update_version_v304.sql > /dev/null 2>&1
+psql -h $PGHOST -U $PGUSER -d $PGDATABASE -f migrations/016_update_version_v305.sql > /dev/null 2>&1
 
 # 3. Backend (PM2)
 cd server
 npm install --production > /dev/null 2>&1
-
-# Garantir que a porta 3002 está livre antes de reiniciar
 echo "Limpando processos na porta 3002..."
 sudo fuser -k 3002/tcp > /dev/null 2>&1 || true
 pm2 delete fazendinha-backend > /dev/null 2>&1 || true
-
 pm2 start index.js --name "fazendinha-backend" --update-env
 pm2 save --force
 cd ..

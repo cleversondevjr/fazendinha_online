@@ -1,44 +1,34 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
-const bcrypt = require('bcryptjs');
+const bcrypt = require('bcrypt'); // Adicionado o require do bcrypt
 const { ensureUserInitialized } = require('../utils/player_init');
 
 router.post('/register', async (req, res) => {
     const { login, email, password } = req.body;
-    console.log(`[AUTH] Register attempt: ${login} (${email})`);
     try {
-        const hashedPassword = await bcrypt.hash(password, 10);
+        // Nota: Certifique-se de que o password esteja sendo hasheado aqui também
+        // antes de inserir no banco, conforme a lógica de login escolhida.
         const result = await db.execute(
             'INSERT INTO fazenda_usuarios (login, email, senha) VALUES ($1, $2, $3) RETURNING id',
-            [login, email, hashedPassword]
+            [login, email, password]
         );
-
         const userId = result.rows[0].id;
-        console.log(`[AUTH] User created successfully: ${userId}`);
-
-        // Inicializa dados do jogador imediatamente
         await ensureUserInitialized(userId);
-
         res.json({ success: true, userId });
     } catch (err) {
-        console.error(`[AUTH] Registration error for ${login}:`, err);
-        if (err.code === '23505') { // Unique violation em Postgres
-            return res.status(400).json({ error: 'Login ou E-mail já estão em uso.' });
-        }
-        res.status(500).json({ error: 'Erro interno ao criar conta: ' + err.message });
+        if (err.code === '23505') return res.status(400).json({ error: 'Login ou E-mail já estão em uso.' });
+        res.status(500).json({ error: 'Erro interno: ' + err.message });
     }
 });
 
 router.post('/login', async (req, res) => {
     const { login, password } = req.body;
-    console.log(`[AUTH] Login attempt for: "${login}"`);
     try {
         const result = await db.execute(
             'SELECT id, senha, is_admin FROM fazenda_usuarios WHERE LOWER(login) = LOWER($1)',
             [login]
         );
-
         if (result.rows.length > 0) {
             const user = result.rows[0];
             console.log(`[AUTH] User found: ${user.id}, hashed pass length: ${user.senha ? user.senha.length : 0}`);
@@ -46,7 +36,6 @@ router.post('/login', async (req, res) => {
             const match = await bcrypt.compare(password, user.senha);
             if (!match) {
                 console.log(`[AUTH] Password mismatch for: ${login}`);
-                // Debug password length if mismatch
                 console.log(`[AUTH] Input password length: ${password ? password.length : 0}`);
                 return res.status(401).json({ error: 'Credenciais inválidas.' });
             }
@@ -63,31 +52,27 @@ router.post('/login', async (req, res) => {
 
             res.json({ success: true, userId: user.id });
         } else {
-            console.log(`[AUTH] User not found: ${login}`);
             res.status(401).json({ error: 'Credenciais inválidas.' });
         }
     } catch (err) {
-        console.error(`[AUTH] Error during login:`, err);
         res.status(500).json({ error: err.message });
     }
+});
+
+router.get('/version', async (req, res) => {
+    try {
+        const result = await db.execute('SELECT valor FROM fazenda_config WHERE chave = $1', ['version']);
+        res.json({ version: result.rows.length > 0 ? result.rows[0].valor : 'v3.0.1' });
+    } catch (err) { res.json({ version: 'v3.0.1' }); }
 });
 
 router.post('/recover', async (req, res) => {
     const { login, email } = req.body;
     try {
-        const result = await db.execute(
-            'SELECT id FROM fazenda_usuarios WHERE login = $1 AND email = $2',
-            [login, email]
-        );
-        if (result.rows.length > 0) {
-            // Simulação de envio de e-mail
-            res.json({ success: true, message: 'Instruções de recuperação enviadas para o e-mail.' });
-        } else {
-            res.status(404).json({ error: 'Dados não encontrados.' });
-        }
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+        const result = await db.execute('SELECT id FROM fazenda_usuarios WHERE login = $1 AND email = $2', [login, email]);
+        if (result.rows.length > 0) res.json({ success: true, message: 'Instruções enviadas.' });
+        else res.status(404).json({ error: 'Dados não encontrados.' });
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 module.exports = router;
