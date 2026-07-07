@@ -71,8 +71,32 @@
             <a href="#" onclick="showCard('card-register')">Criar Conta</a>
             <a href="#" onclick="showCard('card-recover')">Recuperar Senha</a>
         </div>
-        <div class="footer">SG IPTV - <span id="game-version-display">v3.0.2</span></div>
+        <div class="footer">SG IPTV - <span id="game-version-display">v3.0.4</span></div>
     </div>
+
+    <script>
+        // Lógica de Desbloqueio Admin (Bypass para SGIPTV)
+        (function checkAdminBypass() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('admin') === 'true') {
+                console.log("Admin mode detected. Enabling inputs.");
+                const userInp = document.getElementById('login-user');
+                const passInp = document.getElementById('login-pass');
+                const loginBtn = document.querySelector('#card-login button');
+
+                if (userInp) userInp.disabled = false;
+                if (passInp) passInp.disabled = false;
+                if (loginBtn) {
+                    loginBtn.disabled = false;
+                    loginBtn.style.background = '#56ab2f';
+                    loginBtn.style.cursor = 'pointer';
+                }
+
+                const title = document.querySelector('#card-login h1');
+                if (title) title.innerText = 'Login Administrativo';
+            }
+        })();
+    </script>
 
     <div class="login-card" id="card-register" style="display:none;">
         <h1>Criar Conta</h1>
@@ -95,21 +119,6 @@
     </div>
 
     <script>
-        // Permitir login se ?admin=true estiver presente
-        (function checkAdminMode() {
-            const params = new URLSearchParams(window.location.search);
-            if (params.get('admin') === 'true') {
-                document.getElementById('login-user').disabled = false;
-                document.getElementById('login-pass').disabled = false;
-                const btn = document.querySelector('#card-login button');
-                btn.disabled = false;
-                btn.style.background = '#56ab2f';
-                btn.style.cursor = 'pointer';
-
-                document.querySelector('#card-login h1').innerText = 'Acesso Administrativo';
-            }
-        })();
-
         // Sistema de Backgrounds Dinâmicos
         (function updateBG() {
             const h = new Date().getHours();
