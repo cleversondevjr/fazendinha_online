@@ -449,7 +449,7 @@ body {
 .terrain-layer {
   position: absolute;
   left: 50%;
-  bottom: 5%;
+  bottom: 15%;
   transform: translateX(-50%);
   width: 90%;
   height: auto;
@@ -459,7 +459,7 @@ body {
 .crop-layer {
   position: absolute;
   left: 50%;
-  bottom: 12%;
+  bottom: 22%;
   transform: translateX(-50%);
   height: auto;
   z-index: 2;
@@ -849,7 +849,7 @@ body {
   right: 18px;
   bottom: 18px;
   z-index: 4500;
-  display: none;
+  display: flex;
   align-items: center;
   gap: 15px;
 }
@@ -1101,25 +1101,6 @@ body {
 
 .admin-danger {
   background: linear-gradient(180deg, #d83d31 0%, #7c1612 100%);
-}
-
-/* Feature Locked Style */
-.feature-locked {
-  filter: grayscale(0.9) opacity(0.6) !important;
-  cursor: not-allowed !important;
-  pointer-events: none !important;
-  position: relative;
-}
-
-.feature-locked::after {
-  content: '🔒';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 1.2rem;
-  z-index: 10;
-  text-shadow: 0 0 5px rgba(0,0,0,0.8);
 }
 
 

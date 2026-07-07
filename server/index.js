@@ -9,7 +9,7 @@ const app = express();
 const port = process.env.PORT || 3002;
 
 // Confia no proxy para sessões seguras via Cloudflare/Nginx
-app.set('trust proxy', 1);
+app.set('trust proxy', true);
 
 // Update CORS to allow credentials from the main domain
 const allowedOrigins = [
@@ -38,7 +38,7 @@ const db = require('./db');
 const sessionStore = new pgSession({
     pool: db.pool,
     tableName: 'session',
-    createTableIfMissing: false // Já lidamos com isso nas migrações
+    createTableIfMissing: true // Garante a existência da tabela de sessão
 });
 
 // Captura erros no store de sessão para evitar crash do servidor
@@ -56,8 +56,8 @@ app.use(session({
     cookie: {
         maxAge: 24 * 60 * 60 * 1000,
         secure: true,
-        sameSite: 'lax',
-        path: '/fazendinha/'
+        sameSite: 'none',
+        path: '/'
     }
 }));
 
