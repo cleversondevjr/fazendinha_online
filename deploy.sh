@@ -37,6 +37,10 @@ psql -h $PGHOST -U $PGUSER -d $PGDATABASE -f migrations/012_reset_admin_plain_te
 <<<<<< feature/v3.0.1-final-sync-14719019057366838169
 psql -h $PGHOST -U $PGUSER -d $PGDATABASE -f migrations/013_update_version_v302.sql > /dev/null 2>&1
 =======
+<<<<<< feature/v3.0.1-final-sync-14719019057366838169
+psql -h $PGHOST -U $PGUSER -d $PGDATABASE -f migrations/013_update_version_v302.sql > /dev/null 2>&1
+=======
+>>>>>> main
 >>>>>> main
 
 # 3. Backend (PM2)
