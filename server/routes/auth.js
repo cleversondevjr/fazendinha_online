@@ -1,11 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const bcrypt = require('bcrypt'); // Adicionado o require do bcrypt
 const { ensureUserInitialized } = require('../utils/player_init');
 
 router.post('/register', async (req, res) => {
     const { login, email, password } = req.body;
     try {
+        // Nota: Certifique-se de que o password esteja sendo hasheado aqui também
+        // antes de inserir no banco, conforme a lógica de login escolhida.
         const result = await db.execute(
             'INSERT INTO fazenda_usuarios (login, email, senha) VALUES ($1, $2, $3) RETURNING id',
             [login, email, password]
@@ -28,8 +31,25 @@ router.post('/login', async (req, res) => {
         );
         if (result.rows.length > 0) {
             const user = result.rows[0];
-            if (password !== user.senha) return res.status(401).json({ error: 'Credenciais inválidas.' });
-            req.session.userId = user.id;
+            console.log(`[AUTH] User found: ${user.id}, hashed pass length: ${user.senha ? user.senha.length : 0}`);
+
+            const match = await bcrypt.compare(password, user.senha);
+            if (!match) {
+                console.log(`[AUTH] Password mismatch for: ${login}`);
+                console.log(`[AUTH] Input password length: ${password ? password.length : 0}`);
+                return res.status(401).json({ error: 'Credenciais inválidas.' });
+            }
+
+            console.log(`[AUTH] Login success for: ${login} (ID: ${user.id}, Admin: ${user.is_admin})`);
+
+            if (req.session) {
+                req.session.userId = user.id;
+                console.log(`[AUTH] Session userId set to: ${req.session.userId}`);
+            } else {
+                console.error(`[AUTH] ERRO CRÍTICO: req.session está undefined para ${login}`);
+                return res.status(500).json({ error: 'Erro ao inicializar sessão. Verifique o servidor.' });
+            }
+
             res.json({ success: true, userId: user.id });
         } else {
             res.status(401).json({ error: 'Credenciais inválidas.' });

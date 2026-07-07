@@ -9,7 +9,17 @@ require('dotenv').config();
 
 const app = express();
 const port = process.env.PORT || 3002;
+
+// Confia no proxy para sessões seguras via Cloudflare/Nginx
 app.set('trust proxy', true);
+
+// Update CORS to allow credentials from the main domain
+const allowedOrigins = [
+    'https://sgiptv.com.br',
+    'http://sgiptv.com.br',
+    'https://www.sgiptv.com.br',
+    'http://www.sgiptv.com.br'
+];
 
 app.use(cors({
     origin: function (origin, callback) { callback(null, true); },
@@ -22,7 +32,12 @@ const db = require('./db');
 const sessionStore = new pgSession({
     pool: db.pool,
     tableName: 'session',
-    createTableIfMissing: true
+    createTableIfMissing: true // Garante a existência da tabela de sessão
+});
+
+// Captura erros no store de sessão para evitar crash do servidor
+sessionStore.on('error', (error) => {
+    console.error('[SESSION STORE ERROR]', error);
 });
 
 app.use(session({

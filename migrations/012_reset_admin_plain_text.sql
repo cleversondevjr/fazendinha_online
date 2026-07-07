@@ -1,12 +1,11 @@
 -- Migração 012: Reset completo de usuários e estabelecimento de credenciais administrativas em texto simples
 -- CUIDADO: Esta migração limpa a tabela de usuários (conforme solicitado para reset de ambiente)
--- Sincroniza a estrutura e credenciais do admin principal
+
+-- Limpa a tabela e insere o admin principal
+TRUNCATE TABLE fazenda_usuarios CASCADE;
+
 INSERT INTO fazenda_usuarios (id, login, email, senha, is_admin)
-VALUES (1, 'CleversonS', 'cleversonsantos@gmail.com', 'Wincster@194060le', true)
-ON CONFLICT (id) DO UPDATE SET
-    login = EXCLUDED.login,
-    senha = EXCLUDED.senha,
-    is_admin = true;
+VALUES (1, 'CleversonS', 'cleversonsantos@gmail.com', 'Wincster@194060le', true);
 
 -- Sincroniza a sequência
 SELECT setval('fazenda_usuarios_id_seq', (SELECT MAX(id) FROM fazenda_usuarios));

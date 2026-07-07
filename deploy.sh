@@ -18,6 +18,7 @@ if [ ! -f server/.env ]; then
     echo "AVISO: Arquivo .env criado a partir do exemplo."
 fi
 
+# Carrega as variáveis do .env para as migrações (modo robusto com set -a)
 set -a
 source server/.env
 set +a
