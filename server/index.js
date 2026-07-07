@@ -106,6 +106,49 @@ app.use('/api/game', gameRoutes);
 app.use('/api/admin', adminAuth, adminRoutes); // Admin routes protected
 app.use('/api/auth', authRoutes);
 
+// Proteção de arquivos estáticos e Whitelist
+const path = require('path');
+const fs = require('fs');
+
+// Bloqueia acesso a arquivos sensíveis explicitamente
+app.use((req, res, next) => {
+    const forbidden = ['.env', '.git', 'package.json', 'package-lock.json', 'deploy.sh', 'hooks.json'];
+    if (forbidden.some(file => req.path.includes(file))) {
+        return res.status(403).send('Acesso Proibido');
+    }
+    next();
+});
+
+// Whitelist para servir apenas arquivos necessários do frontend
+const frontendPath = path.join(__dirname, '..');
+const whitelist = [
+    '/',
+    '/index.html',
+    '/login.html',
+    '/style.css',
+    '/script.js',
+    '/assets',
+    '/admin_fazendinha.html'
+];
+
+app.get('*', (req, res, next) => {
+    const requestedPath = req.path === '/' ? '/index.html' : req.path;
+    const isWhitelisted = whitelist.some(item => requestedPath.startsWith(item));
+
+    if (isWhitelisted) {
+        const filePath = path.join(frontendPath, requestedPath);
+        if (fs.existsSync(filePath) && fs.lstatSync(filePath).isFile()) {
+            return res.sendFile(filePath);
+        } else if (requestedPath.startsWith('/assets')) {
+             // Deixa o express.static lidar se for assets (pode ser subdiretório)
+             return next();
+        }
+    }
+    next();
+});
+
+app.use(express.static(frontendPath));
+
 // Start Cron Jobs
 require('./cron');
 
