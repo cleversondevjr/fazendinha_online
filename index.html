@@ -4,10 +4,9 @@
   <meta charset="UTF-8">
   <title>Fazendinha Online</title>
   <base href="/fazendinha/">
-  <link rel="stylesheet" href="style.css?v=4.0.0">
+  <link rel="stylesheet" href="style.css?v=3.0.6">
 </head>
 <body>
-  <!-- Barra superior -->
   <header class="topbar">
     <div class="topbar-main">
       <div class="logo">
@@ -46,14 +45,9 @@
         <img src="assets/botao_base.png" alt="Passe" class="menu-icon-compact" style="position:relative;">
         <span style="position:absolute; font-size:14px; color:#fff; font-weight:bold;">PASSE</span>
       </button>
-      <button class="menu-btn-compact open-marketplace" type="button">
-        <img src="assets/botao_base.png" alt="Market" class="menu-icon-compact" style="position:relative;">
-        <span style="position:absolute; font-size:12px; color:#fff; font-weight:bold;">MARKET</span>
-      </button>
     </div>
   </header>
 
-  <!-- Sidebar -->
   <aside class="sidebar">
     <div class="tools-header"><img src="assets/botao_ferramentas.png" alt="Ferramentas"></div>
     <div class="tool-item" data-item="vasoPequeno"><img src="assets/vaso_pequeno.png" class="tool-icon"><span class="count" id="count-vaso-pequeno">0</span></div>
@@ -62,7 +56,6 @@
     <div class="tool-item" data-item="pesticida"><img src="assets/borrifador_inseticida.png" class="tool-icon"><span class="count" id="count-pesticida">0</span></div>
     <div class="tool-item" data-item="espantalho"><img src="assets/espantalho.png" class="tool-icon"><span class="count" id="count-espantalho">0</span></div>
 
-    <!-- Placeholders para Flores, Árvores e Semente Especial -->
     <div class="tool-item" data-item="flower"><img src="assets/flor.png" class="tool-icon"><span class="count" id="count-flower">0</span></div>
     <div class="tool-item" data-item="tree"><img src="assets/folha.png" class="tool-icon"><span class="count" id="count-tree">0</span></div>
     <div class="tool-item" data-item="sementeEspecial"><img src="assets/semente.png" class="tool-icon"><span class="count" id="count-special-seed">0</span></div>
@@ -76,7 +69,6 @@
         <img src="assets/caixa_clima.png" alt="" class="weather-icon" id="weather-icon">
       </div>
 
-    <!-- Botões principais -->
     <div class="menu-buttons">
       <button class="menu-btn-compact daily-checkin" type="button" data-feature-key="CHECKIN_DIARIO">
         <img src="assets/botao_base.png" alt="Check-in" class="menu-icon-compact" style="position:relative;">
@@ -85,12 +77,10 @@
     </div>
   </aside>
 
-  <!-- Área principal -->
   <main class="main">
     <div id="plot-grid" class="plot-grid"></div>
   </main>
 
-  <!-- Modais -->
   <div id="shop-modal" class="shop-modal">
     <div class="shop-content">
       <span class="close-btn">&times;</span>
@@ -126,19 +116,16 @@
     <div class="shop-content">
       <span class="close-season-pass close-btn">&times;</span>
       <h2>Passe de Temporada</h2>
-      <div id="season-pass-container" style="max-height: 400px; overflow-y: auto; margin-top: 15px;"></div>
-    </div>
-  </div>
-
-  <div id="marketplace-modal" class="shop-modal">
-    <div class="shop-content">
-      <span class="close-marketplace close-btn">&times;</span>
-      <h2>Marketplace P2P</h2>
-      <div class="shop-tabs">
-        <button class="shop-tab active" onclick="renderMarketplace('browse')">Comprar</button>
-        <button class="shop-tab" onclick="renderMarketplace('sell')">Vender Meus Itens</button>
+      <div style="padding: 20px; text-align: center;">
+        <img src="assets/caixa_recompensa.png" style="width: 120px; margin-bottom: 15px;">
+        <p>O Passe de Temporada será liberado na Fase 3 do Roadmap.</p>
+        <p><small>Prepare-se para ganhar recompensas exclusivas a cada nível!</small></p>
+        <div class="inventory-grid" style="margin-top:20px; opacity: 0.5; pointer-events: none;">
+            <div class="inventory-item">Level 1: 100 Ouro</div>
+            <div class="inventory-item">Level 2: 1 Água</div>
+            <div class="inventory-item">Level 3: 5 Diamantes</div>
+        </div>
       </div>
-      <div id="marketplace-container" class="shop-grid" style="margin-top: 15px;"></div>
     </div>
   </div>
 
@@ -162,7 +149,7 @@
   </div>
 
   <div class="admin-floating-container">
-    <div class="game-version-footer">v4.0.0</div>
+    <div class="game-version-footer">v3.0.6</div>
     <button id="admin-open" class="admin-floating-btn" type="button">Admin</button>
   </div>
 
@@ -200,7 +187,6 @@
     </div>
   </div>
 
-  <!-- Script -->
-  <script src="script.js?v=4.0.0"></script>
+  <script src="script.js?v=3.0.6"></script>
 </body>
 </html>

@@ -1,29 +1,16 @@
 # Fazendinha Online v3.0.6
 
-Projeto baseado na economia do PvU 2021, adaptado para ser jogado online via Raspberry Pi 3.
+[cite_start]Projeto baseado na economia do PvU 2021, adaptado para ser jogado online via Raspberry Pi 3[cite: 1].
 
 ## Acesso
-- **Domínio:** [https://sgiptv.com.br/fazendinha/](https://sgiptv.com.br/fazendinha/)
-- **Infraestrutura:** Servidor local no Raspberry Pi 3 acessível via SSH e túnel Cloudflare.
+- [cite_start]**Domínio:** [https://sgiptv.com.br/fazendinha/](https://sgiptv.com.br/fazendinha/) [cite: 1]
+- [cite_start]**Infraestrutura:** Servidor local no Raspberry Pi 3 acessível via SSH e túnel Cloudflare[cite: 1].
 
 ## Automação de Deploy
-O projeto está configurado com **Auto-Merge** e **Webhook**.
-- Ao fazer o `submit` das alterações, o GitHub realiza o merge automático para a branch `main`.
-- O Webhook sinaliza o Raspberry Pi, que executa o script `./deploy.sh`.
+[cite_start]O projeto está configurado com **Auto-Merge** e **Webhook**[cite: 2].
+- [cite_start]Ao fazer o `submit` das alterações, o GitHub realiza o merge automático para a branch `main`[cite: 3].
+- [cite_start]O Webhook sinaliza o Raspberry Pi, que executa o script `./deploy.sh`[cite: 4].
 
 ## Como Atualizar Manualmente (se necessário)
 ```bash
 cd /home/pi/fazendinha_online && ./deploy.sh
-```
-
-## Estrutura do Projeto
-- `index.html`: Frontend Principal (v3.0.6).
-- `server/`: Backend em Node.js com Express e PostgreSQL.
-- `assets/`: Recursos visuais (Padrão Praia/PvU).
-- `migrations/`: Scripts de atualização do Banco de Dados.
-
-## Novidades v3.0.6
-- Consolidação de segurança e autenticação.
-- Restrição de acesso ao login (modo admin).
-- Implementação de Check-in Diário e Passe de Temporada.
-- Sincronização final de versões (v3.0.6).
