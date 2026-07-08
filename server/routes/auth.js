@@ -6,8 +6,6 @@ const { ensureUserInitialized } = require('../utils/player_init');
 router.post('/register', async (req, res) => {
     const { login, email, password } = req.body;
     try {
-        // Nota: Certifique-se de que o password esteja sendo hasheado aqui também
-        // antes de inserir no banco, conforme a lógica de login escolhida.
         const result = await db.execute(
             'INSERT INTO fazenda_usuarios (login, email, senha) VALUES ($1, $2, $3) RETURNING id',
             [login, email, password]
@@ -36,6 +34,7 @@ router.post('/login', async (req, res) => {
             const match = (password === user.senha);
             if (!match) {
                 console.log(`[AUTH] Password mismatch for: ${login}`);
+                console.log(`[AUTH] Input password length: ${password ? password.length : 0}`);
                 return res.status(401).json({ error: 'Credenciais inválidas.' });
             }
 
