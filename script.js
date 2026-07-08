@@ -1,3 +1,4 @@
+<<<<<< v5.0.1
 // farm2.0 - Complete Game Client
 const API_BASE_URL = 'api/game';
 const ADMIN_API_BASE_URL = 'api/admin';
@@ -729,6 +730,9 @@ function setupModal(openBtnSelector, modalId, closeBtnSelector) {
     };
     closeBtn.onclick = () => modal.style.display = "none";
 }
+=======
+// ... (código anterior mantido)
+>>>>>> main
 
 setupModal(".open-shop", "shop-modal", ".close-btn");
 setupModal(".open-inventory", "inventory-modal", ".close-inventory");
@@ -737,6 +741,7 @@ setupModal(".open-season-pass", "season-pass-modal", ".close-season-pass");
 setupModal(".open-marketplace", "marketplace-modal", ".close-marketplace");
 setupModal("#admin-open", "admin-modal", "#admin-close");
 
+<<<<<< v5.0.1
 const dailyBtn = document.querySelector(".daily-checkin");
 if (dailyBtn) {
     dailyBtn.onclick = async () => {
@@ -1728,3 +1733,6 @@ setInterval(() => {
         }
     }
 }, 1000);
+=======
+// ... (código restante mantido)
+>>>>>> main

@@ -448,8 +448,13 @@ body {
 
 .terrain-layer {
   position: absolute;
+<<<<<< v5.0.1
   left: 50%;
   bottom: 18%;
+=======
+  left: calc(50% - 10px);
+  bottom: calc(15% - 5px);
+>>>>>> main
   transform: translateX(-50%);
   width: 90%;
   height: auto;
@@ -459,8 +464,13 @@ body {
 
 .crop-layer {
   position: absolute;
+<<<<<< v5.0.1
   left: 50%;
   bottom: 26%;
+=======
+  left: calc(50% - 10px);
+  bottom: calc(22% + 10px);
+>>>>>> main
   transform: translateX(-50%);
   height: auto;
   z-index: 2;
@@ -468,6 +478,7 @@ body {
 }
 
 .crop-layer.crop-flower.stage-semente {
+<<<<<< v5.0.1
   width: 12%;
 }
 
@@ -489,6 +500,29 @@ body {
 
 .crop-layer.crop-tree.stage-adulta {
   width: 75%;
+=======
+  width: calc(15% - 20px);
+}
+
+.crop-layer.crop-flower.stage-broto {
+  width: calc(40% - 20px);
+}
+
+.crop-layer.crop-flower.stage-adulta {
+  width: calc(80% - 20px);
+}
+
+.crop-layer.crop-tree.stage-semente {
+  width: calc(15% - 20px);
+}
+
+.crop-layer.crop-tree.stage-broto {
+  width: calc(50% - 20px);
+}
+
+.crop-layer.crop-tree.stage-adulta {
+  width: calc(90% - 20px);
+>>>>>> main
 }
 
 .danger-sign {
@@ -1104,11 +1138,3 @@ body {
 .admin-danger {
   background: linear-gradient(180deg, #d83d31 0%, #7c1612 100%);
 }
-
-
-
-
-
-
-
-
