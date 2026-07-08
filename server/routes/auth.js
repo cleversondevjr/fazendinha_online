@@ -60,8 +60,8 @@ router.post('/login', async (req, res) => {
 router.get('/version', async (req, res) => {
     try {
         const result = await db.execute('SELECT valor FROM fazenda_config WHERE chave = $1', ['version']);
-        res.json({ version: result.rows.length > 0 ? result.rows[0].valor : 'v3.0.1' });
-    } catch (err) { res.json({ version: 'v3.0.1' }); }
+        res.json({ version: result.rows.length > 0 ? result.rows[0].valor : 'v3.0.5' });
+    } catch (err) { res.json({ version: 'v3.0.5' }); }
 });
 
 router.post('/recover', async (req, res) => {
