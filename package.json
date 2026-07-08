@@ -1,10 +1,6 @@
 {
   "name": "fazendinha-online",
-<<<<<<< feature/v3.0.1-final-sync-14719019057366838169
   "version": "4.0.0",
-=======
-  "version": "3.0.6",
->>>>>>> main
   "description": "Projeto Fazendinha Online baseado em PvU 2021",
   "dependencies": {
     "pg": "^8.22.0"

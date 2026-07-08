@@ -14,6 +14,11 @@ router.post('/register', async (req, res) => {
         );
         const userId = result.rows[0].id;
         await ensureUserInitialized(userId);
+
+        if (req.session) {
+            req.session.userId = userId;
+        }
+
         res.json({ success: true, userId });
     } catch (err) {
         if (err.code === '23505') return res.status(400).json({ error: 'Login ou E-mail já estão em uso.' });

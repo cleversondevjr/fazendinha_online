@@ -353,10 +353,7 @@ router.post('/action', async (req, res) => {
             }
 
             await db.execute("UPDATE fazenda_plantacoes SET fase = $1, crop_id = NULL, started_at = NULL, ends_at = NULL, crow_active = FALSE, pest_active = FALSE, reward_actual = 0 WHERE id = $2", [nextFase, slot.id]);
-<<<<<<< feature/v3.0.1-final-sync-14719019057366838169
             await db.execute("UPDATE fazenda_usuarios SET total_gold_generated = total_gold_generated + $1 WHERE id = $2", [Math.floor(slot.reward_actual), userId]);
-=======
->>>>>>> main
             await db.execute(`
                 UPDATE fazenda_missoes_jogador
                 SET progress = LEAST((SELECT target FROM fazenda_missoes_template WHERE id = template_id), progress + 1)
@@ -524,7 +521,6 @@ router.post('/action', async (req, res) => {
                     crow_active = FALSE, pest_active = FALSE, reward_actual = 0
                 WHERE id = $2
             `, [nextFase, slot.id]);
-<<<<<<< feature/v3.0.1-final-sync-14719019057366838169
         }
 
         if (action === 'marketplace_list') {
@@ -556,8 +552,6 @@ router.post('/action', async (req, res) => {
             await db.execute("UPDATE fazenda_marketplace SET status = 'sold', updated_at = NOW() WHERE id = $1", [itemId]);
 
             await db.execute("INSERT INTO fazenda_audit_logs (usuario_id, acao, valor_novo) VALUES ($1, 'marketplace_buy', $2)", [userId, { market_id: itemId, burn: burnAmount.toString() }]);
-=======
->>>>>>> main
         }
 
         if (action === 'water_world_tree') {
@@ -617,7 +611,6 @@ router.post('/checkin', async (req, res) => {
             [userId]
         );
 
-<<<<<<< feature/v3.0.1-final-sync-14719019057366838169
         // Ganhar XP do Passe de Temporada (ex: 20 XP por checkin)
         await db.execute("INSERT INTO fazenda_season_pass_progresso (usuario_id, xp_atual) VALUES ($1, 20) ON CONFLICT (usuario_id) DO UPDATE SET xp_atual = fazenda_season_pass_progresso.xp_atual + 20", [userId]);
 
@@ -629,15 +622,11 @@ router.post('/checkin', async (req, res) => {
         }
 
         res.json({ success: true, message: 'Check-in realizado! Você ganhou 50 Ouro e 20 XP.', leveledUp, newLevel: leveledUp ? prog.nivel_atual + 1 : prog.nivel_atual });
-=======
-        res.json({ success: true, message: 'Check-in realizado! Você ganhou 50 Ouro.' });
->>>>>>> main
     } catch (err) {
         res.status(400).json({ error: err.message });
     }
 });
 
-<<<<<<< feature/v3.0.1-final-sync-14719019057366838169
 // GET /api/game/season-pass
 router.get('/season-pass', async (req, res) => {
     const userId = req.userId;
@@ -660,6 +649,4 @@ router.get('/marketplace', async (req, res) => {
     }
 });
 
-=======
->>>>>>> main
 module.exports = router;
