@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <title>Fazendinha Online</title>
   <base href="/fazendinha/">
-  <link rel="stylesheet" href="style.css?v=3.0.5">
+  <link rel="stylesheet" href="style.css?v=3.0.6">
 </head>
 <body>
   <!-- Barra superior -->
@@ -42,6 +42,10 @@
       <button class="menu-btn-compact logout-btn" type="button">
         <img src="assets/botao_sair.png" alt="Sair" class="menu-icon-compact">
       </button>
+      <button class="menu-btn-compact open-season-pass" type="button" data-feature-key="PASSE_TEMPORADA">
+        <img src="assets/botao_base.png" alt="Passe" class="menu-icon-compact" style="position:relative;">
+        <span style="position:absolute; font-size:14px; color:#fff; font-weight:bold;">PASSE</span>
+      </button>
     </div>
   </header>
 
@@ -69,7 +73,12 @@
       </div>
 
     <!-- Botões principais -->
-    <div class="menu-buttons"></div>
+    <div class="menu-buttons">
+      <button class="menu-btn-compact daily-checkin" type="button" data-feature-key="CHECKIN_DIARIO">
+        <img src="assets/botao_base.png" alt="Check-in" class="menu-icon-compact" style="position:relative;">
+        <span style="position:absolute; font-size:14px; color:#fff; font-weight:bold;">CHECK-IN</span>
+      </button>
+    </div>
   </aside>
 
   <!-- Área principal -->
@@ -109,6 +118,23 @@
     </div>
   </div>
 
+  <div id="season-pass-modal" class="shop-modal">
+    <div class="shop-content">
+      <span class="close-season-pass close-btn">&times;</span>
+      <h2>Passe de Temporada</h2>
+      <div style="padding: 20px; text-align: center;">
+        <img src="assets/caixa_recompensa.png" style="width: 120px; margin-bottom: 15px;">
+        <p>O Passe de Temporada será liberado na Fase 3 do Roadmap.</p>
+        <p><small>Prepare-se para ganhar recompensas exclusivas a cada nível!</small></p>
+        <div class="inventory-grid" style="margin-top:20px; opacity: 0.5; pointer-events: none;">
+            <div class="inventory-item">Level 1: 100 Ouro</div>
+            <div class="inventory-item">Level 2: 1 Água</div>
+            <div class="inventory-item">Level 3: 5 Diamantes</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div id="game-dialog" class="game-dialog hidden">
     <div class="game-dialog-box">
       <h3 id="game-dialog-title">Aviso</h3>
@@ -121,7 +147,7 @@
   </div>
 
   <div class="admin-floating-container">
-    <div class="game-version-footer">v3.0.5</div>
+    <div class="game-version-footer">v3.0.6</div>
     <button id="admin-open" class="admin-floating-btn" type="button">Admin</button>
   </div>
 
@@ -160,6 +186,6 @@
   </div>
 
   <!-- Script -->
-  <script src="script.js?v=3.0.5"></script>
+  <script src="script.js?v=3.0.6"></script>
 </body>
 </html>

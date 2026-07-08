@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ==============================================================================
-# SCRIPT DE DEPLOY AUTOMATIZADO - FAZENDINHA ONLINE (v3.0.5)
+# SCRIPT DE DEPLOY AUTOMATIZADO - FAZENDINHA ONLINE (v3.0.6)
 # ==============================================================================
 
 # Navegar para a pasta do projeto
@@ -36,6 +36,8 @@ psql -h $PGHOST -U $PGUSER -d $PGDATABASE -f migrations/013_update_version_v302.
 psql -h $PGHOST -U $PGUSER -d $PGDATABASE -f migrations/014_update_version_v303.sql > /dev/null 2>&1
 psql -h $PGHOST -U $PGUSER -d $PGDATABASE -f migrations/015_update_version_v304.sql > /dev/null 2>&1
 psql -h $PGHOST -U $PGUSER -d $PGDATABASE -f migrations/016_update_version_v305.sql > /dev/null 2>&1
+psql -h $PGHOST -U $PGUSER -d $PGDATABASE -f migrations/017_daily_checkin.sql > /dev/null 2>&1
+psql -h $PGHOST -U $PGUSER -d $PGDATABASE -f migrations/018_update_version_v306.sql > /dev/null 2>&1
 
 # 3. Backend (PM2)
 cd server

@@ -22,7 +22,13 @@ const allowedOrigins = [
 ];
 
 app.use(cors({
-    origin: function (origin, callback) { callback(null, true); },
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true
 }));
 app.use(express.json());
@@ -51,7 +57,7 @@ app.use(session({
         maxAge: 24 * 60 * 60 * 1000,
         secure: true,
         sameSite: 'none',
-        path: '/'
+        path: '/fazendinha/'
     }
 }));
 
@@ -107,4 +113,4 @@ app.use('/assets', express.static(assetsPath));
 app.use('/sketches', express.static(path.join(frontendPath, 'sketches')));
 
 require('./cron');
-app.listen(port, () => console.log(`Server v3.0.5 running on ${port}`));
+app.listen(port, () => console.log(`Server v3.0.6 running on ${port}`));

@@ -502,4 +502,35 @@ router.post('/action', async (req, res) => {
     }
 });
 
+// POST /api/game/checkin
+router.post('/checkin', async (req, res) => {
+    const userId = req.userId;
+    try {
+        const check = await isFeatureEnabled('CHECKIN_DIARIO');
+        if (!check.ativa) throw new Error(check.mensagem);
+
+        const today = new Date().toISOString().split('T')[0];
+
+        // Tentar inserir o check-in
+        const checkinRes = await db.execute(
+            'INSERT INTO fazenda_checkin (usuario_id, data_dia) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+            [userId, today]
+        );
+
+        if (checkinRes.rowCount === 0) {
+            throw new Error('Você já realizou o check-in hoje!');
+        }
+
+        // Recompensa: 50 Ouro
+        await db.execute(
+            "INSERT INTO fazenda_inventario (usuario_id, item_id, quantidade) VALUES ($1, 'coins', 50) ON CONFLICT (usuario_id, item_id) DO UPDATE SET quantidade = fazenda_inventario.quantidade + 50",
+            [userId]
+        );
+
+        res.json({ success: true, message: 'Check-in realizado! Você ganhou 50 Ouro.' });
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
 module.exports = router;

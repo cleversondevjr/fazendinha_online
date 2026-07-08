@@ -454,6 +454,7 @@ body {
   width: 90%;
   height: auto;
   z-index: 1;
+  margin-left: -15px;
 }
 
 .crop-layer {
@@ -463,6 +464,7 @@ body {
   transform: translateX(-50%);
   height: auto;
   z-index: 2;
+  margin-left: -15px;
 }
 
 .crop-layer.crop-flower.stage-semente {
@@ -1102,11 +1104,3 @@ body {
 .admin-danger {
   background: linear-gradient(180deg, #d83d31 0%, #7c1612 100%);
 }
-
-
-
-
-
-
-
-
