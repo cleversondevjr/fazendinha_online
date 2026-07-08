@@ -1,4 +1,4 @@
-# Fazendinha Online v3.0.6
+# Fazendinha Online v4.0.0
 
 [cite_start]Projeto baseado na economia do PvU 2021, adaptado para ser jogado online via Raspberry Pi 3[cite: 1].
 
