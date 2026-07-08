@@ -316,8 +316,15 @@ router.post('/action', async (req, res) => {
             const slot = calculatePlotState(slotRes.rows[0], {});
             if (slot.fase !== 'ready') throw new Error('Não está pronto');
             await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade + $1 WHERE usuario_id = $2 AND item_id = 'coins'", [Math.floor(slot.reward_actual), userId]);
-            // PvU 2021 Style: After harvest, if pot remains, land needs water again.
-            await db.execute("UPDATE fazenda_plantacoes SET fase = $1, crop_id = NULL, started_at = NULL, ends_at = NULL, crow_active = FALSE, pest_active = FALSE, reward_actual = 0 WHERE id = $2", [slot.pot_type ? 'needsWater' : 'needsPot', slot.id]);
+
+            // Decidir próximo estado: se tiver pote e ainda tiver água, vai para readyToPlant
+            let nextFase = 'needsPot';
+            if (slot.pot_type) {
+                const waterExpires = slot.water_expires_at ? new Date(slot.water_expires_at).getTime() : 0;
+                nextFase = (waterExpires > Date.now()) ? 'readyToPlant' : 'needsWater';
+            }
+
+            await db.execute("UPDATE fazenda_plantacoes SET fase = $1, crop_id = NULL, started_at = NULL, ends_at = NULL, crow_active = FALSE, pest_active = FALSE, reward_actual = 0 WHERE id = $2", [nextFase, slot.id]);
             await db.execute(`
                 UPDATE fazenda_missoes_jogador
                 SET progress = LEAST((SELECT target FROM fazenda_missoes_template WHERE id = template_id), progress + 1)
@@ -336,7 +343,14 @@ router.post('/action', async (req, res) => {
                 if (slot.fase === 'ready') {
                     totalReward += Math.floor(slot.reward_actual);
                     harvestedCount++;
-                    await db.execute("UPDATE fazenda_plantacoes SET fase = $1, crop_id = NULL, started_at = NULL, ends_at = NULL, crow_active = FALSE, pest_active = FALSE, reward_actual = 0 WHERE id = $2", [slot.pot_type ? 'needsWater' : 'needsPot', slot.id]);
+
+                    let nextFase = 'needsPot';
+                    if (slot.pot_type) {
+                        const waterExpires = slot.water_expires_at ? new Date(slot.water_expires_at).getTime() : 0;
+                        nextFase = (waterExpires > Date.now()) ? 'readyToPlant' : 'needsWater';
+                    }
+
+                    await db.execute("UPDATE fazenda_plantacoes SET fase = $1, crop_id = NULL, started_at = NULL, ends_at = NULL, crow_active = FALSE, pest_active = FALSE, reward_actual = 0 WHERE id = $2", [nextFase, slot.id]);
                 }
             }
 
@@ -442,12 +456,18 @@ router.post('/action', async (req, res) => {
             const slot = slotRes.rows[0];
             if (slot.fase === 'locked' || slot.fase === 'needsPot') throw new Error('Slot já está vazio');
 
+            let nextFase = 'needsPot';
+            if (slot.pot_type) {
+                const waterExpires = slot.water_expires_at ? new Date(slot.water_expires_at).getTime() : 0;
+                nextFase = (waterExpires > Date.now()) ? 'readyToPlant' : 'needsWater';
+            }
+
             await db.execute(`
                 UPDATE fazenda_plantacoes
                 SET fase = $1, crop_id = NULL, started_at = NULL, ends_at = NULL,
                     crow_active = FALSE, pest_active = FALSE, reward_actual = 0
                 WHERE id = $2
-            `, [slot.pot_type ? 'needsWater' : 'needsPot', slot.id]);
+            `, [nextFase, slot.id]);
         }
 
         if (action === 'water_world_tree') {
@@ -479,6 +499,37 @@ router.post('/action', async (req, res) => {
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: err.message });
+    }
+});
+
+// POST /api/game/checkin
+router.post('/checkin', async (req, res) => {
+    const userId = req.userId;
+    try {
+        const check = await isFeatureEnabled('CHECKIN_DIARIO');
+        if (!check.ativa) throw new Error(check.mensagem);
+
+        const today = new Date().toISOString().split('T')[0];
+
+        // Tentar inserir o check-in
+        const checkinRes = await db.execute(
+            'INSERT INTO fazenda_checkin (usuario_id, data_dia) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+            [userId, today]
+        );
+
+        if (checkinRes.rowCount === 0) {
+            throw new Error('Você já realizou o check-in hoje!');
+        }
+
+        // Recompensa: 50 Ouro
+        await db.execute(
+            "INSERT INTO fazenda_inventario (usuario_id, item_id, quantidade) VALUES ($1, 'coins', 50) ON CONFLICT (usuario_id, item_id) DO UPDATE SET quantidade = fazenda_inventario.quantidade + 50",
+            [userId]
+        );
+
+        res.json({ success: true, message: 'Check-in realizado! Você ganhou 50 Ouro.' });
+    } catch (err) {
+        res.status(400).json({ error: err.message });
     }
 });
 

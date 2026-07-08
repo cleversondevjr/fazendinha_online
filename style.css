@@ -449,44 +449,46 @@ body {
 .terrain-layer {
   position: absolute;
   left: 50%;
-  bottom: 15%;
+  bottom: 18%;
   transform: translateX(-50%);
   width: 90%;
   height: auto;
   z-index: 1;
+  margin-left: -15px;
 }
 
 .crop-layer {
   position: absolute;
   left: 50%;
-  bottom: 22%;
+  bottom: 26%;
   transform: translateX(-50%);
   height: auto;
   z-index: 2;
+  margin-left: -15px;
 }
 
 .crop-layer.crop-flower.stage-semente {
-  width: 15%;
+  width: 12%;
 }
 
 .crop-layer.crop-flower.stage-broto {
-  width: 40%;
+  width: 32%;
 }
 
 .crop-layer.crop-flower.stage-adulta {
-  width: 80%;
+  width: 65%;
 }
 
 .crop-layer.crop-tree.stage-semente {
-  width: 15%;
+  width: 12%;
 }
 
 .crop-layer.crop-tree.stage-broto {
-  width: 50%;
+  width: 40%;
 }
 
 .crop-layer.crop-tree.stage-adulta {
-  width: 90%;
+  width: 75%;
 }
 
 .danger-sign {

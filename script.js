@@ -699,7 +699,23 @@ function setupModal(openBtnSelector, modalId, closeBtnSelector) {
 setupModal(".open-shop", "shop-modal", ".close-btn");
 setupModal(".open-inventory", "inventory-modal", ".close-inventory");
 setupModal(".open-worldtree", "worldtree-modal", ".close-worldtree");
+setupModal(".open-season-pass", "season-pass-modal", ".close-season-pass");
 setupModal("#admin-open", "admin-modal", "#admin-close");
+
+const dailyBtn = document.querySelector(".daily-checkin");
+if (dailyBtn) {
+    dailyBtn.onclick = async () => {
+        try {
+            const res = await apiFetch(`${API_BASE_URL}/checkin`, { method: 'POST' });
+            if (res && res.success) {
+                showDialog({ title: "Check-in", message: res.message });
+                await loadGameState();
+            }
+        } catch (err) {
+            showDialog({ title: "Check-in", message: err.message });
+        }
+    };
+}
 
 // Forçar recarregamento do inventário ao abrir o modal
 const openInvBtn = document.querySelector(".open-inventory");
