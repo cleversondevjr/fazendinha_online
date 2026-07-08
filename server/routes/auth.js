@@ -1,14 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
-const bcrypt = require('bcrypt'); // Adicionado o require do bcrypt
 const { ensureUserInitialized } = require('../utils/player_init');
 
 router.post('/register', async (req, res) => {
     const { login, email, password } = req.body;
     try {
-        // Nota: Certifique-se de que o password esteja sendo hasheado aqui também
-        // antes de inserir no banco, conforme a lógica de login escolhida.
         const result = await db.execute(
             'INSERT INTO fazenda_usuarios (login, email, senha) VALUES ($1, $2, $3) RETURNING id',
             [login, email, password]
@@ -31,9 +28,10 @@ router.post('/login', async (req, res) => {
         );
         if (result.rows.length > 0) {
             const user = result.rows[0];
-            console.log(`[AUTH] User found: ${user.id}, hashed pass length: ${user.senha ? user.senha.length : 0}`);
+            console.log(`[AUTH] User found: ${user.id}`);
 
-            const match = await bcrypt.compare(password, user.senha);
+            // Comparação em texto puro conforme requisito legado
+            const match = (password === user.senha);
             if (!match) {
                 console.log(`[AUTH] Password mismatch for: ${login}`);
                 console.log(`[AUTH] Input password length: ${password ? password.length : 0}`);

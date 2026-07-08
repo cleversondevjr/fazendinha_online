@@ -57,8 +57,17 @@ app.use(session({
 
 app.use((req, res, next) => {
     if (req.path.startsWith('/api/auth')) return next();
-    if (!req.session.userId && process.env.NODE_ENV === 'production') return res.status(401).json({ error: 'Não autorizado.' });
-    req.userId = req.session.userId || '1';
+
+    // Em produção, não permitimos fallback para userId=1
+    if (process.env.NODE_ENV === 'production') {
+        if (!req.session.userId) {
+            return res.status(401).json({ error: 'Sessão expirada ou não autorizado.' });
+        }
+        req.userId = req.session.userId;
+    } else {
+        // Em desenvolvimento, permitimos fallback para facilitar testes
+        req.userId = req.session.userId || '1';
+    }
     next();
 });
 
@@ -95,6 +104,7 @@ app.get('/script.js', (req, res) => res.sendFile(path.join(frontendPath, 'script
 
 // Servir assets estáticos
 app.use('/assets', express.static(assetsPath));
+app.use('/sketches', express.static(path.join(frontendPath, 'sketches')));
 
 require('./cron');
 app.listen(port, () => console.log(`Server v3.0.5 running on ${port}`));
