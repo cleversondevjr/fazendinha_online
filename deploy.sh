@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ==============================================================================
-# SCRIPT DE DEPLOY AUTOMATIZADO - FAZENDINHA ONLINE (v4.0.0)
+# SCRIPT DE DEPLOY AUTOMATIZADO - FAZENDINHA ONLINE (v3.0.1)
 # ==============================================================================
 
 # Navegar para a pasta do projeto
