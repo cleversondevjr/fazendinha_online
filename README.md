@@ -14,16 +14,3 @@ O projeto está configurado com **Auto-Merge** e **Webhook**.
 ## Como Atualizar Manualmente (se necessário)
 ```bash
 cd /home/pi/fazendinha_online && ./deploy.sh
-```
-
-## Estrutura do Projeto
-- `index.html`: Frontend Principal (v3.0.6).
-- `server/`: Backend em Node.js com Express e PostgreSQL.
-- `assets/`: Recursos visuais (Padrão Praia/PvU).
-- `migrations/`: Scripts de atualização do Banco de Dados.
-
-## Novidades v3.0.6
-- Consolidação de segurança e autenticação.
-- Restrição de acesso ao login (modo admin).
-- Implementação de Check-in Diário e Passe de Temporada.
-- Sincronização final de versões (v3.0.6).

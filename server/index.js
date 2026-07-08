@@ -74,7 +74,6 @@ app.use((req, res, next) => {
         // Em desenvolvimento, permitimos fallback para facilitar testes
         req.userId = req.session.userId || '1';
     }
-
     next();
 });
 
