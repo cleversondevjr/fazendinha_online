@@ -5,6 +5,34 @@ const db = require('../db');
 const { ensureUserInitialized } = require('../utils/player_init');
 const { isFeatureEnabled } = require('../utils/feature_check');
 
+// --- Middleware: Maintenance Mode ---
+router.use(async (req, res, next) => {
+    try {
+        const configsRes = await db.execute("SELECT valor FROM fazenda_config WHERE chave = 'maintenance_mode'");
+        const isMaintenance = configsRes.rows[0]?.valor === 'true';
+
+        if (isMaintenance) {
+            const bypassRes = await db.execute("SELECT valor FROM fazenda_config WHERE chave = 'maintenance_bypass_ips'");
+            const bypassList = JSON.parse(bypassRes.rows[0]?.valor || '[]');
+            const clientIp = req.ip || req.headers['x-forwarded-for'];
+
+            // Permitir Admin e IPs na whitelist
+            const userRes = await db.execute('SELECT is_admin FROM fazenda_usuarios WHERE id = $1', [req.userId]);
+            const isAdmin = userRes.rows[0]?.is_admin;
+
+            if (!isAdmin && !bypassList.includes(clientIp)) {
+                return res.status(503).json({
+                    maintenance: true,
+                    message: "Servidor em manutenção para atualizações. Voltamos em breve!"
+                });
+            }
+        }
+        next();
+    } catch (err) {
+        next();
+    }
+});
+
 // --- Helper: Energy Restore ---
 async function syncEnergy(userId, configs) {
     const key = `last_energy_sync_${userId}`;
@@ -139,51 +167,51 @@ router.get('/state', async (req, res) => {
 
 // POST /api/game/action
 router.post('/action', async (req, res) => {
-    const { action, slotIndex, itemId, missionId, quantity } = req.body;
-    const qty = parseInt(quantity) || 1;
+    const { action, slotIndex, itemId, missionId, quantity, price } = req.body;
+    const qty = BigInt(quantity || 1);
     const userId = req.userId;
     try {
         const inventoryRes = await db.execute('SELECT item_id, quantidade FROM fazenda_inventario WHERE usuario_id = $1', [userId]);
-        const inventory = inventoryRes.rows.reduce((acc, curr) => ({ ...acc, [curr.item_id]: curr.quantidade }), {});
+        const inventory = inventoryRes.rows.reduce((acc, curr) => ({ ...acc, [curr.item_id]: BigInt(curr.quantidade) }), {});
 
         if (action === 'buy_item') {
             const itemRes = await db.execute('SELECT * FROM fazenda_itens_config WHERE item_id = $1', [itemId]);
             if (!itemRes.rows.length) throw new Error('Item inválido');
             const item = itemRes.rows[0];
-            const discount = parseInt((await db.execute("SELECT valor FROM fazenda_config WHERE chave = 'global_discount'")).rows[0].valor || 0);
+            const discount = BigInt((await db.execute("SELECT valor FROM fazenda_config WHERE chave = 'global_discount'")).rows[0].valor || 0);
 
             if (item.price_diamonds > 0) {
-                const check = await isFeatureEnabled('LOJA_DIAMANTE');
-                if (!check.ativa) throw new Error(check.mensagem);
-
-                const totalDiamonds = item.price_diamonds * qty;
-                if ((inventory['diamante'] || 0) < totalDiamonds) throw new Error('Diamantes insuficientes');
-                await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade - $1 WHERE usuario_id = $2 AND item_id = 'diamante'", [totalDiamonds, userId]);
+                const totalDiamonds = BigInt(item.price_diamonds) * qty;
+                if ((inventory['diamante'] || 0n) < totalDiamonds) throw new Error('Diamantes insuficientes');
+                await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade - $1 WHERE usuario_id = $2 AND item_id = 'diamante'", [totalDiamonds.toString(), userId]);
             } else {
-                const unitPrice = Math.floor(item.price_coins * (1 - discount / 100));
+                const unitPrice = BigInt(item.price_coins) * (100n - discount) / 100n;
                 const totalCoins = unitPrice * qty;
-                if ((inventory['coins'] || 0) < totalCoins) throw new Error('Ouro insuficiente');
-                await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade - $1 WHERE usuario_id = $2 AND item_id = 'coins'", [totalCoins, userId]);
+                if ((inventory['coins'] || 0n) < totalCoins) throw new Error('Ouro insuficiente');
+                await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade - $1 WHERE usuario_id = $2 AND item_id = 'coins'", [totalCoins.toString(), userId]);
             }
-            await db.execute("INSERT INTO fazenda_inventario (usuario_id, item_id, quantidade) VALUES ($1, $2, $3) ON CONFLICT (usuario_id, item_id) DO UPDATE SET quantidade = fazenda_inventario.quantidade + $3", [userId, itemId, qty]);
+            await db.execute("INSERT INTO fazenda_inventario (usuario_id, item_id, quantidade) VALUES ($1, $2, $3) ON CONFLICT (usuario_id, item_id) DO UPDATE SET quantidade = fazenda_inventario.quantidade + $3", [userId, itemId, qty.toString()]);
         }
 
         if (action === 'buy_pack') {
-            if (itemId === 'pack_gold_1') {
-                if ((inventory['diamante'] || 0) < 10) throw new Error('Diamantes insuficientes');
-                await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade - 10 WHERE usuario_id = $1 AND item_id = 'diamante'", [userId]);
-                await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade + 1000 WHERE usuario_id = $1 AND item_id = 'coins'", [userId]);
-            } else if (itemId === 'pack_gold_2') {
-                if ((inventory['diamante'] || 0) < 50) throw new Error('Diamantes insuficientes');
-                await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade - 50 WHERE usuario_id = $1 AND item_id = 'diamante'", [userId]);
-                await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade + 6000 WHERE usuario_id = $1 AND item_id = 'coins'", [userId]);
-            } else if (itemId === 'convert_gold_to_diamond') {
-                const check = await isFeatureEnabled('CONVERSAO_DIAMANTE');
-                if (!check.ativa) throw new Error(check.mensagem);
+            // Regra: 10.000 Ouro = 10 Diamantes. Limite de 1 troca por dia/conta.
+            if (itemId.startsWith('conv_diamante_')) {
+                const today = new Date().toISOString().split('T')[0];
+                const limitCheck = await db.execute("SELECT id FROM fazenda_audit_logs WHERE usuario_id = $1 AND acao = 'conversion_gold' AND created_at::date = $2", [userId, today]);
+                if (limitCheck.rows.length >= 1) throw new Error('Limite de 1 conversão por dia atingido');
 
-                if ((inventory['coins'] || 0) < 50000) throw new Error('Ouro insuficiente (Necessário 50.000)');
-                await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade - 50000 WHERE usuario_id = $1 AND item_id = 'coins'", [userId]);
-                await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade + 10 WHERE usuario_id = $1 AND item_id = 'diamante'", [userId]);
+                const goldCost = 10000n;
+                const diamondGain = 10n;
+
+                if ((inventory['coins'] || 0n) < goldCost) throw new Error('Ouro insuficiente');
+                await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade - $1 WHERE usuario_id = $2 AND item_id = 'coins'", [goldCost.toString(), userId]);
+                await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade + $1 WHERE usuario_id = $2 AND item_id = 'diamante'", [diamondGain.toString(), userId]);
+
+                await db.execute("INSERT INTO fazenda_audit_logs (usuario_id, acao, valor_novo) VALUES ($1, 'conversion_gold', $2)", [userId, { gold: goldCost.toString(), diamond: diamondGain.toString() }]);
+            } else if (itemId.startsWith('pack_diamante_')) {
+                // Placeholder para bônus de pacotes reais
+                const diamondBase = BigInt(itemId.split('_').pop()) * 1000n; // Simulação
+                await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade + $1 WHERE usuario_id = $2 AND item_id = 'diamante'", [diamondBase.toString(), userId]);
             }
         }
 
@@ -325,6 +353,10 @@ router.post('/action', async (req, res) => {
             }
 
             await db.execute("UPDATE fazenda_plantacoes SET fase = $1, crop_id = NULL, started_at = NULL, ends_at = NULL, crow_active = FALSE, pest_active = FALSE, reward_actual = 0 WHERE id = $2", [nextFase, slot.id]);
+<<<<<<< feature/v3.0.1-final-sync-14719019057366838169
+            await db.execute("UPDATE fazenda_usuarios SET total_gold_generated = total_gold_generated + $1 WHERE id = $2", [Math.floor(slot.reward_actual), userId]);
+=======
+>>>>>>> main
             await db.execute(`
                 UPDATE fazenda_missoes_jogador
                 SET progress = LEAST((SELECT target FROM fazenda_missoes_template WHERE id = template_id), progress + 1)
@@ -356,6 +388,7 @@ router.post('/action', async (req, res) => {
 
             if (harvestedCount > 0) {
                 await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade + $1 WHERE usuario_id = $2 AND item_id = 'coins'", [totalReward, userId]);
+                await db.execute("UPDATE fazenda_usuarios SET total_gold_generated = total_gold_generated + $1 WHERE id = $2", [totalReward, userId]);
                 await db.execute(`
                     UPDATE fazenda_missoes_jogador
                     SET progress = LEAST((SELECT target FROM fazenda_missoes_template WHERE id = template_id), progress + $1)
@@ -371,7 +404,30 @@ router.post('/action', async (req, res) => {
             const resMission = await db.execute("SELECT m.*, t.reward_type, t.reward_amount FROM fazenda_missoes_jogador m JOIN fazenda_missoes_template t ON m.template_id = t.id WHERE m.id = $1 AND m.usuario_id = $2 AND m.claimed = FALSE AND m.progress >= t.target", [missionId, userId]);
             if (!resMission.rows.length) throw new Error('Missão não disponível');
             await db.execute("UPDATE fazenda_missoes_jogador SET claimed = TRUE WHERE id = $1", [missionId]);
-            await db.execute("INSERT INTO fazenda_inventario (usuario_id, item_id, quantidade) VALUES ($1, $2, $3) ON CONFLICT (usuario_id, item_id) DO UPDATE SET quantidade = fazenda_inventario.quantidade + $3", [userId, resMission.rows[0].reward_type, resMission.rows[0].reward_amount]);
+            await db.execute("INSERT INTO fazenda_inventario (usuario_id, item_id, quantidade) VALUES ($1, $2, $3) ON CONFLICT (usuario_id, item_id) DO UPDATE SET quantidade = fazenda_inventario.quantidade + $3", [userId, resMission.rows[0].reward_type, resMission.rows[0].reward_amount.toString()]);
+
+            // Regra Spec V1.0: 3 missões completadas = 1 nível no passe (simplificado: cada missão dá 34 XP, 100 XP = level up)
+            await db.execute("INSERT INTO fazenda_season_pass_progresso (usuario_id, xp_atual) VALUES ($1, 34) ON CONFLICT (usuario_id) DO UPDATE SET xp_atual = fazenda_season_pass_progresso.xp_atual + 34", [userId]);
+
+            // Check Level Up
+            const prog = (await db.execute("SELECT * FROM fazenda_season_pass_progresso WHERE usuario_id = $1", [userId])).rows[0];
+            let leveledUp = false;
+            if (prog.xp_atual >= 100) {
+                await db.execute("UPDATE fazenda_season_pass_progresso SET nivel_atual = nivel_atual + 1, xp_atual = xp_atual - 100 WHERE usuario_id = $1", [userId]);
+                leveledUp = true;
+            }
+            return res.json({ success: true, leveledUp, newLevel: leveledUp ? prog.nivel_atual + 1 : prog.nivel_atual });
+        }
+
+        if (action === 'claim_pass_reward') {
+            const level = parseInt(missionId); // Reutilizando campo missionId para o nível do passe
+            const progRes = await db.execute("SELECT * FROM fazenda_season_pass_progresso WHERE usuario_id = $1", [userId]);
+            const prog = progRes.rows[0];
+            if (!prog || prog.nivel_atual < level || prog.claimed_levels.includes(level)) throw new Error("Recompensa não disponível");
+
+            const tier = (await db.execute("SELECT * FROM fazenda_season_pass_template WHERE nivel = $1", [level])).rows[0];
+            await db.execute("UPDATE fazenda_season_pass_progresso SET claimed_levels = array_append(claimed_levels, $1) WHERE usuario_id = $2", [level, userId]);
+            await db.execute("INSERT INTO fazenda_inventario (usuario_id, item_id, quantidade) VALUES ($1, $2, $3) ON CONFLICT (usuario_id, item_id) DO UPDATE SET quantidade = fazenda_inventario.quantidade + $3", [userId, tier.recompensa_tipo, tier.recompensa_quantidade.toString()]);
         }
 
         if (action === 'buy_slot') {
@@ -468,6 +524,40 @@ router.post('/action', async (req, res) => {
                     crow_active = FALSE, pest_active = FALSE, reward_actual = 0
                 WHERE id = $2
             `, [nextFase, slot.id]);
+<<<<<<< feature/v3.0.1-final-sync-14719019057366838169
+        }
+
+        if (action === 'marketplace_list') {
+            const check = await isFeatureEnabled('MARKETPLACE');
+            if (!check.ativa) throw new Error(check.mensagem);
+
+            if ((inventory[itemId] || 0n) < qty) throw new Error('Quantidade insuficiente no inventário');
+
+            // Sistema de Escrow: Remove do inventário e coloca no marketplace (status vault)
+            await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade - $1 WHERE usuario_id = $2 AND item_id = $3", [qty.toString(), userId, itemId]);
+            await db.execute("INSERT INTO fazenda_marketplace (vendedor_id, item_id, quantidade, preco_diamante, status) VALUES ($1, $2, $3, $4, 'listing')", [userId, itemId, qty.toString(), BigInt(price).toString()]);
+        }
+
+        if (action === 'marketplace_buy') {
+            const marketRes = await db.execute("SELECT * FROM fazenda_marketplace WHERE id = $1 AND status = 'listing'", [itemId]);
+            if (!marketRes.rows.length) throw new Error('Item não disponível ou já vendido');
+            const entry = marketRes.rows[0];
+            const totalCost = BigInt(entry.preco_diamante);
+
+            if ((inventory['diamante'] || 0n) < totalCost) throw new Error('Diamantes insuficientes');
+
+            // Taxa de Queima: 10%
+            const burnAmount = totalCost / 10n;
+            const sellerGain = totalCost - burnAmount;
+
+            await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade - $1 WHERE usuario_id = $2 AND item_id = 'diamante'", [totalCost.toString(), userId]);
+            await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade + $1 WHERE usuario_id = $2 AND item_id = 'diamante'", [sellerGain.toString(), entry.vendedor_id]);
+            await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade + $1 WHERE usuario_id = $2 AND item_id = $3", [entry.quantidade, userId, entry.item_id]);
+            await db.execute("UPDATE fazenda_marketplace SET status = 'sold', updated_at = NOW() WHERE id = $1", [itemId]);
+
+            await db.execute("INSERT INTO fazenda_audit_logs (usuario_id, acao, valor_novo) VALUES ($1, 'marketplace_buy', $2)", [userId, { market_id: itemId, burn: burnAmount.toString() }]);
+=======
+>>>>>>> main
         }
 
         if (action === 'water_world_tree') {
@@ -527,10 +617,49 @@ router.post('/checkin', async (req, res) => {
             [userId]
         );
 
+<<<<<<< feature/v3.0.1-final-sync-14719019057366838169
+        // Ganhar XP do Passe de Temporada (ex: 20 XP por checkin)
+        await db.execute("INSERT INTO fazenda_season_pass_progresso (usuario_id, xp_atual) VALUES ($1, 20) ON CONFLICT (usuario_id) DO UPDATE SET xp_atual = fazenda_season_pass_progresso.xp_atual + 20", [userId]);
+
+        const prog = (await db.execute("SELECT * FROM fazenda_season_pass_progresso WHERE usuario_id = $1", [userId])).rows[0];
+        let leveledUp = false;
+        if (prog.xp_atual >= 100) {
+            await db.execute("UPDATE fazenda_season_pass_progresso SET nivel_atual = nivel_atual + 1, xp_atual = xp_atual - 100 WHERE usuario_id = $1", [userId]);
+            leveledUp = true;
+        }
+
+        res.json({ success: true, message: 'Check-in realizado! Você ganhou 50 Ouro e 20 XP.', leveledUp, newLevel: leveledUp ? prog.nivel_atual + 1 : prog.nivel_atual });
+=======
         res.json({ success: true, message: 'Check-in realizado! Você ganhou 50 Ouro.' });
+>>>>>>> main
     } catch (err) {
         res.status(400).json({ error: err.message });
     }
 });
 
+<<<<<<< feature/v3.0.1-final-sync-14719019057366838169
+// GET /api/game/season-pass
+router.get('/season-pass', async (req, res) => {
+    const userId = req.userId;
+    try {
+        const progRes = await db.execute("SELECT * FROM fazenda_season_pass_progresso WHERE usuario_id = $1", [userId]);
+        const templates = await db.execute("SELECT * FROM fazenda_season_pass_template ORDER BY nivel");
+        res.json({ progress: progRes.rows[0] || { nivel_atual: 1, xp_atual: 0, claimed_levels: [] }, tiers: templates.rows });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET /api/game/marketplace
+router.get('/marketplace', async (req, res) => {
+    try {
+        const result = await db.execute("SELECT m.*, u.login as vendedor FROM fazenda_marketplace m JOIN fazenda_usuarios u ON m.vendedor_id = u.id WHERE m.status = 'listing' ORDER BY m.created_at DESC");
+        res.json({ items: result.rows });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+=======
+>>>>>>> main
 module.exports = router;

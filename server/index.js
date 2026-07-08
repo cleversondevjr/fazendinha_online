@@ -113,4 +113,8 @@ app.use('/assets', express.static(assetsPath));
 app.use('/sketches', express.static(path.join(frontendPath, 'sketches')));
 
 require('./cron');
+<<<<<<< feature/v3.0.1-final-sync-14719019057366838169
+app.listen(port, () => console.log(`Server v4.0.0 running on ${port}`));
+=======
 app.listen(port, () => console.log(`Server v3.0.6 running on ${port}`));
+>>>>>>> main

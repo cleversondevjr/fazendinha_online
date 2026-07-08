@@ -7,7 +7,6 @@
   <link rel="stylesheet" href="style.css?v=3.0.6">
 </head>
 <body>
-  <!-- Barra superior -->
   <header class="topbar">
     <div class="topbar-main">
       <div class="logo">
@@ -49,7 +48,6 @@
     </div>
   </header>
 
-  <!-- Sidebar -->
   <aside class="sidebar">
     <div class="tools-header"><img src="assets/botao_ferramentas.png" alt="Ferramentas"></div>
     <div class="tool-item" data-item="vasoPequeno"><img src="assets/vaso_pequeno.png" class="tool-icon"><span class="count" id="count-vaso-pequeno">0</span></div>
@@ -58,7 +56,6 @@
     <div class="tool-item" data-item="pesticida"><img src="assets/borrifador_inseticida.png" class="tool-icon"><span class="count" id="count-pesticida">0</span></div>
     <div class="tool-item" data-item="espantalho"><img src="assets/espantalho.png" class="tool-icon"><span class="count" id="count-espantalho">0</span></div>
 
-    <!-- Placeholders para Flores, Árvores e Semente Especial -->
     <div class="tool-item" data-item="flower"><img src="assets/flor.png" class="tool-icon"><span class="count" id="count-flower">0</span></div>
     <div class="tool-item" data-item="tree"><img src="assets/folha.png" class="tool-icon"><span class="count" id="count-tree">0</span></div>
     <div class="tool-item" data-item="sementeEspecial"><img src="assets/semente.png" class="tool-icon"><span class="count" id="count-special-seed">0</span></div>
@@ -72,7 +69,6 @@
         <img src="assets/caixa_clima.png" alt="" class="weather-icon" id="weather-icon">
       </div>
 
-    <!-- Botões principais -->
     <div class="menu-buttons">
       <button class="menu-btn-compact daily-checkin" type="button" data-feature-key="CHECKIN_DIARIO">
         <img src="assets/botao_base.png" alt="Check-in" class="menu-icon-compact" style="position:relative;">
@@ -81,12 +77,10 @@
     </div>
   </aside>
 
-  <!-- Área principal -->
   <main class="main">
     <div id="plot-grid" class="plot-grid"></div>
   </main>
 
-  <!-- Modais -->
   <div id="shop-modal" class="shop-modal">
     <div class="shop-content">
       <span class="close-btn">&times;</span>
@@ -138,11 +132,19 @@
   <div id="game-dialog" class="game-dialog hidden">
     <div class="game-dialog-box">
       <h3 id="game-dialog-title">Aviso</h3>
-      <p id="game-dialog-message"></p>
+      <div id="game-dialog-message"></div>
       <div class="game-dialog-actions">
         <button id="game-dialog-confirm" class="dialog-btn dialog-btn-confirm" type="button">OK</button>
         <button id="game-dialog-cancel" class="dialog-btn dialog-btn-cancel" type="button">Cancelar</button>
       </div>
+    </div>
+  </div>
+
+  <div id="maintenance-overlay" class="game-dialog hidden" style="background:rgba(0,0,0,0.95); z-index:99999;">
+    <div class="game-dialog-box" style="border-color:#ff3d31;">
+      <h3 style="color:#ff3d31;">Servidor em Manutenção</h3>
+      <img src="assets/ui/manutencao.png" onerror="this.src='assets/logo_fazendinha_online.png'" style="width:120px; margin:15px auto;">
+      <p id="maintenance-message">Estamos preparando novidades para você! Voltamos em instantes.</p>
     </div>
   </div>
 
@@ -185,7 +187,6 @@
     </div>
   </div>
 
-  <!-- Script -->
   <script src="script.js?v=3.0.6"></script>
 </body>
 </html>

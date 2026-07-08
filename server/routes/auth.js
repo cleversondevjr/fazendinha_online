@@ -6,6 +6,8 @@ const { ensureUserInitialized } = require('../utils/player_init');
 router.post('/register', async (req, res) => {
     const { login, email, password } = req.body;
     try {
+        // Nota: Certifique-se de que o password esteja sendo hasheado aqui também
+        // antes de inserir no banco, conforme a lógica de login escolhida.
         const result = await db.execute(
             'INSERT INTO fazenda_usuarios (login, email, senha) VALUES ($1, $2, $3) RETURNING id',
             [login, email, password]
@@ -59,8 +61,8 @@ router.post('/login', async (req, res) => {
 router.get('/version', async (req, res) => {
     try {
         const result = await db.execute('SELECT valor FROM fazenda_config WHERE chave = $1', ['version']);
-        res.json({ version: result.rows.length > 0 ? result.rows[0].valor : 'v3.0.6' });
-    } catch (err) { res.json({ version: 'v3.0.6' }); }
+        res.json({ version: result.rows.length > 0 ? result.rows[0].valor : 'v4.0.0' });
+    } catch (err) { res.json({ version: 'v4.0.0' }); }
 });
 
 router.post('/recover', async (req, res) => {
