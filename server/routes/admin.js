@@ -261,6 +261,19 @@ router.get('/logs', async (req, res) => {
     }
 });
 
+router.post('/broadcast', async (req, res) => {
+    const { message } = req.body;
+    try {
+        await db.execute(`
+            INSERT INTO fazenda_admin_logs (usuario_id, acao, detalhes, ip_address)
+            VALUES ($1, 'BROADCAST', $2, $3)
+        `, [req.userId, JSON.stringify({ message }), req.ip]);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // GET /api/admin/assets - List all images in assets folders
 router.get('/assets', (req, res) => {
     try {

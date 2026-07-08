@@ -28,5 +28,6 @@ INSERT INTO fazenda_features (chave, label, ativa, data_lancamento, fase) VALUES
 ('PASSE_TEMPORADA', 'Passe de Temporada (Níveis 1-30)', FALSE, NOW() + INTERVAL '30 days', 3),
 ('SEMENTES_RARAS', 'Sementes Raras (Drops e Recompensas)', FALSE, NOW() + INTERVAL '45 days', 3),
 ('SLOTS_PREMIUM', 'Slots Premium (7 e 8)', FALSE, NOW() + INTERVAL '60 days', 4),
-('CONVERSAO_DIAMANTE', 'Conversão Ouro -> Diamante', FALSE, NOW() + INTERVAL '75 days', 4)
+('CONVERSAO_DIAMANTE', 'Conversão Ouro -> Diamante', FALSE, NOW() + INTERVAL '75 days', 4),
+('MARKETPLACE', 'Marketplace P2P (Escrow)', FALSE, NOW() + INTERVAL '90 days', 5)
 ON CONFLICT (chave) DO NOTHING;

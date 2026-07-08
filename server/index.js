@@ -114,4 +114,4 @@ app.use('/assets', express.static(assetsPath));
 app.use('/sketches', express.static(path.join(frontendPath, 'sketches')));
 
 require('./cron');
-app.listen(port, () => console.log(`Server v3.0.6 running on ${port}`));
+app.listen(port, () => console.log(`Server v4.0.0 running on ${port}`));
