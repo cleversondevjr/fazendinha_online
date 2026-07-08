@@ -34,7 +34,6 @@ router.post('/login', async (req, res) => {
             const match = (password === user.senha);
             if (!match) {
                 console.log(`[AUTH] Password mismatch for: ${login}`);
-                console.log(`[AUTH] Input password length: ${password ? password.length : 0}`);
                 return res.status(401).json({ error: 'Credenciais inválidas.' });
             }
 
