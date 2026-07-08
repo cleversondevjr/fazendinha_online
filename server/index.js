@@ -22,6 +22,9 @@ const allowedOrigins = [
 ];
 
 app.use(cors({
+<<<<<< v5.0.1
+    origin: function (origin, callback) { callback(null, true); },
+=======
     origin: function (origin, callback) {
         if (!origin || allowedOrigins.indexOf(origin) !== -1) {
             callback(null, true);
@@ -29,6 +32,7 @@ app.use(cors({
             callback(new Error('Not allowed by CORS'));
         }
     },
+>>>>>> main
     credentials: true
 }));
 app.use(express.json());
@@ -55,9 +59,15 @@ app.use(session({
     proxy: true,
     cookie: {
         maxAge: 24 * 60 * 60 * 1000,
+<<<<<< v5.0.1
+        secure: false, // Reverted for troubleshooting connection errors
+        sameSite: 'lax',
+        path: '/'
+=======
         secure: true,
         sameSite: 'none',
         path: '/fazendinha/'
+>>>>>> main
     }
 }));
 
@@ -113,4 +123,8 @@ app.use('/assets', express.static(assetsPath));
 app.use('/sketches', express.static(path.join(frontendPath, 'sketches')));
 
 require('./cron');
+<<<<<< v5.0.1
+app.listen(port, () => console.log(`Server v3.0.1 running on ${port}`));
+=======
 app.listen(port, () => console.log(`Server v4.0.0 running on ${port}`));
+>>>>>> main
