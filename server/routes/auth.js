@@ -15,6 +15,7 @@ router.post('/register', async (req, res) => {
 
         if (req.session) {
             req.session.userId = userId;
+            req.session.userLogin = login; // Armazenando login para uso posterior
         }
 
         res.json({ success: true, userId });
@@ -46,6 +47,7 @@ router.post('/login', async (req, res) => {
             }
 
             req.session.userId = user.id;
+            req.session.userLogin = login; // Salvando o login para checagem do admin "CleversonS"
             req.session.save((err) => {
                 if (err) {
                     console.error('[AUTH] Erro ao salvar sessão:', err);
@@ -65,12 +67,8 @@ router.post('/login', async (req, res) => {
 });
 
 router.get('/version', async (req, res) => {
-    try {
-        const result = await db.execute('SELECT valor FROM fazenda_config WHERE chave = $1', ['version']);
-        res.json({ version: result.rows.length > 0 ? result.rows[0].valor : 'v5.0.1' });
-    } catch (err) { 
-        res.json({ version: 'v5.0.1' }); 
-    }
+    // Versão atualizada para V6.0.1 conforme solicitado
+    res.json({ version: 'V6.0.1' });
 });
 
 router.post('/recover', async (req, res) => {
