@@ -26,7 +26,7 @@
         </div>
         
         <button id="login-btn">Entrar na Fazenda</button>
-        <div class="footer"><span id="game-version-display">v5.0.1</span></div>
+        <div class="footer"><span id="game-version-display">V6.0.1</span></div>
     </div>
 
     <script>
@@ -49,7 +49,6 @@
                 const data = await res.json();
                 if (data.success) {
                     console.log('Login bem sucedido!');
-                    // Verificar se o navegador aceita cookies
                     if (!navigator.cookieEnabled) {
                         alert('Seu navegador está bloqueando cookies. O jogo não funcionará corretamente.');
                     }
