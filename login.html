@@ -19,13 +19,16 @@
     <div class="login-card" id="card-login">
         <img src="assets/logo_fazendinha_online.png" alt="Logo" style="width: 150px; margin-bottom: 1rem;">
         <h1>Acessar Fazenda</h1>
+        
         <div style="margin: 20px 0;">
             <input type="text" id="login-user" placeholder="Login" autocomplete="username">
             <input type="password" id="login-pass" placeholder="Senha" autocomplete="current-password">
         </div>
+        
         <button id="login-btn">Entrar na Fazenda</button>
         <div class="footer"><span id="game-version-display">v5.0.1</span></div>
     </div>
+
     <script>
         document.getElementById('login-btn').addEventListener('click', async () => {
             const user = document.getElementById('login-user').value;
@@ -45,12 +48,18 @@
 
                 const data = await res.json();
                 if (data.success) {
+                    console.log('Login bem sucedido!');
+                    // Verificar se o navegador aceita cookies
+                    if (!navigator.cookieEnabled) {
+                        alert('Seu navegador está bloqueando cookies. O jogo não funcionará corretamente.');
+                    }
                     window.location.href = 'index.html';
                 } else {
                     alert('Erro: ' + (data.error || 'Credenciais inválidas.'));
                 }
             } catch (err) {
-                alert('Erro na conexão com o servidor.');
+                console.error('Erro de conexão:', err);
+                alert('Erro crítico de rede ou servidor. Verifique o console.');
             }
         });
 
@@ -58,6 +67,7 @@
             if (e.key === 'Enter') document.getElementById('login-btn').click();
         });
 
+        // Buscar versão dinamicamente
         async function fetchVersion() {
             try {
                 const res = await fetch('api/auth/version');
@@ -65,7 +75,9 @@
                 if (data.version) {
                     document.getElementById('game-version-display').textContent = data.version;
                 }
-            } catch (err) {}
+            } catch (err) {
+                console.error('Erro ao buscar versão:', err);
+            }
         }
         fetchVersion();
     </script>

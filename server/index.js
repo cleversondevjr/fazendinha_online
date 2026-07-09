@@ -12,10 +12,20 @@ const port = process.env.PORT || 3002;
 
 app.set('trust proxy', true);
 
+// Lista de origens permitidas (ajuste conforme necessário para o seu ambiente)
+const allowedOrigins = ['https://sgiptv.com.br'];
+
 app.use(cors({
-    origin: function (origin, callback) { callback(null, true); },
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true
 }));
+
 app.use(express.json());
 app.use(cookieParser());
 
@@ -39,12 +49,13 @@ app.use(session({
     proxy: true,
     cookie: {
         maxAge: 24 * 60 * 60 * 1000,
-        secure: true,
-        sameSite: 'none',
+        secure: true, // Habilitado para HTTPS (Cloudflare)
+        sameSite: 'none', 
         path: '/fazendinha/'
     }
 }));
 
+// Middleware de verificação de autenticação
 app.use((req, res, next) => {
     const publicPaths = [
         '/login.html',
@@ -80,7 +91,7 @@ const authRoutes = require('./routes/auth');
 
 const adminAuth = async (req, res, next) => {
     try {
-        const userRes = await db.execute('SELECT is_admin FROM fazenda_usuarios WHERE id = ', [req.userId]);
+        const userRes = await db.execute('SELECT is_admin FROM fazenda_usuarios WHERE id = $1', [req.userId]);
         if (userRes.rows.length === 0 || !userRes.rows[0].is_admin) {
             return res.status(403).json({ error: 'Acesso negado. Apenas administradores.' });
         }
@@ -107,4 +118,5 @@ app.use('/assets', express.static(assetsPath));
 app.use('/sketches', express.static(path.join(frontendPath, 'sketches')));
 
 require('./cron');
+
 app.listen(port, () => console.log(`Server v5.0.1 running on ${port}`));
