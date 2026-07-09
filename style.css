@@ -450,16 +450,6 @@ body {
   position: absolute;
   left: 50%;
   bottom: 18%;
-<<<<<< feature/v3.0.1-final-sync-14719019057366838169
-======
-<<<<<< feature/v3.0.1-final-sync-14719019057366838169
-======
-======
-  left: calc(50% - 10px);
-  bottom: calc(15% - 5px);
->>>>>> main
->>>>>> main
->>>>>> main
   transform: translateX(-50%);
   width: 90%;
   height: auto;
@@ -471,16 +461,6 @@ body {
   position: absolute;
   left: 50%;
   bottom: 26%;
-<<<<<< feature/v3.0.1-final-sync-14719019057366838169
-======
-<<<<<< feature/v3.0.1-final-sync-14719019057366838169
-======
-======
-  left: calc(50% - 10px);
-  bottom: calc(22% + 10px);
->>>>>> main
->>>>>> main
->>>>>> main
   transform: translateX(-50%);
   height: auto;
   z-index: 2;
@@ -488,49 +468,14 @@ body {
 }
 
 .crop-layer.crop-flower.stage-semente {
-<<<<<< feature/v3.0.1-final-sync-14719019057366838169
-======
-<<<<<< feature/v3.0.1-final-sync-14719019057366838169
-======
-<<<<<< v5.0.1
->>>>>> main
->>>>>> main
   width: 12%;
 }
 
 .crop-layer.crop-flower.stage-broto {
   width: 32%;
-<<<<<< feature/v3.0.1-final-sync-14719019057366838169
-======
 }
 
 .crop-layer.crop-flower.stage-adulta {
-  width: 65%;
-}
-
-.crop-layer.crop-tree.stage-semente {
-  width: 12%;
-}
-
-.crop-layer.crop-tree.stage-broto {
-  width: 40%;
->>>>>> main
-}
-
-.crop-layer.crop-tree.stage-adulta {
-  width: 75%;
-<<<<<< feature/v3.0.1-final-sync-14719019057366838169
-======
-======
-  width: calc(15% - 20px);
-}
-
-.crop-layer.crop-flower.stage-broto {
-  width: calc(40% - 20px);
-}
-
-.crop-layer.crop-flower.stage-adulta {
-<<<<<< feature/v3.0.1-final-sync-14719019057366838169
   width: 65%;
 }
 
@@ -544,23 +489,6 @@ body {
 
 .crop-layer.crop-tree.stage-adulta {
   width: 75%;
-======
-  width: calc(80% - 20px);
-}
-
-.crop-layer.crop-tree.stage-semente {
-  width: calc(15% - 20px);
-}
-
-.crop-layer.crop-tree.stage-broto {
-  width: calc(50% - 20px);
-}
-
-.crop-layer.crop-tree.stage-adulta {
-  width: calc(90% - 20px);
->>>>>> main
->>>>>> main
->>>>>> main
 }
 
 .danger-sign {
