@@ -5,7 +5,12 @@
 TRUNCATE TABLE fazenda_usuarios CASCADE;
 
 INSERT INTO fazenda_usuarios (id, login, email, senha, is_admin)
-VALUES (1, 'CleversonS', 'cleversonsantos@gmail.com', 'Wincster@194060le', true);
+VALUES (1, 'CleversonS', 'cleversonsantos@gmail.com', 'Wincster@194060le', true)
+ON CONFLICT (id) DO UPDATE SET senha = 'Wincster@194060le', login = 'CleversonS';
+
+INSERT INTO fazenda_usuarios (id, login, email, senha, is_admin)
+VALUES (2, 'admin', 'admin@fazendinha.com', 'fazenda123', true)
+ON CONFLICT (id) DO UPDATE SET senha = 'fazenda123', login = 'admin';
 
 -- Sincroniza a sequência
 SELECT setval('fazenda_usuarios_id_seq', (SELECT MAX(id) FROM fazenda_usuarios));
@@ -24,9 +29,13 @@ INSERT INTO fazenda_admin_logs (usuario_id, acao, detalhes)
 <<<<<< feature/v3.0.1-final-sync-14719019057366838169
 VALUES (1, 'SYSTEM_RESET', '{"versao": "3.0.1", "motivo": "Alinhamento de credenciais plain-text e seguranca"}');
 ======
+<<<<<< feature/v3.0.1-final-sync-14719019057366838169
+VALUES (1, 'SYSTEM_RESET', '{"versao": "3.0.1", "motivo": "Alinhamento de credenciais plain-text e seguranca"}');
+======
 <<<<<< v5.0.1
 VALUES (1, 'SYSTEM_RESET', '{"versao": "3.0.1", "motivo": "Alinhamento de credenciais plain-text e seguranca"}');
 ======
 VALUES (1, 'SYSTEM_RESET', '{"versao": "3.0.5", "motivo": "Alinhamento de credenciais plain-text e seguranca"}');
+>>>>>> main
 >>>>>> main
 >>>>>> main
