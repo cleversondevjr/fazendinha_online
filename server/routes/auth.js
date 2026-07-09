@@ -14,17 +14,6 @@ router.post('/register', async (req, res) => {
         );
         const userId = result.rows[0].id;
         await ensureUserInitialized(userId);
-<<<<<< feature/v3.0.1-final-sync-14719019057366838169
-======
-<<<<<< v5.0.1
-======
-
-        if (req.session) {
-            req.session.userId = userId;
-        }
-
->>>>>> main
->>>>>> main
         res.json({ success: true, userId });
     } catch (err) {
         if (err.code === '23505') return res.status(400).json({ error: 'Login ou E-mail já estão em uso.' });
@@ -34,6 +23,7 @@ router.post('/register', async (req, res) => {
 
 router.post('/login', async (req, res) => {
     const { login, password } = req.body;
+    console.log(`[AUTH] Tentativa de login: ${login}`);
     try {
         const result = await db.execute(
             'SELECT id, senha, is_admin FROM fazenda_usuarios WHERE LOWER(login) = LOWER($1)',
@@ -41,49 +31,42 @@ router.post('/login', async (req, res) => {
         );
         if (result.rows.length > 0) {
             const user = result.rows[0];
-            console.log(`[AUTH] User found: ${user.id}`);
 
-            // Comparação em texto puro conforme requisito legado
-            const match = (password === user.senha);
-            if (!match) {
-                console.log(`[AUTH] Password mismatch for: ${login}`);
-                return res.status(401).json({ error: 'Credenciais inválidas.' });
+            // Comparação em texto puro conforme requisito
+            if (password !== user.senha) {
+                console.log(`[AUTH] Senha incorreta para: ${login}`);
+                return res.status(401).json({ error: 'Senha incorreta.' });
             }
 
-            console.log(`[AUTH] Login success for: ${login} (ID: ${user.id}, Admin: ${user.is_admin})`);
-
-            if (req.session) {
-                req.session.userId = user.id;
-                console.log(`[AUTH] Session userId set to: ${req.session.userId}`);
-            } else {
-                console.error(`[AUTH] ERRO CRÍTICO: req.session está undefined para ${login}`);
-                return res.status(500).json({ error: 'Erro ao inicializar sessão. Verifique o servidor.' });
+            if (!req.session) {
+                console.error(`[AUTH] Sessão não disponível!`);
+                return res.status(500).json({ error: 'Erro de sessão no servidor.' });
             }
 
-            res.json({ success: true, userId: user.id });
+            req.session.userId = user.id;
+            req.session.save((err) => {
+                if (err) {
+                    console.error('[AUTH] Erro ao salvar sessão:', err);
+                    return res.status(500).json({ error: 'Falha ao salvar sessão.' });
+                }
+                console.log(`[AUTH] Login OK: ${login} (ID: ${user.id})`);
+                res.json({ success: true, userId: user.id });
+            });
         } else {
-            res.status(401).json({ error: 'Credenciais inválidas.' });
+            console.log(`[AUTH] Usuário não encontrado: ${login}`);
+            res.status(401).json({ error: 'Usuário não encontrado.' });
         }
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('[AUTH] Erro interno:', err);
+        res.status(500).json({ error: 'Erro no banco de dados.' });
     }
 });
 
 router.get('/version', async (req, res) => {
     try {
         const result = await db.execute('SELECT valor FROM fazenda_config WHERE chave = $1', ['version']);
-<<<<<< feature/v3.0.1-final-sync-14719019057366838169
         res.json({ version: result.rows.length > 0 ? result.rows[0].valor : 'v3.0.1' });
     } catch (err) { res.json({ version: 'v3.0.1' }); }
-======
-<<<<<< v5.0.1
-        res.json({ version: result.rows.length > 0 ? result.rows[0].valor : 'v3.0.1' });
-    } catch (err) { res.json({ version: 'v3.0.1' }); }
-======
-        res.json({ version: result.rows.length > 0 ? result.rows[0].valor : 'v4.0.0' });
-    } catch (err) { res.json({ version: 'v4.0.0' }); }
->>>>>> main
->>>>>> main
 });
 
 router.post('/recover', async (req, res) => {
