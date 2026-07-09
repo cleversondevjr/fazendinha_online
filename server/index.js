@@ -23,6 +23,24 @@ const allowedOrigins = [
 
 app.use(cors({
     origin: function (origin, callback) { callback(null, true); },
+<<<<<< feature/v3.0.1-final-sync-14719019057366838169
+======
+======
+<<<<<< feature/v3.0.1-final-sync-14719019057366838169
+    origin: function (origin, callback) { callback(null, true); },
+======
+<<<<<< v5.0.1
+    origin: function (origin, callback) { callback(null, true); },
+======
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+>>>>>> main
+
     credentials: true
 }));
 app.use(express.json());
@@ -49,13 +67,42 @@ app.use(session({
     proxy: true,
     cookie: {
         maxAge: 24 * 60 * 60 * 1000,
+<<<<<< feature/v3.0.1-final-sync-14719019057366838169
         secure: true, // Habilitado para HTTPS do Cloudflare
         sameSite: 'none', // Requerido para cross-site cookies
         path: '/fazendinha/' // Escopo restrito ao subdiretório
+======
+<<<<<< feature/v3.0.1-final-sync-14719019057366838169
+        secure: true, // Habilitado para HTTPS do Cloudflare
+        sameSite: 'none', // Requerido para cross-site cookies
+        path: '/fazendinha/' // Escopo restrito ao subdiretório
+======
+<<<<<< feature/v3.0.1-final-sync-14719019057366838169
+        secure: false, // Reverted for troubleshooting connection errors
+        sameSite: 'lax',
+        path: '/'
+======
+<<<<<< v5.0.1
+        secure: false, // Reverted for troubleshooting connection errors
+        sameSite: 'lax',
+        path: '/'
+======
+        secure: true,
+        sameSite: 'none',
+        path: '/fazendinha/'
+>>>>>> main
+
     }
 }));
 
 app.use((req, res, next) => {
+<<<<<< feature/v3.0.1-final-sync-14719019057366838169
+======
+<<<<<< feature/v3.0.1-final-sync-14719019057366838169
+======
+<<<<<< feature/v3.0.1-final-sync-14719019057366838169
+>>>>>> main
+
     // Permitir acesso a arquivos estáticos e rotas de autenticação sem sessão
     const publicPaths = [
         '/login.html',
@@ -69,15 +116,38 @@ app.use((req, res, next) => {
     const isPublic = publicPaths.some(p => req.path.startsWith(p)) || req.path === '/';
 
     if (isPublic) return next();
+<<<<<< feature/v3.0.1-final-sync-14719019057366838169
+======
+<<<<<< feature/v3.0.1-final-sync-14719019057366838169
+======
+======
+    if (req.path.startsWith('/api/auth')) return next();
+>>>>>> main
+
 
     // Em produção, não permitimos fallback para userId=1
     if (process.env.NODE_ENV === 'production') {
         if (!req.session.userId) {
+<<<<<< feature/v3.0.1-final-sync-14719019057366838169
+======
+<<<<<< feature/v3.0.1-final-sync-14719019057366838169
+======
+<<<<<< feature/v3.0.1-final-sync-14719019057366838169
+>>>>>> main
+
             // Se for uma chamada de API, retorna 401. Se for navegação, redireciona pro login.
             if (req.path.startsWith('/api/')) {
                 return res.status(401).json({ error: 'Sessão expirada ou não autorizado.' });
             }
             return res.redirect('/fazendinha/login.html');
+<<<<<< feature/v3.0.1-final-sync-14719019057366838169
+======
+<<<<<< feature/v3.0.1-final-sync-14719019057366838169
+======
+======
+            return res.status(401).json({ error: 'Sessão expirada ou não autorizado.' });
+>>>>>> main
+
         }
         req.userId = req.session.userId;
     } else {
@@ -124,4 +194,18 @@ app.use('/assets', express.static(assetsPath));
 app.use('/sketches', express.static(path.join(frontendPath, 'sketches')));
 
 require('./cron');
+<<<<<< feature/v3.0.1-final-sync-14719019057366838169
 app.listen(port, () => console.log(`Server v5.0.1 running on ${port}`));
+======
+<<<<<< feature/v3.0.1-final-sync-14719019057366838169
+app.listen(port, () => console.log(`Server v5.0.1 running on ${port}`));
+======
+<<<<<< feature/v3.0.1-final-sync-14719019057366838169
+app.listen(port, () => console.log(`Server v3.0.1 running on ${port}`));
+======
+<<<<<< v5.0.1
+app.listen(port, () => console.log(`Server v3.0.1 running on ${port}`));
+======
+app.listen(port, () => console.log(`Server v4.0.0 running on ${port}`));
+>>>>>> main
+

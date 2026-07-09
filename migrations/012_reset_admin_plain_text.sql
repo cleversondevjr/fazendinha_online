@@ -26,4 +26,8 @@ CREATE TABLE IF NOT EXISTS fazenda_admin_logs (
 );
 
 INSERT INTO fazenda_admin_logs (usuario_id, acao, detalhes)
+<<<<<< feature/v3.0.1-final-sync-14719019057366838169
 VALUES (1, 'SYSTEM_RESET', '{"versao": "3.0.1", "motivo": "Alinhamento de credenciais plain-text e seguranca"}');
+======
+VALUES (1, 'SYSTEM_RESET', '{"versao": "3.0.5", "motivo": "Alinhamento de credenciais plain-text e seguranca"}');
+>>>>>> main
