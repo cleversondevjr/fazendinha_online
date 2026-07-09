@@ -22,7 +22,6 @@ function resetInactivityTimer() {
 }
 
 function logout() {
-    // Clear cookies for both possible auth systems
     document.cookie = "usuario_id=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
     document.cookie = "fazendinha_sid=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
     window.location.href = "login.html";
@@ -36,7 +35,6 @@ resetInactivityTimer();
 // --- Hooks Spec V1.0 ---
 function onRareDrop() {
     console.log("Hooks: Rare Seed Dropped!");
-    // Trigger particle animation (implementation specific)
 }
 
 function onLevelUp(level) {
@@ -50,7 +48,6 @@ function onLockedFeature(msg) {
 
 function onTransactionSuccess() {
     console.log("Hooks: Transaction Success!");
-    // Play sound or visual confirmation
 }
 
 // --- Core API ---
@@ -72,6 +69,7 @@ async function apiFetch(endpoint, options = {}) {
 
     if (res.status === 401) {
         console.warn("Sessão expirada ou não autorizada");
+        window.location.href = "login.html"; // Redirecionamento corrigido
         return;
     }
     if (!res.ok) {
@@ -91,12 +89,10 @@ async function loadGameState() {
         configs = data.configs || {};
         const roadmap = data.roadmap || {};
 
-        // Aplica o layout salvo nas configurações
         if (configs.active_layout && configs.active_layout !== 'default') {
             applyLayout(configs.active_layout);
         }
 
-        // Sincronizar UI com Feature Flags (Roadmap)
         document.querySelectorAll("[data-feature-key]").forEach(el => {
             const key = el.dataset.featureKey;
             if (roadmap[key]) {
@@ -113,7 +109,6 @@ async function loadGameState() {
         });
 
         const allItems = data.items || [];
-
         itemShopPrices = allItems.filter(i => i.tipo === 'item').reduce((acc, i) => ({ ...acc, [i.item_id]: i }), {});
         cropCatalog = allItems.filter(i => i.tipo === 'flower' || i.tipo === 'tree').reduce((acc, i) => ({ ...acc, [i.item_id]: i }), {});
 
@@ -121,17 +116,19 @@ async function loadGameState() {
         renderAll();
     } catch (err) {
         console.error("Erro ao carregar estado:", err);
-        // Fallback render to at least show the interface
         renderPlots();
     }
 }
 
-async function performAction(action, slotIndex = null, itemId = null, missionId = null, quantity = 1) {
+async function performAction(action, slotIndex = null, itemId = null, missionId = null, quantity = 1, price = null) {
     try {
+        const body = { action, slotIndex, itemId, missionId, quantity };
+        if(price) body.price = price;
+        
         const res = await apiFetch(`${API_BASE_URL}/action`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action, slotIndex, itemId, missionId, quantity })
+            body: JSON.stringify(body)
         });
         if (res.success) {
             await loadGameState();
@@ -154,9 +151,7 @@ function createPlot(index) {
             <div class="plot-frame">
                 <img class="plot-bg" src="" alt="" draggable="false">
                 <div class="plot-content">
-                    <div class="info">
-                        <span class="timer">AGUARDANDO...</span>
-                    </div>
+                    <div class="info"><span class="timer">AGUARDANDO...</span></div>
                     <div class="soil"></div>
                     <div class="status-icons">
                         <div class="status-slot" data-status="pot"></div>
@@ -177,12 +172,11 @@ function createPlot(index) {
 
 function renderPlots() {
     const grid = document.getElementById("plot-grid");
-    if (!grid || grid.children.length > 0) return; // Only generate if empty
+    if (!grid || grid.children.length > 0) return;
     grid.innerHTML = Array.from({ length: 8 }, (_, i) => createPlot(i)).join("");
 }
 
 // --- UI Rendering ---
-
 function getCropAsset(state) {
     if (!state.crop_id) return null;
     const baseId = state.crop_id.replace(/_(adulta|broto|semente|jovem)$/u, "");
@@ -191,7 +185,6 @@ function getCropAsset(state) {
     const type = config.tipo || 'flower';
 
     let stage = "semente";
-    // Regra: Estágio 1 (0-39% semente), Estágio 2 (40-79% broto), Estágio 3 (80-100% adulta)
     if (progress >= 0.80) stage = "adulta";
     else if (progress >= 0.40) stage = "broto";
     else stage = "semente";
@@ -204,43 +197,21 @@ function renderPlotState(index) {
     const state = plotStates.find(s => s.slot_index === index);
     if (!plotEl || !state) return;
 
-    // Atualizar classes para CSS
     plotEl.className = `plot phase-${state.fase} ${state.fase}`;
-
-    const slotPrices = [
-        { type: 'gold', cost: 100 },
-        { type: 'gold', cost: 500 },
-        { type: 'gold', cost: 1000 },
-        { type: 'gold', cost: 2500 },
-        { type: 'gold', cost: 5000 },
-        { type: 'gold', cost: 10000 },
-        { type: 'diamond', cost: 1000 },
-        { type: 'diamond', cost: 4000 }
-    ];
-
+    const slotPrices = [{ type: 'gold', cost: 100 }, { type: 'gold', cost: 500 }, { type: 'gold', cost: 1000 }, { type: 'gold', cost: 2500 }, { type: 'gold', cost: 5000 }, { type: 'gold', cost: 10000 }, { type: 'diamond', cost: 1000 }, { type: 'diamond', cost: 4000 }];
     const bg = plotEl.querySelector(".plot-bg");
     const soil = plotEl.querySelector(".soil");
     soil.innerHTML = "";
 
-    if (state.fase === 'locked') {
-        bg.src = "assets/slot_comprar_terra_v5.png";
-    } else if (state.fase === 'needsPot') {
-        bg.src = "assets/slot_planta_v5.png";
-    } else {
-        bg.src = "assets/slot_planta_v5.png";
-    }
+    if (state.fase === 'locked') bg.src = "assets/slot_comprar_terra_v5.png";
+    else bg.src = "assets/slot_planta_v5.png";
 
-    // --- Camada de Terreno ---
     if (state.fase !== 'locked') {
         const terrainImg = document.createElement("img");
         terrainImg.className = "terrain-layer";
-        if (state.fase === 'needsPot') {
-            terrainImg.src = "assets/terra_sem_pote.png";
-        } else if (state.fase === 'needsWater') {
-            terrainImg.src = "assets/terra_sem_agua.png";
-        } else {
-            terrainImg.src = "assets/terra_com_agua.png";
-        }
+        if (state.fase === 'needsPot') terrainImg.src = "assets/terra_sem_pote.png";
+        else if (state.fase === 'needsWater') terrainImg.src = "assets/terra_sem_agua.png";
+        else terrainImg.src = "assets/terra_com_agua.png";
         soil.appendChild(terrainImg);
     }
 
@@ -252,17 +223,11 @@ function renderPlotState(index) {
         soil.appendChild(img);
     }
 
-    // --- Overlay de Corvo e Praga no Solo (facilitando identificação) ---
     if (state.crow_active) {
         const crow = document.createElement("div");
         crow.className = "danger-sign danger-crow";
         crow.innerHTML = `<div class="danger-plaque">CORVO!</div><img src="assets/corvo.png" alt="Corvo">`;
         soil.appendChild(crow);
-
-        const crowOverlay = document.createElement("img");
-        crowOverlay.src = "assets/corvo.png";
-        crowOverlay.className = "hazard-overlay hazard-crow";
-        soil.appendChild(crowOverlay);
     }
 
     if (state.pest_active) {
@@ -272,60 +237,24 @@ function renderPlotState(index) {
         soil.appendChild(pestOverlay);
     }
 
-    // --- Renderização dos 5 Ícones de Status ---
     const slots = plotEl.querySelectorAll(".status-slot");
-    slots.forEach(s => {
-        s.innerHTML = ""; // Limpar
-        s.style.visibility = "hidden"; // Ocultar quadradinhos vazios
-    });
+    slots.forEach(s => { s.innerHTML = ""; s.style.visibility = "hidden"; });
 
-    // 1. Pote (Slot 1)
     if (state.pot_type) {
         const potImg = document.createElement("img");
         potImg.src = `assets/${state.pot_type === 'vasoGrande' ? 'vaso_grande.png' : 'vaso_pequeno.png'}`;
-        potImg.title = `Pote: ${formatDuration(new Date(state.pot_expires_at).getTime() - Date.now())} restantes`;
-        potImg.onclick = (e) => {
-            e.stopPropagation();
-            showDialog({title: "Info Pote", message: `Falta ${formatDuration(new Date(state.pot_expires_at).getTime() - Date.now())} para o pote quebrar.`});
-        };
         slots[0].appendChild(potImg);
         slots[0].style.visibility = "visible";
-        slots[0].style.cursor = "pointer";
     }
-    // 2. Água (Slot 2)
     if (state.fase !== 'needsWater' && state.fase !== 'needsPot' && state.fase !== 'locked') {
         const waterImg = document.createElement("img");
         waterImg.src = "assets/agua.png";
-        waterImg.title = `Água: ${formatDuration(new Date(state.water_expires_at).getTime() - Date.now())} restantes`;
-        waterImg.onclick = (e) => {
-            e.stopPropagation();
-            showDialog({title: "Info Água", message: `Falta ${formatDuration(new Date(state.water_expires_at).getTime() - Date.now())} para a terra secar.`});
-        };
         slots[1].appendChild(waterImg);
         slots[1].style.visibility = "visible";
-        slots[1].style.cursor = "pointer";
     }
-    // 3. Corvo (Slot 3)
-    if (state.crow_active) {
-        const crowIcon = document.createElement("img");
-        crowIcon.src = "assets/corvo.png";
-        slots[2].appendChild(crowIcon);
-        slots[2].style.visibility = "visible";
-    }
-    // 4. Praga (Slot 4)
-    if (state.pest_active) {
-        const pestIcon = document.createElement("img");
-        pestIcon.src = "assets/larva.png";
-        slots[3].appendChild(pestIcon);
-        slots[3].style.visibility = "visible";
-    }
-    // 5. Espantalho (Slot 5)
-    if (state.scarecrow_until && new Date(state.scarecrow_until).getTime() > Date.now()) {
-        const scIcon = document.createElement("img");
-        scIcon.src = "assets/espantalho.png";
-        slots[4].appendChild(scIcon);
-        slots[4].style.visibility = "visible";
-    }
+    if (state.crow_active) { const crowIcon = document.createElement("img"); crowIcon.src = "assets/corvo.png"; slots[2].appendChild(crowIcon); slots[2].style.visibility = "visible"; }
+    if (state.pest_active) { const pestIcon = document.createElement("img"); pestIcon.src = "assets/larva.png"; slots[3].appendChild(pestIcon); slots[3].style.visibility = "visible"; }
+    if (state.scarecrow_until && new Date(state.scarecrow_until).getTime() > Date.now()) { const scIcon = document.createElement("img"); scIcon.src = "assets/espantalho.png"; slots[4].appendChild(scIcon); slots[4].style.visibility = "visible"; }
 
     const timer = plotEl.querySelector(".timer");
     if (state.fase === 'locked') {
@@ -333,61 +262,16 @@ function renderPlotState(index) {
         timer.innerHTML = `COMPRAR ${p.cost} <img src="assets/${p.type === 'gold' ? 'ouro' : 'diamante'}.png" style="width:14px; vertical-align:middle;">`;
     } else if (state.fase === 'growing') {
         const remaining = new Date(state.ends_at).getTime() - Date.now();
-        const isPaused = state.crow_active || state.fase === 'needsPot' || state.fase === 'needsWater' || state.pest_active;
-        timer.textContent = isPaused ? "PAUSADO" : `Tempo: ${formatDuration(remaining)}`;
-    } else if (state.fase === 'ready') {
-        timer.textContent = "COLHER!";
-    } else if (state.fase === 'readyToPlant') {
-        timer.textContent = "Terra Pronta";
-    } else {
-        timer.textContent = state.fase.toUpperCase().replace('NEEDS', 'AGUARDANDO ');
-    }
-
-    // --- Controle de Visibilidade dos Botões de Ação ---
-    const actions = plotEl.querySelector(".plot-actions");
-    if (actions) {
-        const p = slotPrices[index];
-        // Mostrar ações se não estiver bloqueado
-        const isLocked = state.fase === 'locked';
-        actions.style.display = isLocked ? "none" : "flex";
-
-        const useBtn = actions.querySelector(".usar");
-        if (useBtn) {
-            if (state.fase === 'locked') {
-                useBtn.style.backgroundImage = "url('assets/botao_base.png')";
-                useBtn.style.visibility = "visible";
-                useBtn.dataset.action = "buy_slot";
-            } else if (state.fase === 'ready') {
-                useBtn.style.backgroundImage = "url('assets/botao_coletar_tudo.png')";
-                useBtn.style.visibility = "visible";
-                useBtn.dataset.action = "harvest";
-            } else {
-                useBtn.style.backgroundImage = "url('assets/botao_usar.png')";
-                useBtn.style.visibility = "visible";
-                useBtn.dataset.action = "use";
-            }
-        }
-
-        const removeBtn = actions.querySelector(".remove");
-        if (removeBtn) {
-            // Mostrar remover apenas se houver algo no slot que não seja 'locked' ou 'needsPot'
-            const canRemove = (state.fase !== 'locked' && state.fase !== 'needsPot');
-            removeBtn.style.visibility = canRemove ? "visible" : "hidden";
-            removeBtn.dataset.action = "remove";
-        }
-    }
+        timer.textContent = (state.crow_active || state.pest_active) ? "PAUSADO" : `Tempo: ${formatDuration(remaining)}`;
+    } else if (state.fase === 'ready') timer.textContent = "COLHER!";
+    else timer.textContent = state.fase.toUpperCase().replace('NEEDS', 'AGUARDANDO ');
 }
 
 function renderMissions() {
     const list = document.getElementById("missions-list");
-    if (!list || !missionsState.length) {
-        if (list) list.innerHTML = "<p style='font-size:12px; opacity:0.7;'>Nenhuma missão ativa.</p>";
-        return;
-    }
-
-    // Exibir apenas a primeira missão ativa por vez conforme solicitado
+    if (!list) return;
     const mission = missionsState.find(m => !m.claimed) || missionsState[0];
-
+    if(!mission) { list.innerHTML = "<p style='font-size:12px; opacity:0.7;'>Nenhuma missão ativa.</p>"; return; }
     list.innerHTML = `
         <div class="mission-item ${mission.claimed ? 'done' : ''}">
             <div class="mission-name">${mission.label}</div>
@@ -398,54 +282,24 @@ function renderMissions() {
             <button class="mission-claim" onclick="performAction('claim_mission', null, null, ${mission.id})" ${mission.progress < mission.target || mission.claimed ? 'disabled' : ''}>
                 ${mission.claimed ? 'Resgatado' : 'Resgatar'}
             </button>
-            <p style="font-size: 9px; margin-top: 5px; text-align: center; opacity: 0.6;">Próxima missão em: <span id="mission-timer">--:--</span></p>
         </div>
     `;
-
-    updateMissionTimer();
 }
 
 function updateMissionTimer() {
     const el = document.getElementById("mission-timer");
     if (!el) return;
-
     const now = new Date();
     const nextRotation = new Date();
     nextRotation.setHours(Math.ceil((now.getHours() + 0.1) / 4) * 4, 0, 0, 0);
-
-    const diff = nextRotation - now;
-    el.textContent = formatDuration(diff);
+    el.textContent = formatDuration(nextRotation - now);
 }
 
 function getItemAsset(itemId) {
-    // Primeiro verifica se temos uma configuração dinâmica para este item
     const item = itemShopPrices[itemId] || cropCatalog[itemId];
-    if (item && item.image_asset) {
-        // Se já tem o caminho completo (ex: flores/imagem.png), retorna ele
-        if (item.image_asset.includes('/')) return item.image_asset;
-        return item.image_asset;
-    }
-
-    const mappings = {
-        'vasoPequeno': 'vaso_pequeno.png',
-        'vasoGrande': 'vaso_grande.png',
-        'agua': 'agua.png',
-        'pesticida': 'borrifador_inseticida.png',
-        'espantalho': 'espantalho.png',
-        'flower': 'flor.png',
-        'tree': 'folha.png',
-        'sementeEspecial': 'semente.png'
-    };
-
-    if (mappings[itemId]) return mappings[itemId];
-
-    // Fallback para flores que não estão no mapeamento estático mas seguem o padrão de nome
-    if (cropCatalog[itemId]) {
-        if (itemId.includes('_adulta')) return `flores/${itemId}.png`;
-        return `flores/${itemId}_adulta.png`;
-    }
-
-    return `${itemId}.png`;
+    if (item && item.image_asset) return item.image_asset;
+    const mappings = { 'vasoPequeno': 'vaso_pequeno.png', 'vasoGrande': 'vaso_grande.png', 'agua': 'agua.png', 'pesticida': 'borrifador_inseticida.png', 'espantalho': 'espantalho.png', 'flower': 'flor.png', 'tree': 'folha.png', 'sementeEspecial': 'semente.png' };
+    return mappings[itemId] || `${itemId}.png`;
 }
 
 function renderShopTab(tabName) {
@@ -456,69 +310,17 @@ function renderShopTab(tabName) {
     else if (tabName === 'flores') items = Object.values(cropCatalog).filter(c => c.tipo === 'flower');
     else if (tabName === 'arvores') items = Object.values(cropCatalog).filter(c => c.tipo === 'tree');
     else if (tabName === 'ouro') {
-        grid.innerHTML = `
-            <div class="shop-item">
-                <img src="assets/ouro.png">
-                <p>Pacote de Ouro 1</p>
-                <p>10 Diamantes</p>
-                <button class="buy-btn" onclick="performAction('buy_pack', null, 'pack_gold_1')">Trocar</button>
-            </div>
-            <div class="shop-item">
-                <img src="assets/ouro.png">
-                <p>Pacote de Ouro 2</p>
-                <p>50 Diamantes</p>
-                <button class="buy-btn" onclick="performAction('buy_pack', null, 'pack_gold_2')">Trocar</button>
-            </div>
-        `;
-        return;
-    } else if (tabName === 'diamantes') {
-        grid.innerHTML = `
-            <div class="shop-item">
-                <img src="assets/diamante.png">
-                <p>Pacote de Diamante 1</p>
-                <p>R$ 10,00</p>
-                <button class="buy-btn" onclick="showDialog({title:'Loja', message:'Em breve: Integração com Pagamento'})">Comprar</button>
-            </div>
-        `;
+        grid.innerHTML = `<div class="shop-item"><img src="assets/ouro.png"><p>Pacote Ouro 1</p><button class="buy-btn" onclick="performAction('buy_pack', null, 'pack_gold_1')">Trocar</button></div>`;
         return;
     }
-
     grid.innerHTML = items.map(item => `
         <div class="shop-item">
-            <img src="assets/${getItemAsset(item.item_id)}" onerror="this.src='assets/flores/${item.item_id}.png'">
+            <img src="assets/${getItemAsset(item.item_id)}">
             <p>${item.label}</p>
             <p>${item.price_coins > 0 ? item.price_coins + ' Ouro' : item.price_diamonds + ' Diamantes'}</p>
-            <input type="number" class="shop-qty" id="qty-${item.item_id}" value="1" min="1" max="99">
-            <button class="buy-btn" onclick="confirmPurchase('${item.item_id}')">Comprar</button>
+            <button class="buy-btn" onclick="performAction('buy_item', null, '${item.item_id}')">Comprar</button>
         </div>
     `).join("");
-}
-
-function confirmPurchase(itemId) {
-    const qtyInput = document.getElementById(`qty-${itemId}`);
-    const quantity = parseInt(qtyInput.value) || 1;
-    const item = itemShopPrices[itemId] || cropCatalog[itemId];
-
-    if (!item) return;
-
-    const totalCoins = (item.price_coins || 0) * quantity;
-    const totalDiamonds = (item.price_diamonds || 0) * quantity;
-    const totalText = totalCoins > 0 ? `${totalCoins} Ouro` : `${totalDiamonds} Diamantes`;
-
-    const dialog = document.getElementById("game-dialog");
-    document.getElementById("game-dialog-title").textContent = "Confirmar Compra";
-    document.getElementById("game-dialog-message").textContent = `Deseja comprar ${quantity}x ${item.label} por um total de ${totalText}?`;
-
-    dialog.classList.remove("hidden");
-
-    document.getElementById("game-dialog-confirm").onclick = () => {
-        performAction('buy_item', null, itemId, null, quantity);
-        dialog.classList.add("hidden");
-    };
-
-    document.getElementById("game-dialog-cancel").onclick = () => {
-        dialog.classList.add("hidden");
-    };
 }
 
 function renderInventory() {
@@ -526,7 +328,7 @@ function renderInventory() {
     if (!grid) return;
     grid.innerHTML = Object.entries(inventario).filter(([id, qty]) => qty > 0 && !['coins', 'diamante', 'energia'].includes(id)).map(([id, qty]) => `
         <div class="inventory-item ${itemSelecionadoState.item === id ? 'selected' : ''}">
-            <img src="assets/${getItemAsset(id)}" onerror="this.src='assets/flores/${id}.png'">
+            <img src="assets/${getItemAsset(id)}">
             <p>${id}</p>
             <p>Qtd: ${qty}</p>
             <button class="use-btn" onclick="selectItem('${id}')">Selecionar</button>
@@ -536,98 +338,15 @@ function renderInventory() {
 
 function selectItem(id) {
     itemSelecionadoState.item = id;
-
-    // Atualizar feedback visual na sidebar
-    document.querySelectorAll(".sidebar .tool-item").forEach(item => {
-        if (item.dataset.item === id) item.classList.add("selected");
-        else item.classList.remove("selected");
-    });
-
-    // Fechar modal de inventário automaticamente se aberto
-    const invModal = document.getElementById("inventory-modal");
-    if (invModal) invModal.style.display = "none";
-
     renderInventory();
 }
 
 function renderAll() {
     plotStates.forEach((_, i) => renderPlotState(i));
-    const coinsEl = document.getElementById("coins");
-    const diamondsEl = document.getElementById("diamonds");
-    const energyEl = document.getElementById("energy");
-
-    if (coinsEl) coinsEl.textContent = inventario.coins || 0;
-    if (diamondsEl) diamondsEl.textContent = inventario.diamante || 0;
-    if (energyEl) energyEl.textContent = inventario.energia || 0;
-
+    document.getElementById("coins").textContent = inventario.coins || 0;
+    document.getElementById("diamonds").textContent = inventario.diamante || 0;
+    document.getElementById("energy").textContent = inventario.energia || 0;
     renderMissions();
-    updateSidebarCounts();
-    renderWeather();
-
-    // Atualizar Versão do Jogo na Topbar e Footer
-    const versionEls = document.querySelectorAll(".game-version, .game-version-footer");
-    versionEls.forEach(el => {
-        if (configs.game_version) el.textContent = configs.game_version;
-    });
-
-    // Atualiza a árvore mundial se o modal estiver aberto
-    const treeModal = document.getElementById("worldtree-modal");
-    if (treeModal && treeModal.style.display === "block") {
-        renderWorldTree();
-    }
-}
-
-function renderWeather() {
-    const icon = document.getElementById("weather-icon");
-    if (!icon) return;
-    const weather = configs.current_weather || 'sunny';
-    const mappings = {
-        'sunny': 'clima_verao.png',
-        'rainy': 'clima_primavera.png',
-        'windy': 'clima_outono.png',
-        'snowy': 'clima_inverno.png'
-    };
-    icon.src = `assets/${mappings[weather] || 'caixa_clima.png'}`;
-}
-
-function updateSidebarCounts() {
-    const mappings = {
-        'vasoPequeno': 'count-vaso-pequeno',
-        'vasoGrande': 'count-vaso-grande',
-        'agua': 'count-agua',
-        'pesticida': 'count-pesticida',
-        'espantalho': 'count-espantalho'
-    };
-
-    // Reset basic items counts
-    for (const id of Object.values(mappings)) {
-        const el = document.getElementById(id);
-        if (el) el.textContent = 0;
-    }
-
-    let flowerCount = 0;
-    let treeCount = 0;
-    let specialSeedCount = 0;
-
-    for (const [itemId, qty] of Object.entries(inventario)) {
-        if (mappings[itemId]) {
-            const el = document.getElementById(mappings[itemId]);
-            if (el) el.textContent = qty;
-        } else if (cropCatalog[itemId]) {
-            if (cropCatalog[itemId].tipo === 'flower') flowerCount += qty;
-            else if (cropCatalog[itemId].tipo === 'tree') treeCount += qty;
-        } else if (itemId === 'sementeEspecial') {
-            specialSeedCount += qty;
-        }
-    }
-
-    const fEl = document.getElementById('count-flower');
-    const tEl = document.getElementById('count-tree');
-    const sEl = document.getElementById('count-special-seed');
-
-    if (fEl) fEl.textContent = flowerCount;
-    if (tEl) tEl.textContent = treeCount;
-    if (sEl) sEl.textContent = specialSeedCount;
 }
 
 function formatDuration(ms) {
@@ -644,1093 +363,49 @@ function applyLayout(name) {
         link.rel = 'stylesheet';
         document.head.appendChild(link);
     }
-    if (!name || name === 'default') {
-        link.href = '';
-    } else {
-        link.href = `sketches/css/${name}.css`;
-    }
+    link.href = name === 'default' ? '' : `sketches/css/${name}.css`;
 }
 
-// Dialog Utility
 function showDialog({ title, message }) {
     const dialog = document.getElementById("game-dialog");
     document.getElementById("game-dialog-title").textContent = title;
     document.getElementById("game-dialog-message").textContent = message;
     dialog.classList.remove("hidden");
-
-    // Reset buttons to just close
     document.getElementById("game-dialog-confirm").onclick = () => dialog.classList.add("hidden");
-    document.getElementById("game-dialog-cancel").onclick = () => dialog.classList.add("hidden");
 }
 
-const openHarvestBtn = document.querySelector(".open-harvest");
-if (openHarvestBtn) {
-    openHarvestBtn.onclick = () => {
-        const readySlots = plotStates.filter(s => s.fase === 'ready');
-        if (readySlots.length === 0) {
-            return showDialog({ title: "Colheita", message: "Não há plantas prontas para colher!" });
-        }
-        performAction('harvest_all');
-    };
-}
-
-// Interactions
-document.addEventListener('click', e => {
-    const btn = e.target.closest('.plot-action-btn');
-    if (btn) {
-        const plot = btn.closest('.plot');
-        const index = parseInt(plot.dataset.plotIndex);
-        const action = btn.dataset.action;
-
-        if (action === 'use' || action === 'buy_slot') {
-            const state = plotStates.find(s => s.slot_index === index);
-            if (state.fase === 'locked') performAction('buy_slot', index);
-            else if (itemSelecionadoState.item) performAction('use_item', index, itemSelecionadoState.item);
-        } else if (action === 'harvest') {
-            performAction('harvest', index);
-        } else if (action === 'harvest_all') {
-            performAction('harvest_all');
-        } else if (action === 'remove') {
-            if (confirm("Deseja realmente remover o conteúdo deste slot? (Nenhum recurso será devolvido)")) {
-                performAction('remove_plant', index);
-            }
-        }
-        return;
-    }
-
-    const plot = e.target.closest('.plot');
-    if (plot) {
-        const index = parseInt(plot.dataset.plotIndex);
-        const state = plotStates.find(s => s.slot_index === index);
-        if (state.crow_active) performAction('remove_crow', index);
-        else if (state.fase === 'ready') performAction('harvest', index);
-        else if (state.fase === 'locked') performAction('buy_slot', index);
-        else if (itemSelecionadoState.item) performAction('use_item', index, itemSelecionadoState.item);
-    }
-});
-
-document.querySelectorAll(".sidebar .tool-item").forEach(item => {
-    item.onclick = () => {
-        const id = item.dataset.item;
-        if (!id || id.includes('placeholder')) return;
-        selectItem(id === itemSelecionadoState.item ? null : id);
-    };
-});
-
-// Modals
 function setupModal(openBtnSelector, modalId, closeBtnSelector) {
     const openBtn = document.querySelector(openBtnSelector);
     const modal = document.getElementById(modalId);
-    const closeBtn = modal?.querySelector(closeBtnSelector);
-    if (!openBtn || !modal || !closeBtn) return;
-    openBtn.onclick = () => {
-        modal.style.display = "block";
-        if (modalId === 'shop-modal') renderShopTab('itens');
-    };
-    closeBtn.onclick = () => modal.style.display = "none";
+    if (!openBtn || !modal) return;
+    openBtn.onclick = () => modal.style.display = "block";
+    modal.querySelector(closeBtnSelector).onclick = () => modal.style.display = "none";
 }
 
 setupModal(".open-shop", "shop-modal", ".close-btn");
 setupModal(".open-inventory", "inventory-modal", ".close-inventory");
 setupModal(".open-worldtree", "worldtree-modal", ".close-worldtree");
-setupModal(".open-season-pass", "season-pass-modal", ".close-season-pass");
-setupModal(".open-marketplace", "marketplace-modal", ".close-marketplace");
 setupModal("#admin-open", "admin-modal", "#admin-close");
 
-<<<<<< feature/v3.0.1-final-sync-14719019057366838169
-======
-<<<<<< v5.0.1
->>>>>> main
-
-
-const dailyBtn = document.querySelector(".daily-checkin");
-if (dailyBtn) {
-    dailyBtn.onclick = async () => {
-        try {
-            const res = await apiFetch(`${API_BASE_URL}/checkin`, { method: 'POST' });
-            if (res && res.success) {
-                showDialog({ title: "Check-in", message: res.message });
-                await loadGameState();
-            }
-        } catch (err) {
-            showDialog({ title: "Check-in", message: err.message });
-        }
-    };
-}
-
-// Forçar recarregamento do inventário ao abrir o modal
-const openInvBtn = document.querySelector(".open-inventory");
-if (openInvBtn) {
-    const originalClick = openInvBtn.onclick;
-    openInvBtn.onclick = async () => {
-        await loadGameState();
-        if (originalClick) originalClick();
-        renderInventory();
-    };
-}
-
-// Ensure setupModal calls renderWorldTree
-const openTreeBtn = document.querySelector(".open-worldtree");
-if (openTreeBtn) {
-    const originalClick = openTreeBtn.onclick;
-    openTreeBtn.onclick = () => {
-        if (originalClick) originalClick();
-        renderWorldTree();
-    };
-}
-
-const openPassBtn = document.querySelector(".open-season-pass");
-if (openPassBtn) {
-    const originalClick = openPassBtn.onclick;
-    openPassBtn.onclick = () => {
-        if (originalClick) originalClick();
-        renderSeasonPass();
-    };
-}
-
-async function renderSeasonPass() {
-    const container = document.getElementById("season-pass-container");
-    if (!container) return;
-    try {
-        const data = await apiFetch(`api/game/season-pass`);
-        const prog = data.progress;
-        const tiers = data.tiers;
-
-        container.innerHTML = `
-            <div style="background:rgba(0,0,0,0.3); padding:15px; border-radius:10px; margin-bottom:15px;">
-                <p>Nível Atual: <strong>${prog.nivel_atual}</strong></p>
-                <p>Progresso: ${prog.xp_atual} XP</p>
-                <div class="worldtree-progress"><div class="worldtree-progress-bar" style="width:${Math.min(100, prog.xp_atual)}%"></div></div>
-            </div>
-            <div class="inventory-grid">
-                ${tiers.map(t => `
-                    <div class="inventory-item" style="${t.nivel <= prog.nivel_atual ? 'border-color:#4caf50' : 'opacity:0.6'}">
-                        <p>Nível ${t.nivel}</p>
-                        <img src="assets/${t.recompensa_tipo === 'diamante' ? 'diamante.png' : 'ouro.png'}" style="width:30px;">
-                        <p>${t.recompensa_quantidade} ${t.recompensa_tipo}</p>
-                        ${t.nivel <= prog.nivel_atual && !prog.claimed_levels.includes(t.nivel) ?
-                            `<button class="use-btn" onclick="performAction('claim_pass_reward', null, null, ${t.nivel})">Resgatar</button>` :
-                            (prog.claimed_levels.includes(t.nivel) ? '<p style="color:#4caf50">Coletado</p>' : '<p><small>Bloqueado</small></p>')
-                        }
-                    </div>
-                `).join('')}
-            </div>
-        `;
-    } catch (err) { console.error(err); }
-}
-
-async function renderMarketplace(mode = 'browse') {
-    const container = document.getElementById("marketplace-container");
-    if (!container) return;
-
-    if (mode === 'sell') {
-        container.innerHTML = Object.entries(inventario)
-            .filter(([id, qty]) => qty > 0 && !['coins', 'diamante', 'energia'].includes(id))
-            .map(([id, qty]) => `
-                <div class="inventory-item">
-                    <img src="assets/${getItemAsset(id)}" style="width:50px;">
-                    <p>${id}</p>
-                    <input type="number" id="market-qty-${id}" value="1" min="1" max="${qty}" style="width:60px;">
-                    <input type="number" id="market-price-${id}" placeholder="Preço (Diamante)" style="width:80px; margin-top:5px;">
-                    <button class="buy-btn" onclick="listOnMarket('${id}')">Listar</button>
-                </div>
-            `).join('');
-    } else {
-        try {
-            const data = await apiFetch('api/game/marketplace');
-            if (!data.items || data.items.length === 0) {
-                container.innerHTML = '<p style="padding:20px;">Nenhum item listado no momento.</p>';
-                return;
-            }
-            container.innerHTML = data.items.map(item => `
-                <div class="inventory-item">
-                    <img src="assets/${getItemAsset(item.item_id)}" style="width:50px;">
-                    <p>${item.item_id} (x${item.quantidade})</p>
-                    <p>Vendedor: ${item.vendedor}</p>
-                    <p><strong>${item.preco_diamante} Diamantes</strong></p>
-                    <button class="buy-btn" onclick="performAction('marketplace_buy', null, ${item.id})">Comprar</button>
-                </div>
-            `).join('');
-        } catch (err) { console.error(err); }
+// Interactions
+document.addEventListener('click', e => {
+    const btn = e.target.closest('.plot-action-btn');
+    if (btn) {
+        const index = parseInt(btn.closest('.plot').dataset.plotIndex);
+        const action = btn.dataset.action;
+        if (action === 'use') performAction('use_item', index, itemSelecionadoState.item);
+        else if (action === 'harvest') performAction('harvest', index);
+        else if (action === 'buy_slot') performAction('buy_slot', index);
+        else if (action === 'remove') performAction('remove_plant', index);
     }
-}
-
-async function listOnMarket(itemId) {
-    const qty = document.getElementById(`market-qty-${itemId}`).value;
-    const price = document.getElementById(`market-price-${itemId}`).value;
-    if (!price || price <= 0) return alert("Defina um preço em diamantes");
-    await performAction('marketplace_list', null, itemId, null, qty, price);
-    renderMarketplace('sell');
-}
-
-function renderWorldTree() {
-    const panel = document.getElementById("worldtree-panel");
-    if (!panel || !worldTreeState) {
-        if (panel) panel.innerHTML = "<p>Nenhum dado da Árvore Mundial disponível no momento.</p>";
-        return;
-    }
-
-    const progress = Math.min(100, (worldTreeState.agua_atual / worldTreeState.meta_agua) * 100);
-
-    panel.innerHTML = `
-        <div class="worldtree-summary">
-            <div class="worldtree-visual">
-                <img src="assets/arvore_mundial_v1.png" class="worldtree-art" onerror="this.src='assets/logo_fazendinha_online.png'">
-            </div>
-            <div class="worldtree-stats">
-                <p>Status: <strong>${progress >= 100 ? 'Meta Atingida!' : 'Crescendo...'}</strong></p>
-                <div class="worldtree-progress">
-                    <div class="worldtree-progress-bar" style="width: ${progress}%"></div>
-                </div>
-                <p>Geral: ${worldTreeState.agua_atual} / ${worldTreeState.meta_agua} gotas</p>
-                <p>Sua contribuição ajuda a todos!</p>
-            </div>
-        </div>
-        <div class="worldtree-donations">
-            <button class="worldtree-donate" onclick="performAction('water_world_tree')">
-                Regar Árvore (1 gota)
-            </button>
-            <button class="worldtree-donate" onclick="performAction('collect_tree_reward')" ${!worldTreeState.reward_available ? 'disabled' : ''}>
-                Coletar Recompensa Coletiva
-            </button>
-        </div>
-        <div class="worldtree-donation-log">
-            <p><small>* Você pode contribuir com até 2 gotas a cada 6 horas.</small></p>
-            <p><small>* A recompensa de 100 Ouro é liberada para todos que contribuíram no dia, assim que a meta for atingida.</small></p>
-        </div>
-    `;
-}
-
-// --- Admin Panel Logic ---
-let availableAssets = [];
-
-async function renderAdminTab(tabName) {
-    const content = document.getElementById("admin-content");
-    if (!content) return;
-
-    if (tabName === 'conta') {
-        content.innerHTML = `
-            <div class="admin-account-manager">
-                <h3>Gerenciar Recursos do Jogador</h3>
-                <div class="admin-inline-actions">
-                    <input type="text" id="admin-user-search-query" placeholder="ID ou Login do Usuário">
-                    <button class="admin-action primary" onclick="searchUserAccount()">Buscar</button>
-                </div>
-                <div id="admin-user-result" class="admin-grid" style="margin-top: 20px;">
-                    <p>Digite um ID ou Login e clique em buscar.</p>
-                </div>
-            </div>
-        `;
-    } else if (tabName === 'slots') {
-        content.innerHTML = `
-            <div class="admin-slots-manager">
-                <h3>Gerenciar Slots de Jogador</h3>
-                <div class="admin-inline-actions">
-                    <input type="number" id="admin-slots-search-id" placeholder="ID do Usuário">
-                    <button class="admin-action primary" onclick="searchUserSlots()">Buscar Slots</button>
-                </div>
-                <div id="admin-slots-result" style="margin-top: 20px;"></div>
-            </div>
-        `;
-    } else if (tabName === 'plantas') {
-        const adminData = await apiFetch(`${ADMIN_API_BASE_URL}/config`);
-        const crops = adminData.items.filter(i => i.tipo === 'flower');
-        content.innerHTML = `
-            <div class="admin-crops-manager">
-                <h3>Parâmetros de Flores</h3>
-                <div class="admin-table-container">
-                    <table class="admin-table">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Label</th>
-                                <th>Tempo (h)</th>
-                                <th>Recompensa</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${crops.map(c => `
-                                <tr>
-                                    <td>${c.item_id}</td>
-                                    <td>${c.label}</td>
-                                    <td><input type="number" step="0.1" id="crop-grow-${c.item_id}" value="${c.grow_hours}"></td>
-                                    <td><input type="number" id="crop-reward-${c.item_id}" value="${c.reward_base}"></td>
-                                    <td><button onclick="saveCropParams('${c.item_id}')">Salvar</button></td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        `;
-    } else if (tabName === 'arvores') {
-        const adminData = await apiFetch(`${ADMIN_API_BASE_URL}/config`);
-        const trees = adminData.items.filter(i => i.tipo === 'tree');
-        content.innerHTML = `
-            <div class="admin-crops-manager">
-                <h3>Parâmetros de Árvores</h3>
-                <div class="admin-table-container">
-                    <table class="admin-table">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Label</th>
-                                <th>Tempo (h)</th>
-                                <th>Recompensa</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${trees.map(c => `
-                                <tr>
-                                    <td>${c.item_id}</td>
-                                    <td>${c.label}</td>
-                                    <td><input type="number" step="0.1" id="crop-grow-${c.item_id}" value="${c.grow_hours}"></td>
-                                    <td><input type="number" id="crop-reward-${c.item_id}" value="${c.reward_base}"></td>
-                                    <td><button onclick="saveCropParams('${c.item_id}')">Salvar</button></td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        `;
-    } else if (tabName === 'itens') {
-        const adminData = await apiFetch(`${ADMIN_API_BASE_URL}/config`);
-        const assetsData = await apiFetch(`${ADMIN_API_BASE_URL}/assets`);
-        availableAssets = assetsData.images;
-        const items = adminData.items.filter(i => i.tipo === 'item');
-
-        content.innerHTML = `
-            <div class="admin-item-manager">
-                <h3>Gerenciar Itens de Consumo</h3>
-                <button class="admin-action" onclick="showItemForm()">+ Adicionar Novo Item</button>
-                <div class="admin-table-container">
-                    <table class="admin-table">
-                        <thead>
-                            <tr>
-                                <th>ID (Imagem)</th>
-                                <th>Label</th>
-                                <th>Preço Ouro</th>
-                                <th>Preço Diam.</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${items.map(item => `
-                                <tr>
-                                    <td>${item.item_id}</td>
-                                    <td>${item.label}</td>
-                                    <td>${item.price_coins}</td>
-                                    <td>${item.price_diamonds}</td>
-                                    <td>
-                                        <button onclick='showItemForm(${JSON.stringify(item)})'>Editar</button>
-                                        <button class="admin-danger" onclick="deleteItemAdmin('${item.item_id}')">Excluir</button>
-                                    </td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        `;
-    } else if (tabName === 'missoes') {
-        const adminData = await apiFetch(`${ADMIN_API_BASE_URL}/config`);
-        content.innerHTML = `
-            <div class="admin-mission-manager">
-                <h3>Modelos de Missões</h3>
-                <button class="admin-action" onclick="showMissionForm()">+ Criar Missão</button>
-                <div class="admin-table-container">
-                    <table class="admin-table">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Label</th>
-                                <th>Tipo</th>
-                                <th>Meta</th>
-                                <th>Recompensa</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${adminData.missions.map(m => `
-                                <tr>
-                                    <td>${m.id}</td>
-                                    <td>${m.label}</td>
-                                    <td>${m.tipo}</td>
-                                    <td>${m.target}</td>
-                                    <td>${m.reward_amount} ${m.reward_type}</td>
-                                    <td>
-                                        <button onclick='showMissionForm(${JSON.stringify(m)})'>Editar</button>
-                                        <button class="admin-danger" onclick="deleteMissionAdmin(${m.id})">Excluir</button>
-                                    </td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        `;
-    } else if (tabName === 'regras') {
-        const adminData = await apiFetch(`${ADMIN_API_BASE_URL}/config`);
-        const currentLayout = adminData.configs.find(c => c.chave === 'active_layout')?.valor || 'default';
-        const currentVersion = adminData.configs.find(c => c.chave === 'game_version')?.valor || 'v1.0.5';
-        const isMaintenance = adminData.configs.find(c => c.chave === 'maintenance_mode')?.valor === 'true';
-
-        content.innerHTML = `
-            <div class="admin-rules-manager">
-                <h3>Controle do Sistema (Spec V1.0)</h3>
-                <div class="admin-grid" style="margin-bottom: 20px;">
-                    <div class="admin-card" style="border: 2px solid #ff3d31;">
-                        <div class="admin-field">
-                            <label>Modo Manutenção</label>
-                            <select id="config-maintenance_mode">
-                                <option value="true" ${isMaintenance ? 'selected' : ''}>ATIVADO (Bloquear Usuários)</option>
-                                <option value="false" ${!isMaintenance ? 'selected' : ''}>DESATIVADO (Normal)</option>
-                            </select>
-                            <button class="admin-action primary admin-danger" onclick="saveConfig('maintenance_mode')">Atualizar Modo</button>
-                        </div>
-                    </div>
-                    <div class="admin-card" style="border: 2px solid #37ad34;">
-                        <div class="admin-field">
-                            <label>Broadcast Global (Mensagem in-game)</label>
-                            <input type="text" id="admin-broadcast-msg" placeholder="Digite o aviso para todos...">
-                            <button class="admin-action primary" onclick="sendBroadcast()">Enviar Agora</button>
-                        </div>
-                    </div>
-                </div>
-
-                <h3>Aparência e Layout</h3>
-                <div class="admin-card" style="margin-bottom: 20px; border: 2px solid #ffeb3b;">
-                    <div class="admin-field">
-                        <label>Versão do Jogo</label>
-                        <input type="text" id="config-game_version" value="${currentVersion}">
-                        <button class="admin-action" onclick="saveConfig('game_version')">Atualizar Versão</button>
-                    </div>
-                    <div class="admin-field">
-                        <label>Escolher Layout do Jogo</label>
-                        <select id="config-active_layout" onchange="applyLayout(this.value)">
-                            <option value="default" ${currentLayout === 'default' ? 'selected' : ''}>Original (Roxo)</option>
-                            <option value="immersive" ${currentLayout === 'immersive' ? 'selected' : ''}>Imersivo (Glassmorphism)</option>
-                            <option value="retro" ${currentLayout === 'retro' ? 'selected' : ''}>Retrô RPG (Madeira/Papel)</option>
-                            <option value="neon" ${currentLayout === 'neon' ? 'selected' : ''}>Neon Moderno (PvU 2.0)</option>
-                            <option value="junina" ${currentLayout === 'junina' ? 'selected' : ''}>Festa Junina (Brasil)</option>
-                            <option value="kids" ${currentLayout === 'kids' ? 'selected' : ''}>Dia das Crianças</option>
-                            <option value="natal" ${currentLayout === 'natal' ? 'selected' : ''}>Natal</option>
-                            <option value="anonovo" ${currentLayout === 'anonovo' ? 'selected' : ''}>Ano Novo</option>
-                        </select>
-                        <p><small>O layout muda instantaneamente para você. Clique abaixo para salvar para todos.</small></p>
-                        <button class="admin-action primary" onclick="saveConfig('active_layout')">Salvar Layout para Todos</button>
-                    </div>
-                </div>
-
-                <h3>Configurações Globais</h3>
-                <div class="admin-grid">
-                    ${adminData.configs.filter(c => c.chave !== 'active_layout').map(c => `
-                        <div class="admin-card">
-                            <div class="admin-field">
-                                <label>${c.chave}</label>
-                                <input type="text" id="config-${c.chave}" value="${c.valor}">
-                                <small>${c.descricao || ''}</small>
-                                <button class="admin-action" onclick="saveConfig('${c.chave}')">Atualizar</button>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-        `;
-    } else if (tabName === 'eventos') {
-        content.innerHTML = `
-            <div class="admin-events">
-                <h3>Gerenciar Eventos Ativos</h3>
-                <div class="admin-card" style="border: 2px dashed #ffeb3b; text-align: center; padding: 40px;">
-                    <p>Módulo de Eventos Temporários</p>
-                    <small>Em breve: Eventos de Natal, Carnaval e Aniversário.</small>
-                </div>
-            </div>
-        `;
-    } else if (tabName === 'promocoes') {
-        content.innerHTML = `
-            <div class="admin-promos">
-                <h3>Promoções e Descontos</h3>
-                <div class="admin-card">
-                    <div class="admin-field">
-                        <label>Desconto Global na Loja (%)</label>
-                        <input type="number" id="config-global_discount" value="${adminData.configs.find(c => c.chave === 'global_discount')?.valor || 0}">
-                        <button class="admin-action primary" onclick="saveConfig('global_discount')">Aplicar Desconto</button>
-                    </div>
-                </div>
-            </div>
-        `;
-    } else if (tabName === 'dados') {
-        const stats = await apiFetch(`${ADMIN_API_BASE_URL}/stats`);
-        // Simulação de Ranking Global (Será movido para endpoint específico no futuro)
-        content.innerHTML = `
-            <div class="admin-stats">
-                <h3>Estatísticas do Jogo</h3>
-                <div class="admin-grid">
-                    <div class="admin-card">
-                        <p>Total de Jogadores: <strong>${stats.totalUsers}</strong></p>
-                    </div>
-                    <div class="admin-card">
-                        <p>Slots Desbloqueados: <strong>${stats.activeSlots}</strong></p>
-                    </div>
-                    <div class="admin-card">
-                        <p>Total Ouro em Circulação: <strong>${stats.totalEconomy}</strong></p>
-                    </div>
-                </div>
-
-                <h3 style="margin-top:20px;">Ranking Global de Ouro Gerado (Top 10)</h3>
-                <div class="admin-table-container">
-                    <table class="admin-table">
-                        <thead>
-                            <tr><th>Pos</th><th>Usuário (ID)</th><th>Total Gerado</th><th>Status Pix</th></tr>
-                        </thead>
-                        <tbody>
-                            <tr><td>1</td><td>CleversonS (1)</td><td>150.000</td><td><button>Pagar</button></td></tr>
-                            <tr><td>2</td><td>Admin (2)</td><td>120.000</td><td><button>Pagar</button></td></tr>
-                            <tr><td colspan="4" style="text-align:center; opacity:0.5;">... aguardando dados reais ...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-                <button class="admin-action" style="margin-top:10px;">Exportar Relatório CSV</button>
-            </div>
-        `;
-    } else if (tabName === 'logs') {
-        const logs = await apiFetch(`${ADMIN_API_BASE_URL}/logs`);
-        content.innerHTML = `
-            <div class="admin-logs">
-                <h3>Logs de Auditoria</h3>
-                <div class="admin-table-container">
-                    <table class="admin-table">
-                        <thead>
-                            <tr><th>Data</th><th>Admin</th><th>Ação</th><th>Detalhes</th></tr>
-                        </thead>
-                        <tbody>
-                            ${logs.map(l => `
-                                <tr>
-                                    <td>${new Date(l.created_at).toLocaleString()}</td>
-                                    <td>${l.login || 'Sistema'}</td>
-                                    <td>${l.acao}</td>
-                                    <td><small>${JSON.stringify(l.detalhes)}</small></td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        `;
-    } else if (tabName === 'usuarios') {
-        const users = await apiFetch(`${ADMIN_API_BASE_URL}/users/list`);
-        content.innerHTML = `
-            <div class="admin-users-manager">
-                <h3>Lista de Usuários</h3>
-                <div class="admin-table-container">
-                    <table class="admin-table">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Login</th>
-                                <th>Email</th>
-                                <th>Admin</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${users.map(u => `
-                                <tr>
-                                    <td>${u.id}</td>
-                                    <td>${u.login}</td>
-                                    <td>${u.email || '-'}</td>
-                                    <td>${u.is_admin ? 'Sim' : 'Não'}</td>
-                                    <td>
-                                        <button onclick="searchUserAccountById(${u.id})">Editar Recursos</button>
-                                        ${u.id !== 1 ? `<button class="admin-danger" onclick="deleteUserAdmin(${u.id})">Excluir</button>` : ''}
-                                    </td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        `;
-    }
-}
-
-async function searchUserAccountById(userId) {
-    document.querySelector('[data-admin-tab="conta"]').click();
-    setTimeout(() => {
-        document.getElementById("admin-user-search-query").value = userId;
-        searchUserAccount();
-    }, 100);
-}
-
-async function deleteUserAdmin(userId) {
-    if (!confirm(`Tem certeza que deseja excluir o usuário ID ${userId}? Esta ação é irreversível.`)) return;
-    try {
-        await apiFetch(`${ADMIN_API_BASE_URL}/user/${userId}`, { method: 'DELETE' });
-        renderAdminTab('usuarios');
-    } catch (err) {
-        alert("Erro ao excluir usuário: " + err.message);
-    }
-}
-
-async function searchUserAccount() {
-    const query = document.getElementById("admin-user-search-query").value;
-    if (!query) return alert("Digite um ID ou Login válido.");
-
-    try {
-        const data = await apiFetch(`${ADMIN_API_BASE_URL}/user/search?q=${query}`);
-        const resultDiv = document.getElementById("admin-user-result");
-
-        // Build inventory list
-        const invEntries = Object.entries(data.inventory)
-            .filter(([key]) => !['coins', 'diamante', 'energia'].includes(key))
-            .map(([key, qty]) => `
-                <div class="admin-field" style="grid-template-columns: 1fr 80px;">
-                    <label>${key}</label>
-                    <input type="number" class="edit-user-inv-item" data-item-id="${key}" value="${qty}">
-                </div>
-            `).join('');
-
-        resultDiv.innerHTML = `
-            <div class="admin-card">
-                <h3>Recursos</h3>
-                <div class="admin-field">
-                    <label>ID do Usuário</label>
-                    <input type="text" value="${data.usuario_id}" disabled>
-                </div>
-                <div class="admin-field">
-                    <label>Ouro (Coins)</label>
-                    <input type="number" id="edit-user-ouro" value="${data.ouro}">
-                </div>
-                <div class="admin-field">
-                    <label>Diamantes</label>
-                    <input type="number" id="edit-user-diamante" value="${data.diamante}">
-                </div>
-                <div class="admin-field">
-                    <label>Energia</label>
-                    <input type="number" id="edit-user-energia" value="${data.energia}">
-                </div>
-
-                <h3 style="margin-top:20px;">Inventário (Itens)</h3>
-                ${invEntries}
-
-                <div class="admin-field" style="margin-top:10px;">
-                    <label>Adicionar Novo Item</label>
-                    <select id="add-user-item-id">
-                        <option value="">Selecione...</option>
-                        ${data.availableItems.map(i => `<option value="${i.item_id}">${i.label}</option>`).join('')}
-                    </select>
-                    <input type="number" id="add-user-item-qty" placeholder="Qtd" value="1">
-                </div>
-
-                <button class="admin-action primary" onclick="saveUserAccount(${data.usuario_id})">Salvar Tudo</button>
-            </div>
-        `;
-    } catch (err) {
-        alert("Erro ao buscar usuário: " + err.message);
-    }
-}
-
-async function searchUserSlots() {
-    const id = document.getElementById("admin-slots-search-id").value;
-    if (!id) return alert("Digite um ID válido.");
-    try {
-        const res = await apiFetch(`${ADMIN_API_BASE_URL}/user/${id}/slots`);
-        const container = document.getElementById("admin-slots-result");
-        container.innerHTML = `
-            <table class="admin-table">
-                <thead>
-                    <tr><th>Slot</th><th>Fase</th><th>Planta</th><th>Vaso</th><th>Ações</th></tr>
-                </thead>
-                <tbody>
-                    ${res.slots.map(s => `
-                        <tr>
-                            <td>${s.slot_index}</td>
-                            <td>
-                                <select id="slot-fase-${s.id}">
-                                    <option value="locked" ${s.fase === 'locked' ? 'selected' : ''}>Bloqueado</option>
-                                    <option value="needsPot" ${s.fase === 'needsPot' ? 'selected' : ''}>Sem Vaso</option>
-                                    <option value="needsWater" ${s.fase === 'needsWater' ? 'selected' : ''}>Sem Água</option>
-                                    <option value="readyToPlant" ${s.fase === 'readyToPlant' ? 'selected' : ''}>Pronto p/ Plantar</option>
-                                    <option value="growing" ${s.fase === 'growing' ? 'selected' : ''}>Crescendo</option>
-                                    <option value="ready" ${s.fase === 'ready' ? 'selected' : ''}>Pronto p/ Colher</option>
-                                </select>
-                            </td>
-                            <td><input type="text" id="slot-crop-${s.id}" value="${s.crop_id || ''}"></td>
-                            <td><input type="text" id="slot-pot-${s.id}" value="${s.pot_type || ''}"></td>
-                            <td><button onclick="saveSlotAdmin(${s.id})">Salvar</button></td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            </table>
-        `;
-    } catch (err) { alert(err.message); }
-}
-
-async function saveSlotAdmin(slotId) {
-    const data = {
-        id: slotId,
-        fase: document.getElementById(`slot-fase-${slotId}`).value,
-        crop_id: document.getElementById(`slot-crop-${slotId}`).value || null,
-        pot_type: document.getElementById(`slot-pot-${slotId}`).value || null
-    };
-    await apiFetch(`${ADMIN_API_BASE_URL}/slots/update`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-    });
-    alert("Slot atualizado!");
-}
-
-async function deleteItemAdmin(itemId) {
-    if (!confirm(`Tem certeza que deseja excluir o item ${itemId}?`)) return;
-    try {
-        await apiFetch(`${ADMIN_API_BASE_URL}/items/${itemId}`, { method: 'DELETE' });
-        renderAdminTab('itens');
-    } catch (err) { alert(err.message); }
-}
-
-async function deleteMissionAdmin(id) {
-    if (!confirm(`Tem certeza que deseja excluir a missão ID ${id}?`)) return;
-    try {
-        await apiFetch(`${ADMIN_API_BASE_URL}/missions/${id}`, { method: 'DELETE' });
-        renderAdminTab('missoes');
-    } catch (err) { alert(err.message); }
-}
-
-async function saveCropParams(itemId) {
-    const grow = parseFloat(document.getElementById(`crop-grow-${itemId}`).value);
-    const reward = parseFloat(document.getElementById(`crop-reward-${itemId}`).value);
-
-    // Precisamos buscar o objeto completo para não perder outros campos no save_item
-    const adminData = await apiFetch(`${ADMIN_API_BASE_URL}/config`);
-    const item = adminData.items.find(i => i.item_id === itemId);
-
-    const data = { ...item, grow_hours: grow, reward_base: reward };
-    await apiFetch(`${ADMIN_API_BASE_URL}/items/save`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-    });
-    alert("Parâmetros salvos!");
-}
-
-async function saveUserAccount(userId) {
-    const items = {};
-    document.querySelectorAll(".edit-user-inv-item").forEach(input => {
-        items[input.dataset.itemId] = parseInt(input.value);
-    });
-
-    const newItemId = document.getElementById("add-user-item-id").value;
-    if (newItemId) {
-        const newItemQty = parseInt(document.getElementById("add-user-item-qty").value);
-        items[newItemId] = (items[newItemId] || 0) + newItemQty;
-    }
-
-    const data = {
-        usuario_id: userId,
-        ouro: parseInt(document.getElementById("edit-user-ouro").value),
-        diamante: parseInt(document.getElementById("edit-user-diamante").value),
-        energia: parseInt(document.getElementById("edit-user-energia").value),
-        items: items
-    };
-
-    try {
-        await apiFetch(`${ADMIN_API_BASE_URL}/user/update`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        });
-        alert("Dados da conta salvos com sucesso!");
-        searchUserAccount(); // Refresh
-        if (String(userId) === String(inventario.usuario_id || '1')) {
-            loadGameState();
-        }
-    } catch (err) {
-        alert("Erro ao salvar: " + err.message);
-    }
-}
-
-async function saveConfig(chave) {
-    const valor = document.getElementById(`config-${chave}`).value;
-    try {
-        await apiFetch(`${ADMIN_API_BASE_URL}/config/update`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ chave, valor })
-        });
-        alert('Configuração atualizada!');
-        renderAdminTab('regras');
-    } catch (err) {
-        alert('Erro ao salvar: ' + err.message);
-    }
-}
-
-async function sendBroadcast() {
-    const msg = document.getElementById("admin-broadcast-msg").value;
-    if (!msg) return alert("Digite uma mensagem");
-    try {
-        await apiFetch(`${ADMIN_API_BASE_URL}/broadcast`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: msg })
-        });
-        alert("Broadcast enviado!");
-        document.getElementById("admin-broadcast-msg").value = "";
-    } catch (err) { alert(err.message); }
-}
-
-function showMissionForm(mission = null) {
-    const dialog = document.getElementById("game-dialog");
-    const formHtml = `
-        <div class="admin-form">
-            <input type="hidden" id="edit-mission-id" value="${mission?.id || ''}">
-            <div class="form-group">
-                <label>Label:</label>
-                <input type="text" id="edit-mission-label" value="${mission?.label || ''}">
-            </div>
-            <div class="form-group">
-                <label>Tipo:</label>
-                <select id="edit-mission-tipo">
-                    <option value="harvest_count" ${mission?.tipo === 'harvest_count' ? 'selected' : ''}>Colheitas Realizadas</option>
-                    <option value="water_count" ${mission?.tipo === 'water_count' ? 'selected' : ''}>Regas Realizadas</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Meta (Quantidade):</label>
-                <input type="number" id="edit-mission-target" value="${mission?.target || 1}">
-            </div>
-            <div class="form-group">
-                <label>Recompensa (Tipo):</label>
-                <select id="edit-mission-reward-type">
-                    <option value="coins" ${mission?.reward_type === 'coins' ? 'selected' : ''}>Ouro</option>
-                    <option value="diamante" ${mission?.reward_type === 'diamante' ? 'selected' : ''}>Diamante</option>
-                    <option value="energia" ${mission?.reward_type === 'energia' ? 'selected' : ''}>Energia</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Recompensa (Quantidade):</label>
-                <input type="number" id="edit-mission-reward-amount" value="${mission?.reward_amount || 0}">
-            </div>
-            <div class="form-group">
-                <label>Peso (Raridade):</label>
-                <input type="number" id="edit-mission-weight" value="${mission?.weight || 1}">
-            </div>
-        </div>
-    `;
-
-    document.getElementById("game-dialog-title").textContent = mission ? "Editar Missão" : "Nova Missão";
-    document.getElementById("game-dialog-message").innerHTML = formHtml;
-    dialog.classList.remove("hidden");
-
-    document.getElementById("game-dialog-confirm").onclick = async () => {
-        const data = {
-            id: document.getElementById("edit-mission-id").value,
-            label: document.getElementById("edit-mission-label").value,
-            tipo: document.getElementById("edit-mission-tipo").value,
-            target: parseInt(document.getElementById("edit-mission-target").value),
-            reward_type: document.getElementById("edit-mission-reward-type").value,
-            reward_amount: parseInt(document.getElementById("edit-mission-reward-amount").value),
-            weight: parseInt(document.getElementById("edit-mission-weight").value),
-            active: true
-        };
-        await apiFetch(`${ADMIN_API_BASE_URL}/missions/save`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        });
-        dialog.classList.add("hidden");
-        renderAdminTab('missoes');
-    };
-}
-
-function showItemForm(item = null) {
-    const dialog = document.getElementById("game-dialog");
-    const title = item ? "Editar Item" : "Novo Item";
-
-    const formHtml = `
-        <div class="admin-form">
-            <div class="form-group">
-                <label>ID do Item (deve ser o nome da imagem sem .png):</label>
-                <input type="text" id="edit-item-id" value="${item?.item_id || ''}" ${item ? 'disabled' : ''}>
-            </div>
-            <div class="form-group">
-                <label>Selecione a Imagem (Assets):</label>
-                <select id="edit-item-asset" onchange="document.getElementById('edit-preview').src='assets/'+this.value">
-                    <option value="">Selecione...</option>
-                    ${availableAssets.map(img => `<option value="${img}" ${item && (img === item.item_id+'.png' || img === 'flores/'+item.item_id+'.png') ? 'selected' : ''}>${img}</option>`).join('')}
-                </select>
-                <img id="edit-preview" src="${item ? 'assets/'+getItemAsset(item.item_id) : ''}" style="width:50px; height:50px; margin-top:5px; border: 1px solid #555;">
-            </div>
-            <div class="form-group">
-                <label>Nome Visível (Label):</label>
-                <input type="text" id="edit-item-label" value="${item?.label || ''}">
-            </div>
-            <div class="form-group">
-                <label>Tipo:</label>
-                <select id="edit-item-tipo">
-                    <option value="item" ${item?.tipo === 'item' ? 'selected' : ''}>Consumível (Vaso/Água/Pesticida)</option>
-                    <option value="flower" ${item?.tipo === 'flower' ? 'selected' : ''}>Flor</option>
-                    <option value="tree" ${item?.tipo === 'tree' ? 'selected' : ''}>Árvore</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Preço em Ouro:</label>
-                <input type="number" id="edit-item-price-coins" value="${item?.price_coins || 0}">
-            </div>
-            <div class="form-group">
-                <label>Preço em Diamantes:</label>
-                <input type="number" id="edit-item-price-diamonds" value="${item?.price_diamonds || 0}">
-            </div>
-            <div class="form-group">
-                <label>Recompensa Base (Ouro):</label>
-                <input type="number" id="edit-item-reward" value="${item?.reward_base || 0}">
-            </div>
-            <div class="form-group">
-                <label>Tempo de Crescimento (Horas):</label>
-                <input type="number" step="0.01" id="edit-item-grow" value="${item?.grow_hours || 0}">
-            </div>
-        </div>
-    `;
-
-    document.getElementById("game-dialog-title").textContent = title;
-    document.getElementById("game-dialog-message").innerHTML = formHtml;
-    dialog.classList.remove("hidden");
-
-    document.getElementById("game-dialog-confirm").onclick = async () => {
-        const data = {
-            item_id: document.getElementById("edit-item-id").value,
-            label: document.getElementById("edit-item-label").value,
-            tipo: document.getElementById("edit-item-tipo").value,
-            price_coins: parseInt(document.getElementById("edit-item-price-coins").value),
-            price_diamonds: parseInt(document.getElementById("edit-item-price-diamonds").value),
-            reward_base: parseFloat(document.getElementById("edit-item-reward").value),
-            grow_hours: parseFloat(document.getElementById("edit-item-grow").value),
-            image_asset: document.getElementById("edit-item-asset").value
-        };
-
-        try {
-            await apiFetch(`${ADMIN_API_BASE_URL}/items/save`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
-            dialog.classList.add("hidden");
-            renderAdminTab('itens');
-            loadGameState();
-        } catch (err) {
-            alert("Erro ao salvar: " + err.message);
-        }
-    };
-}
-
-document.querySelectorAll(".admin-tab").forEach(tab => {
-    tab.onclick = () => {
-        document.querySelectorAll(".admin-tab").forEach(t => t.classList.remove("active"));
-        tab.classList.add("active");
-        renderAdminTab(tab.dataset.adminTab);
-    };
 });
-
-// Update modal open to render first tab
-const adminOpenBtn = document.querySelector("#admin-open");
-if (adminOpenBtn) {
-    adminOpenBtn.onclick = () => {
-        const modal = document.getElementById("admin-modal");
-        modal.classList.remove("hidden");
-        modal.style.display = "block";
-        renderAdminTab('conta');
-    }
-}
-
-const adminCloseBtn = document.querySelector("#admin-close");
-if (adminCloseBtn) {
-    adminCloseBtn.onclick = () => {
-        const modal = document.getElementById("admin-modal");
-        modal.classList.add("hidden");
-        modal.style.display = "none";
-    }
-}
-
-const logoutBtn = document.querySelector(".logout-btn");
-if (logoutBtn) {
-    logoutBtn.onclick = () => {
-        if(confirm("Deseja sair da fazenda?")) {
-            logout();
-        }
-    };
-}
-
-document.querySelectorAll(".shop-tab").forEach(tab => {
-    tab.onclick = () => {
-        document.querySelectorAll(".shop-tab").forEach(t => t.classList.remove("active"));
-        tab.classList.add("active");
-        renderShopTab(tab.dataset.tab);
-    };
-});
-
-function syncPlotStateLocal(index) {
-    const state = plotStates.find(s => s.slot_index === index);
-    if (!state || state.fase === 'locked' || state.fase === 'ready' || state.fase === 'needsPot') return;
-
-    const now = Date.now();
-
-    // 1. Expiração do Pote
-    if (state.pot_expires_at && new Date(state.pot_expires_at).getTime() < now) {
-        state.fase = 'needsPot';
-    }
-
-    // 2. Expiração da Água
-    if (state.water_expires_at && new Date(state.water_expires_at).getTime() < now) {
-        if (state.fase !== 'needsPot') state.fase = 'needsWater';
-    }
-
-    // 3. Progresso e transição para 'ready'
-    if (state.fase === 'growing') {
-        const isPaused = state.crow_active || state.pest_active || state.fase === 'needsPot' || state.fase === 'needsWater';
-
-        if (!isPaused) {
-            const started = new Date(state.started_at).getTime();
-            const ends = new Date(state.ends_at).getTime();
-            const paused = Number(state.total_paused_ms || 0);
-            const totalMs = ends - started;
-
-            // Recalcular progresso localmente
-            let progress = totalMs > 0 ? (now - started - paused) / totalMs : 1;
-            if (progress >= 1) {
-                state.fase = 'ready';
-                state.progress = 1;
-            } else {
-                state.progress = progress;
-            }
-        }
-    }
-}
 
 // --- Init ---
-renderPlots(); // Force initial render of slots
+renderPlots();
 loadGameState();
 setInterval(() => {
     if (plotStates.length > 0) {
-        plotStates.forEach((_, i) => {
-            syncPlotStateLocal(i);
-            renderPlotState(i);
-        });
-        updateMissionTimer();
-
-        // Atualiza clima visual a cada minuto para garantir que mudou
-        renderWeather();
-    } else {
-        // If state hasn't loaded yet, just update the waiting timers
-        for (let i = 0; i < 8; i++) {
-            const plotEl = document.querySelector(`.plot[data-plot-index="${i}"]`);
-            if (plotEl) {
-                const timer = plotEl.querySelector(".timer");
-                if (timer) timer.textContent = "CARREGANDO...";
-            }
-        }
+        plotStates.forEach((_, i) => renderPlotState(i));
     }
 }, 1000);
+```[cite: 1]
