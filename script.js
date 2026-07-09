@@ -738,8 +738,11 @@ setupModal(".open-marketplace", "marketplace-modal", ".close-marketplace");
 setupModal("#admin-open", "admin-modal", "#admin-close");
 
 <<<<<< feature/v3.0.1-final-sync-14719019057366838169
+=======
+<<<<<< feature/v3.0.1-final-sync-14719019057366838169
 ======
 <<<<<< v5.0.1
+>>>>>> main
 >>>>>> main
 
 const dailyBtn = document.querySelector(".daily-checkin");

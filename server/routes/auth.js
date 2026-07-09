@@ -6,14 +6,14 @@ const { ensureUserInitialized } = require('../utils/player_init');
 router.post('/register', async (req, res) => {
     const { login, email, password } = req.body;
     try {
-        // Nota: Certifique-se de que o password esteja sendo hasheado aqui também
-        // antes de inserir no banco, conforme a lógica de login escolhida.
         const result = await db.execute(
             'INSERT INTO fazenda_usuarios (login, email, senha) VALUES ($1, $2, $3) RETURNING id',
             [login, email, password]
         );
         const userId = result.rows[0].id;
         await ensureUserInitialized(userId);
+<<<<<< feature/v3.0.1-final-sync-14719019057366838169
+=======
 <<<<<< feature/v3.0.1-final-sync-14719019057366838169
 ======
 <<<<<< feature/v3.0.1-final-sync-14719019057366838169
@@ -22,13 +22,17 @@ router.post('/register', async (req, res) => {
 ======
 <<<<<< v5.0.1
 ======
+>>>>>> main
 
         if (req.session) {
             req.session.userId = userId;
         }
 
+<<<<<< feature/v3.0.1-final-sync-14719019057366838169
+=======
 >>>>>> main
 
+>>>>>> main
         res.json({ success: true, userId });
     } catch (err) {
         if (err.code === '23505') return res.status(400).json({ error: 'Login ou E-mail já estão em uso.' });
@@ -47,7 +51,6 @@ router.post('/login', async (req, res) => {
         if (result.rows.length > 0) {
             const user = result.rows[0];
 
-            // Comparação em texto puro conforme requisito
             if (password !== user.senha) {
                 console.log(`[AUTH] Senha incorreta para: ${login}`);
                 return res.status(401).json({ error: 'Senha incorreta.' });
@@ -83,6 +86,10 @@ router.get('/version', async (req, res) => {
 <<<<<< feature/v3.0.1-final-sync-14719019057366838169
         res.json({ version: result.rows.length > 0 ? result.rows[0].valor : 'v5.0.1' });
     } catch (err) { res.json({ version: 'v5.0.1' }); }
+=======
+<<<<<< feature/v3.0.1-final-sync-14719019057366838169
+        res.json({ version: result.rows.length > 0 ? result.rows[0].valor : 'v5.0.1' });
+    } catch (err) { res.json({ version: 'v5.0.1' }); }
 ======
 <<<<<< feature/v3.0.1-final-sync-14719019057366838169
         res.json({ version: result.rows.length > 0 ? result.rows[0].valor : 'v3.0.1' });
@@ -100,6 +107,7 @@ router.get('/version', async (req, res) => {
     } catch (err) { res.json({ version: 'v4.0.0' }); }
 >>>>>> main
 
+>>>>>> main
 });
 
 router.post('/recover', async (req, res) => {

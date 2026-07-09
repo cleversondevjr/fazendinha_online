@@ -11,7 +11,7 @@ O projeto está configurado com **Auto-Merge** e **Webhook**.
 - Ao fazer o `submit` das alterações, o GitHub realiza o merge automático para a branch `main`.
 - O Webhook sinaliza o Raspberry Pi, que executa o script `./deploy.sh`.
 
-## Como Atualizar Manualmente (se necessário)
+## Como Atualizar Manualmente
 ```bash
 cd /home/pi/fazendinha_online && ./deploy.sh
 ```
@@ -19,11 +19,14 @@ cd /home/pi/fazendinha_online && ./deploy.sh
 ## Estrutura do Projeto
 - `index.html`: Frontend Principal (v5.0.1).
 - `server/`: Backend em Node.js com Express e PostgreSQL.
-- `assets/`: Recursos visuais (Padrão Praia/PvU).
+- `assets/`: Recursos visuais.
 - `migrations/`: Scripts de atualização do Banco de Dados.
 
 ## Novidades v5.0.1
 - Consolidação de segurança e autenticação.
+<<<<<< feature/v3.0.1-final-sync-14719019057366838169
+- Sincronização final de versões.
+=======
 <<<<<< feature/v3.0.1-final-sync-14719019057366838169
 - Sincronização final de versões (v5.0.1).
 ======
@@ -35,6 +38,7 @@ cd /home/pi/fazendinha_online && ./deploy.sh
 ======
 ======
 cd /home/pi/fazendinha_online && ./deploy.sh
+>>>>>> main
 >>>>>> main
 >>>>>> main
 >>>>>> main

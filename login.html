@@ -19,16 +19,21 @@
     <div class="login-card" id="card-login">
         <img src="assets/logo_fazendinha_online.png" alt="Logo" style="width: 150px; margin-bottom: 1rem;">
         <h1>Acessar Fazenda</h1>
+<<<<<< feature/v3.0.1-final-sync-14719019057366838169
+=======
         <div style="margin: 20px 0;">
             <input type="text" id="login-user" placeholder="Login" autocomplete="username">
             <input type="password" id="login-pass" placeholder="Senha" autocomplete="current-password">
 ======
 <<<<<< feature/v3.0.1-final-sync-14719019057366838169
+>>>>>> main
         <div style="margin: 20px 0;">
             <input type="text" id="login-user" placeholder="Login" autocomplete="username">
             <input type="password" id="login-pass" placeholder="Senha" autocomplete="current-password">
         </div>
         <button id="login-btn">Entrar na Fazenda</button>
+<<<<<< feature/v3.0.1-final-sync-14719019057366838169
+=======
         <div class="footer"><span id="game-version-display">v5.0.1</span></div>
     </div>
     <script>
@@ -61,23 +66,25 @@
 >>>>>> main
         </div>
         <button id="login-btn">Entrar na Fazenda</button>
+>>>>>> main
         <div class="footer"><span id="game-version-display">v5.0.1</span></div>
     </div>
     <script>
         document.getElementById('login-btn').addEventListener('click', async () => {
             const user = document.getElementById('login-user').value;
             const pass = document.getElementById('login-pass').value;
-<<<<<< feature/v3.0.1-final-sync-14719019057366838169
 
             if (!user || !pass) {
                 alert('Por favor, preencha todos os campos.');
                 return;
             }
 
+<<<<<< feature/v3.0.1-final-sync-14719019057366838169
+=======
 ======
 >>>>>> main
+>>>>>> main
             try {
-                console.log('Tentando login para:', user);
                 const res = await fetch('api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -86,6 +93,8 @@
 
                 const data = await res.json();
                 if (data.success) {
+<<<<<< feature/v3.0.1-final-sync-14719019057366838169
+=======
                     console.log('Login bem sucedido!');
                     // Verificar se o navegador aceita cookies
                     if (!navigator.cookieEnabled) {
@@ -93,12 +102,14 @@
                     }
 <<<<<< feature/v3.0.1-final-sync-14719019057366838169
 ======
+>>>>>> main
                     window.location.href = 'index.html';
                 } else {
-                    console.warn('Falha no login:', data.error);
                     alert('Erro: ' + (data.error || 'Credenciais inválidas.'));
                 }
             } catch (err) {
+<<<<<< feature/v3.0.1-final-sync-14719019057366838169
+=======
                 console.error('Erro de conexão:', err);
                 alert('Erro crítico de rede ou servidor. Verifique o console.');
 ======
@@ -116,18 +127,21 @@
 <<<<<< feature/v3.0.1-final-sync-14719019057366838169
                 alert('Erro crítico de rede ou servidor. Verifique o console.');
 ======
-                alert('Erro na conexão com o servidor.');
 >>>>>> main
+                alert('Erro na conexão com o servidor.');
             }
         });
 
-        // Permitir login ao apertar Enter
         document.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') document.getElementById('login-btn').click();
         });
 <<<<<< feature/v3.0.1-final-sync-14719019057366838169
 
+=======
+<<<<<< feature/v3.0.1-final-sync-14719019057366838169
+
         // Buscar versão dinamicamente
+>>>>>> main
         async function fetchVersion() {
             try {
                 const res = await fetch('api/auth/version');
@@ -135,6 +149,11 @@
                 if (data.version) {
                     document.getElementById('game-version-display').textContent = data.version;
                 }
+<<<<<< feature/v3.0.1-final-sync-14719019057366838169
+            } catch (err) {}
+        }
+        fetchVersion();
+=======
             } catch (err) {
                 console.error('Erro ao buscar versão:', err);
             }
@@ -147,6 +166,7 @@
                 else alert(data.error);
             } catch (err) { alert('Erro na conexão'); }
         }
+>>>>>> main
 >>>>>> main
     </script>
 </body>
