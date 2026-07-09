@@ -22,8 +22,9 @@ const allowedOrigins = [
 ];
 
 app.use(cors({
-<<<<<< feature/v3.0.1-final-sync-14719019057366838169
     origin: function (origin, callback) { callback(null, true); },
+<<<<<< feature/v3.0.1-final-sync-14719019057366838169
+======
 ======
 <<<<<< feature/v3.0.1-final-sync-14719019057366838169
     origin: function (origin, callback) { callback(null, true); },
@@ -39,8 +40,7 @@ app.use(cors({
         }
     },
 >>>>>> main
->>>>>> main
->>>>>> main
+
     credentials: true
 }));
 app.use(express.json());
@@ -73,6 +73,11 @@ app.use(session({
         path: '/fazendinha/' // Escopo restrito ao subdiretório
 ======
 <<<<<< feature/v3.0.1-final-sync-14719019057366838169
+        secure: true, // Habilitado para HTTPS do Cloudflare
+        sameSite: 'none', // Requerido para cross-site cookies
+        path: '/fazendinha/' // Escopo restrito ao subdiretório
+======
+<<<<<< feature/v3.0.1-final-sync-14719019057366838169
         secure: false, // Reverted for troubleshooting connection errors
         sameSite: 'lax',
         path: '/'
@@ -86,8 +91,7 @@ app.use(session({
         sameSite: 'none',
         path: '/fazendinha/'
 >>>>>> main
->>>>>> main
->>>>>> main
+
     }
 }));
 
@@ -95,7 +99,10 @@ app.use((req, res, next) => {
 <<<<<< feature/v3.0.1-final-sync-14719019057366838169
 ======
 <<<<<< feature/v3.0.1-final-sync-14719019057366838169
+======
+<<<<<< feature/v3.0.1-final-sync-14719019057366838169
 >>>>>> main
+
     // Permitir acesso a arquivos estáticos e rotas de autenticação sem sessão
     const publicPaths = [
         '/login.html',
@@ -111,10 +118,12 @@ app.use((req, res, next) => {
     if (isPublic) return next();
 <<<<<< feature/v3.0.1-final-sync-14719019057366838169
 ======
+<<<<<< feature/v3.0.1-final-sync-14719019057366838169
+======
 ======
     if (req.path.startsWith('/api/auth')) return next();
 >>>>>> main
->>>>>> main
+
 
     // Em produção, não permitimos fallback para userId=1
     if (process.env.NODE_ENV === 'production') {
@@ -122,7 +131,10 @@ app.use((req, res, next) => {
 <<<<<< feature/v3.0.1-final-sync-14719019057366838169
 ======
 <<<<<< feature/v3.0.1-final-sync-14719019057366838169
+======
+<<<<<< feature/v3.0.1-final-sync-14719019057366838169
 >>>>>> main
+
             // Se for uma chamada de API, retorna 401. Se for navegação, redireciona pro login.
             if (req.path.startsWith('/api/')) {
                 return res.status(401).json({ error: 'Sessão expirada ou não autorizado.' });
@@ -130,10 +142,12 @@ app.use((req, res, next) => {
             return res.redirect('/fazendinha/login.html');
 <<<<<< feature/v3.0.1-final-sync-14719019057366838169
 ======
+<<<<<< feature/v3.0.1-final-sync-14719019057366838169
+======
 ======
             return res.status(401).json({ error: 'Sessão expirada ou não autorizado.' });
 >>>>>> main
->>>>>> main
+
         }
         req.userId = req.session.userId;
     } else {
@@ -184,6 +198,9 @@ require('./cron');
 app.listen(port, () => console.log(`Server v5.0.1 running on ${port}`));
 ======
 <<<<<< feature/v3.0.1-final-sync-14719019057366838169
+app.listen(port, () => console.log(`Server v5.0.1 running on ${port}`));
+======
+<<<<<< feature/v3.0.1-final-sync-14719019057366838169
 app.listen(port, () => console.log(`Server v3.0.1 running on ${port}`));
 ======
 <<<<<< v5.0.1
@@ -191,5 +208,4 @@ app.listen(port, () => console.log(`Server v3.0.1 running on ${port}`));
 ======
 app.listen(port, () => console.log(`Server v4.0.0 running on ${port}`));
 >>>>>> main
->>>>>> main
->>>>>> main
+

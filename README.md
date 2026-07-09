@@ -27,11 +27,15 @@ cd /home/pi/fazendinha_online && ./deploy.sh
 <<<<<< feature/v3.0.1-final-sync-14719019057366838169
 - Sincronização final de versões (v5.0.1).
 ======
+<<<<<< feature/v3.0.1-final-sync-14719019057366838169
+- Sincronização final de versões (v5.0.1).
+======
 - Sincronização final de versões (v3.0.1).
 <<<<<< feature/v3.0.1-final-sync-14719019057366838169
 ======
 ======
 cd /home/pi/fazendinha_online && ./deploy.sh
+>>>>>> main
 >>>>>> main
 >>>>>> main
 >>>>>> main

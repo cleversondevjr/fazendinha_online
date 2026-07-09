@@ -18,6 +18,8 @@ router.post('/register', async (req, res) => {
 ======
 <<<<<< feature/v3.0.1-final-sync-14719019057366838169
 ======
+<<<<<< feature/v3.0.1-final-sync-14719019057366838169
+======
 <<<<<< v5.0.1
 ======
 
@@ -26,8 +28,7 @@ router.post('/register', async (req, res) => {
         }
 
 >>>>>> main
->>>>>> main
->>>>>> main
+
         res.json({ success: true, userId });
     } catch (err) {
         if (err.code === '23505') return res.status(400).json({ error: 'Login ou E-mail já estão em uso.' });
@@ -80,6 +81,10 @@ router.get('/version', async (req, res) => {
     try {
         const result = await db.execute('SELECT valor FROM fazenda_config WHERE chave = $1', ['version']);
 <<<<<< feature/v3.0.1-final-sync-14719019057366838169
+        res.json({ version: result.rows.length > 0 ? result.rows[0].valor : 'v5.0.1' });
+    } catch (err) { res.json({ version: 'v5.0.1' }); }
+======
+<<<<<< feature/v3.0.1-final-sync-14719019057366838169
         res.json({ version: result.rows.length > 0 ? result.rows[0].valor : 'v3.0.1' });
     } catch (err) { res.json({ version: 'v3.0.1' }); }
 ======
@@ -94,8 +99,7 @@ router.get('/version', async (req, res) => {
         res.json({ version: result.rows.length > 0 ? result.rows[0].valor : 'v4.0.0' });
     } catch (err) { res.json({ version: 'v4.0.0' }); }
 >>>>>> main
->>>>>> main
->>>>>> main
+
 });
 
 router.post('/recover', async (req, res) => {
