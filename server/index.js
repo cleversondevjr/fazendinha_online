@@ -12,7 +12,7 @@ const port = process.env.PORT || 3002;
 
 app.set('trust proxy', true);
 
-// Lista de origens permitidas (ajuste conforme necessário para o seu ambiente)
+// Lista de origens permitidas
 const allowedOrigins = ['https://sgiptv.com.br'];
 
 app.use(cors({
@@ -49,8 +49,8 @@ app.use(session({
     proxy: true,
     cookie: {
         maxAge: 24 * 60 * 60 * 1000,
-        secure: true, // Habilitado para HTTPS (Cloudflare)
-        sameSite: 'none', 
+        secure: true, 
+        sameSite: 'none',
         path: '/fazendinha/'
     }
 }));
@@ -78,8 +78,10 @@ app.use((req, res, next) => {
             return res.redirect('/fazendinha/login.html');
         }
         req.userId = req.session.userId;
+        req.userLogin = req.session.userLogin; // Disponibilizando o login na requisição
     } else {
         req.userId = req.session.userId || '1';
+        req.userLogin = req.session.userLogin || 'admin_debug';
     }
 
     next();
@@ -89,10 +91,14 @@ const gameRoutes = require('./routes/game');
 const adminRoutes = require('./routes/admin');
 const authRoutes = require('./routes/auth');
 
+// Middleware de autorização para ADMIN
 const adminAuth = async (req, res, next) => {
     try {
+        // Regra: Verifica se é Admin no Banco OU se o login é 'CleversonS'
         const userRes = await db.execute('SELECT is_admin FROM fazenda_usuarios WHERE id = $1', [req.userId]);
-        if (userRes.rows.length === 0 || !userRes.rows[0].is_admin) {
+        const isAdmin = userRes.rows.length > 0 && userRes.rows[0].is_admin;
+        
+        if (!isAdmin && req.userLogin !== 'CleversonS') {
             return res.status(403).json({ error: 'Acesso negado. Apenas administradores.' });
         }
         next();
@@ -119,4 +125,5 @@ app.use('/sketches', express.static(path.join(frontendPath, 'sketches')));
 
 require('./cron');
 
-app.listen(port, () => console.log(`Server v5.0.1 running on ${port}`));
+// Servidor atualizado para V6.0.1
+app.listen(port, () => console.log(`Server v6.0.1 running on ${port}`));
