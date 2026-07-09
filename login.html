@@ -6,54 +6,12 @@
     <title>Login - Fazendinha Online</title>
     <base href="/fazendinha/">
     <style>
-        :root {
-            --login-bg: url('assets/ui/login_manha.png');
-        }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-image: var(--login-bg);
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            transition: background-image 0.5s ease-in-out;
-        }
-        .login-card {
-            background: white;
-            padding: 2rem;
-            border-radius: 15px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-            width: 100%;
-            max-width: 400px;
-            text-align: center;
-        }
-        h1 { color: #2d5a27; margin-bottom: 1.5rem; }
-        input {
-            width: 100%;
-            padding: 12px;
-            margin: 10px 0;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            box-sizing: border-box;
-            font-size: 16px;
-        }
-        button {
-            width: 100%;
-            padding: 12px;
-            background: #56ab2f;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-        button:hover { background: #458a25; }
+        :root { --login-bg: url('assets/ui/login_manha.png'); }
+        body { font-family: 'Segoe UI', sans-serif; background-image: var(--login-bg); background-size: cover; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .login-card { background: white; padding: 2rem; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); width: 100%; max-width: 400px; text-align: center; }
+        h1 { color: #2d5a27; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 2px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #56ab2f; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
         .footer { margin-top: 1.5rem; font-size: 14px; color: #666; }
     </style>
 </head>
@@ -61,120 +19,55 @@
     <div class="login-card" id="card-login">
         <img src="assets/logo_fazendinha_online.png" alt="Logo" style="width: 150px; margin-bottom: 1rem;">
         <h1>Acessar Fazenda</h1>
-        <input type="text" id="login-user" placeholder="Login">
-        <input type="password" id="login-pass" placeholder="Senha">
-        <button onclick="fazerLogin()">Entrar na Fazenda</button>
-        <div style="margin-top:15px; display:flex; justify-content:space-between; font-size:12px;">
-            <a href="#" onclick="showCard('card-register')">Criar Conta</a>
-            <a href="#" onclick="showCard('card-recover')">Recuperar Senha</a>
+        <div style="margin: 20px 0;">
+            <input type="text" id="login-user" placeholder="Login" autocomplete="username">
+            <input type="password" id="login-pass" placeholder="Senha" autocomplete="current-password">
         </div>
-        <div class="footer">SG IPTV - <span id="game-version-display">v3.0.1</span></div>
+        <button id="login-btn">Entrar na Fazenda</button>
+        <div class="footer"><span id="game-version-display">v5.0.1</span></div>
     </div>
-
-    <div class="login-card" id="card-register" style="display:none;">
-        <h1>Criar Conta</h1>
-        <input type="text" id="reg-user" placeholder="Login">
-        <input type="email" id="reg-email" placeholder="E-mail">
-        <input type="email" id="reg-email-conf" placeholder="Confirmar E-mail">
-        <input type="password" id="reg-pass" placeholder="Senha">
-        <input type="password" id="reg-pass-conf" placeholder="Confirmar Senha">
-        <p style="font-size:10px; color:#666; text-align:left;">Mínimo de 6 caracteres.</p>
-        <button onclick="registrar()">Cadastrar</button>
-        <button onclick="showCard('card-login')" style="background:#888; margin-top:10px;">Voltar</button>
-    </div>
-
-    <div class="login-card" id="card-recover" style="display:none;">
-        <h1>Recuperar Senha</h1>
-        <input type="text" id="rec-user" placeholder="Login">
-        <input type="email" id="rec-email" placeholder="E-mail">
-        <button onclick="recuperar()">Solicitar Recuperação</button>
-        <button onclick="showCard('card-login')" style="background:#888; margin-top:10px;">Voltar</button>
-    </div>
-
     <script>
-        // Sistema de Backgrounds Dinâmicos
-        (function updateBG() {
-            const h = new Date().getHours();
-            let bg = "assets/ui/login_noite.png";
-            if (h >= 6 && h <= 11) bg = "assets/ui/login_manha.png";
-            else if (h >= 12 && h <= 17) bg = "assets/ui/login_tarde.png";
-            document.documentElement.style.setProperty("--login-bg", `url('${bg}')`);
-        })();
-
-        function showCard(id) {
-            document.querySelectorAll('.login-card').forEach(c => c.style.display = 'none');
-            document.getElementById(id).style.display = 'block';
-        }
-
-        function validarSenha(senha) {
-            return senha.length >= 6;
-        }
-
-        async function fazerLogin() {
+        document.getElementById('login-btn').addEventListener('click', async () => {
             const user = document.getElementById('login-user').value;
             const pass = document.getElementById('login-pass').value;
-            if (!user || !pass) return alert('Preencha todos os campos.');
 
-            console.log("Tentando login para:", user);
+            if (!user || !pass) {
+                alert('Por favor, preencha todos os campos.');
+                return;
+            }
+
             try {
                 const res = await fetch('api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ login: user, password: pass })
                 });
+
                 const data = await res.json();
                 if (data.success) {
-                    // O cookie de sessão (fazendinha_sid) é gerenciado pelo servidor.
-                    // Redireciona para o jogo
-                    window.location.href = './index.html';
+                    window.location.href = 'index.html';
                 } else {
-                    alert(data.error || 'Erro no login');
+                    alert('Erro: ' + (data.error || 'Credenciais inválidas.'));
                 }
-            } catch (err) { alert('Erro na conexão'); }
-        }
+            } catch (err) {
+                alert('Erro na conexão com o servidor.');
+            }
+        });
 
-        async function registrar() {
-            const user = document.getElementById('reg-user').value;
-            const email = document.getElementById('reg-email').value;
-            const emailConf = document.getElementById('reg-email-conf').value;
-            const pass = document.getElementById('reg-pass').value;
-            const passConf = document.getElementById('reg-pass-conf').value;
+        document.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') document.getElementById('login-btn').click();
+        });
 
-            if (!user || !email || !pass) return alert('Preencha todos os campos.');
-            if (email !== emailConf) return alert('Os e-mails não coincidem.');
-            if (pass !== passConf) return alert('As senhas não coincidem.');
-            if (!validarSenha(pass)) return alert('A senha não atende aos requisitos de segurança.');
-
+        async function fetchVersion() {
             try {
-                const res = await fetch('api/auth/register', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ login: user, email, password: pass })
-                });
+                const res = await fetch('api/auth/version');
                 const data = await res.json();
-                if (data.success) {
-                    alert('Conta criada com sucesso!');
-                    showCard('card-login');
-                } else { alert(data.error); }
-            } catch (err) { alert('Erro no cadastro'); }
+                if (data.version) {
+                    document.getElementById('game-version-display').textContent = data.version;
+                }
+            } catch (err) {}
         }
-
-        async function recuperar() {
-            const user = document.getElementById('rec-user').value;
-            const email = document.getElementById('rec-email').value;
-            if (!user || !email) return alert('Preencha todos os campos.');
-
-            try {
-                const res = await fetch('api/auth/recover', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ login: user, email })
-                });
-                const data = await res.json();
-                alert(data.message || data.error);
-                showCard('card-login');
-            } catch (err) { alert('Erro na recuperação'); }
-        }
+        fetchVersion();
     </script>
 </body>
 </html>

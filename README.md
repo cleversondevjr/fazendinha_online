@@ -1,4 +1,4 @@
-# Fazendinha Online v3.0.1
+# Fazendinha Online v5.0.1
 
 Projeto baseado na economia do PvU 2021, adaptado para ser jogado online via Raspberry Pi 3.
 
@@ -11,19 +11,17 @@ O projeto está configurado com **Auto-Merge** e **Webhook**.
 - Ao fazer o `submit` das alterações, o GitHub realiza o merge automático para a branch `main`.
 - O Webhook sinaliza o Raspberry Pi, que executa o script `./deploy.sh`.
 
-## Como Atualizar Manualmente (se necessário)
+## Como Atualizar Manualmente
 ```bash
 cd /home/pi/fazendinha_online && ./deploy.sh
 ```
 
 ## Estrutura do Projeto
-- `index.html`: Frontend Principal (v3.0.1).
+- `index.html`: Frontend Principal (v5.0.1).
 - `server/`: Backend em Node.js com Express e PostgreSQL.
-- `assets/`: Recursos visuais (Padrão Praia/PvU).
+- `assets/`: Recursos visuais.
 - `migrations/`: Scripts de atualização do Banco de Dados.
 
-## Novidades v2.1.0
-- Nova Interface baseada em Praia (PvU Style).
-- Sistema de Missões com correção de bugs de SQL.
-- Painel Administrativo com Gestão de Usuários.
-- Limpeza de banco para reset de ambiente.
+## Novidades v5.0.1
+- Consolidação de segurança e autenticação.
+- Sincronização final de versões.

@@ -33,14 +33,45 @@ document.addEventListener('keydown', resetInactivityTimer);
 document.addEventListener('click', resetInactivityTimer);
 resetInactivityTimer();
 
+// --- Hooks Spec V1.0 ---
+function onRareDrop() {
+    console.log("Hooks: Rare Seed Dropped!");
+    // Trigger particle animation (implementation specific)
+}
+
+function onLevelUp(level) {
+    console.log("Hooks: Level Up to", level);
+    showDialog({ title: "Celebrando!", message: `Parabéns! Você subiu para o nível ${level} no Passe de Temporada!` });
+}
+
+function onLockedFeature(msg) {
+    showDialog({ title: "Em Breve", message: msg || "Esta função está no nosso Roadmap e será liberada em breve!" });
+}
+
+function onTransactionSuccess() {
+    console.log("Hooks: Transaction Success!");
+    // Play sound or visual confirmation
+}
+
 // --- Core API ---
 async function apiFetch(endpoint, options = {}) {
-    // Ensure credentials (cookies) are sent with every request
     options.credentials = 'include';
     const res = await fetch(endpoint, options);
+
+    if (res.status === 503) {
+        const data = await res.json().catch(() => ({}));
+        if (data.maintenance) {
+            const overlay = document.getElementById("maintenance-overlay");
+            if (overlay) {
+                overlay.classList.remove("hidden");
+                document.getElementById("maintenance-message").textContent = data.message;
+            }
+            return;
+        }
+    }
+
     if (res.status === 401) {
-        console.warn("Sessão expirada ou não autorizada (Modo Teste Ativo)");
-        // No modo teste, não redirecionamos
+        console.warn("Sessão expirada ou não autorizada");
         return;
     }
     if (!res.ok) {
@@ -104,9 +135,12 @@ async function performAction(action, slotIndex = null, itemId = null, missionId 
         });
         if (res.success) {
             await loadGameState();
-            if (action === 'buy_item') showDialog({ title: "Loja", message: "Item comprado com sucesso!" });
+            onTransactionSuccess();
+            if (res.leveledUp) onLevelUp(res.newLevel);
+            if (action === 'buy_item' || action === 'buy_pack') showDialog({ title: "Loja", message: "Transação realizada com sucesso!" });
             if (action === 'water_world_tree') showDialog({ title: "Árvore Mundial", message: "Obrigado por sua contribuição!" });
             if (action === 'claim_mission') showDialog({ title: "Missões", message: "Recompensa resgatada!" });
+            if (action === 'checkin') showDialog({ title: "Check-in", message: res.message });
         }
     } catch (err) {
         showDialog({ title: "Ação Falhou", message: err.message });
@@ -699,7 +733,25 @@ function setupModal(openBtnSelector, modalId, closeBtnSelector) {
 setupModal(".open-shop", "shop-modal", ".close-btn");
 setupModal(".open-inventory", "inventory-modal", ".close-inventory");
 setupModal(".open-worldtree", "worldtree-modal", ".close-worldtree");
+setupModal(".open-season-pass", "season-pass-modal", ".close-season-pass");
+setupModal(".open-marketplace", "marketplace-modal", ".close-marketplace");
 setupModal("#admin-open", "admin-modal", "#admin-close");
+
+
+const dailyBtn = document.querySelector(".daily-checkin");
+if (dailyBtn) {
+    dailyBtn.onclick = async () => {
+        try {
+            const res = await apiFetch(`${API_BASE_URL}/checkin`, { method: 'POST' });
+            if (res && res.success) {
+                showDialog({ title: "Check-in", message: res.message });
+                await loadGameState();
+            }
+        } catch (err) {
+            showDialog({ title: "Check-in", message: err.message });
+        }
+    };
+}
 
 // Forçar recarregamento do inventário ao abrir o modal
 const openInvBtn = document.querySelector(".open-inventory");
@@ -720,6 +772,90 @@ if (openTreeBtn) {
         if (originalClick) originalClick();
         renderWorldTree();
     };
+}
+
+const openPassBtn = document.querySelector(".open-season-pass");
+if (openPassBtn) {
+    const originalClick = openPassBtn.onclick;
+    openPassBtn.onclick = () => {
+        if (originalClick) originalClick();
+        renderSeasonPass();
+    };
+}
+
+async function renderSeasonPass() {
+    const container = document.getElementById("season-pass-container");
+    if (!container) return;
+    try {
+        const data = await apiFetch(`api/game/season-pass`);
+        const prog = data.progress;
+        const tiers = data.tiers;
+
+        container.innerHTML = `
+            <div style="background:rgba(0,0,0,0.3); padding:15px; border-radius:10px; margin-bottom:15px;">
+                <p>Nível Atual: <strong>${prog.nivel_atual}</strong></p>
+                <p>Progresso: ${prog.xp_atual} XP</p>
+                <div class="worldtree-progress"><div class="worldtree-progress-bar" style="width:${Math.min(100, prog.xp_atual)}%"></div></div>
+            </div>
+            <div class="inventory-grid">
+                ${tiers.map(t => `
+                    <div class="inventory-item" style="${t.nivel <= prog.nivel_atual ? 'border-color:#4caf50' : 'opacity:0.6'}">
+                        <p>Nível ${t.nivel}</p>
+                        <img src="assets/${t.recompensa_tipo === 'diamante' ? 'diamante.png' : 'ouro.png'}" style="width:30px;">
+                        <p>${t.recompensa_quantidade} ${t.recompensa_tipo}</p>
+                        ${t.nivel <= prog.nivel_atual && !prog.claimed_levels.includes(t.nivel) ?
+                            `<button class="use-btn" onclick="performAction('claim_pass_reward', null, null, ${t.nivel})">Resgatar</button>` :
+                            (prog.claimed_levels.includes(t.nivel) ? '<p style="color:#4caf50">Coletado</p>' : '<p><small>Bloqueado</small></p>')
+                        }
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    } catch (err) { console.error(err); }
+}
+
+async function renderMarketplace(mode = 'browse') {
+    const container = document.getElementById("marketplace-container");
+    if (!container) return;
+
+    if (mode === 'sell') {
+        container.innerHTML = Object.entries(inventario)
+            .filter(([id, qty]) => qty > 0 && !['coins', 'diamante', 'energia'].includes(id))
+            .map(([id, qty]) => `
+                <div class="inventory-item">
+                    <img src="assets/${getItemAsset(id)}" style="width:50px;">
+                    <p>${id}</p>
+                    <input type="number" id="market-qty-${id}" value="1" min="1" max="${qty}" style="width:60px;">
+                    <input type="number" id="market-price-${id}" placeholder="Preço (Diamante)" style="width:80px; margin-top:5px;">
+                    <button class="buy-btn" onclick="listOnMarket('${id}')">Listar</button>
+                </div>
+            `).join('');
+    } else {
+        try {
+            const data = await apiFetch('api/game/marketplace');
+            if (!data.items || data.items.length === 0) {
+                container.innerHTML = '<p style="padding:20px;">Nenhum item listado no momento.</p>';
+                return;
+            }
+            container.innerHTML = data.items.map(item => `
+                <div class="inventory-item">
+                    <img src="assets/${getItemAsset(item.item_id)}" style="width:50px;">
+                    <p>${item.item_id} (x${item.quantidade})</p>
+                    <p>Vendedor: ${item.vendedor}</p>
+                    <p><strong>${item.preco_diamante} Diamantes</strong></p>
+                    <button class="buy-btn" onclick="performAction('marketplace_buy', null, ${item.id})">Comprar</button>
+                </div>
+            `).join('');
+        } catch (err) { console.error(err); }
+    }
+}
+
+async function listOnMarket(itemId) {
+    const qty = document.getElementById(`market-qty-${itemId}`).value;
+    const price = document.getElementById(`market-price-${itemId}`).value;
+    if (!price || price <= 0) return alert("Defina um preço em diamantes");
+    await performAction('marketplace_list', null, itemId, null, qty, price);
+    renderMarketplace('sell');
 }
 
 function renderWorldTree() {
@@ -935,9 +1071,31 @@ async function renderAdminTab(tabName) {
         const adminData = await apiFetch(`${ADMIN_API_BASE_URL}/config`);
         const currentLayout = adminData.configs.find(c => c.chave === 'active_layout')?.valor || 'default';
         const currentVersion = adminData.configs.find(c => c.chave === 'game_version')?.valor || 'v1.0.5';
+        const isMaintenance = adminData.configs.find(c => c.chave === 'maintenance_mode')?.valor === 'true';
 
         content.innerHTML = `
             <div class="admin-rules-manager">
+                <h3>Controle do Sistema (Spec V1.0)</h3>
+                <div class="admin-grid" style="margin-bottom: 20px;">
+                    <div class="admin-card" style="border: 2px solid #ff3d31;">
+                        <div class="admin-field">
+                            <label>Modo Manutenção</label>
+                            <select id="config-maintenance_mode">
+                                <option value="true" ${isMaintenance ? 'selected' : ''}>ATIVADO (Bloquear Usuários)</option>
+                                <option value="false" ${!isMaintenance ? 'selected' : ''}>DESATIVADO (Normal)</option>
+                            </select>
+                            <button class="admin-action primary admin-danger" onclick="saveConfig('maintenance_mode')">Atualizar Modo</button>
+                        </div>
+                    </div>
+                    <div class="admin-card" style="border: 2px solid #37ad34;">
+                        <div class="admin-field">
+                            <label>Broadcast Global (Mensagem in-game)</label>
+                            <input type="text" id="admin-broadcast-msg" placeholder="Digite o aviso para todos...">
+                            <button class="admin-action primary" onclick="sendBroadcast()">Enviar Agora</button>
+                        </div>
+                    </div>
+                </div>
+
                 <h3>Aparência e Layout</h3>
                 <div class="admin-card" style="margin-bottom: 20px; border: 2px solid #ffeb3b;">
                     <div class="admin-field">
@@ -1002,6 +1160,7 @@ async function renderAdminTab(tabName) {
         `;
     } else if (tabName === 'dados') {
         const stats = await apiFetch(`${ADMIN_API_BASE_URL}/stats`);
+        // Simulação de Ranking Global (Será movido para endpoint específico no futuro)
         content.innerHTML = `
             <div class="admin-stats">
                 <h3>Estatísticas do Jogo</h3>
@@ -1016,6 +1175,21 @@ async function renderAdminTab(tabName) {
                         <p>Total Ouro em Circulação: <strong>${stats.totalEconomy}</strong></p>
                     </div>
                 </div>
+
+                <h3 style="margin-top:20px;">Ranking Global de Ouro Gerado (Top 10)</h3>
+                <div class="admin-table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr><th>Pos</th><th>Usuário (ID)</th><th>Total Gerado</th><th>Status Pix</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>1</td><td>CleversonS (1)</td><td>150.000</td><td><button>Pagar</button></td></tr>
+                            <tr><td>2</td><td>Admin (2)</td><td>120.000</td><td><button>Pagar</button></td></tr>
+                            <tr><td colspan="4" style="text-align:center; opacity:0.5;">... aguardando dados reais ...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <button class="admin-action" style="margin-top:10px;">Exportar Relatório CSV</button>
             </div>
         `;
     } else if (tabName === 'logs') {
@@ -1288,6 +1462,20 @@ async function saveConfig(chave) {
     } catch (err) {
         alert('Erro ao salvar: ' + err.message);
     }
+}
+
+async function sendBroadcast() {
+    const msg = document.getElementById("admin-broadcast-msg").value;
+    if (!msg) return alert("Digite uma mensagem");
+    try {
+        await apiFetch(`${ADMIN_API_BASE_URL}/broadcast`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: msg })
+        });
+        alert("Broadcast enviado!");
+        document.getElementById("admin-broadcast-msg").value = "";
+    } catch (err) { alert(err.message); }
 }
 
 function showMissionForm(mission = null) {
