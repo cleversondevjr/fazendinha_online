@@ -13,7 +13,8 @@ cron.schedule('0 */4 * * *', async () => {
         const expiresAt = new Date();
         expiresAt.setHours(expiresAt.getHours() + 4);
         for (const user of usersRes.rows) {
-            const selected = weightedRandomSelect(templatesRes.rows, 5);
+            // Regra Spec V1.0: 3 missões a cada 4 horas
+            const selected = weightedRandomSelect(templatesRes.rows, 3);
             for (const mission of selected) {
                 await db.execute('INSERT INTO fazenda_missoes_jogador (usuario_id, template_id, expires_at) VALUES ($1, $2, $3)', [user.usuario_id, mission.id, expiresAt]);
             }
