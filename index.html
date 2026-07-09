@@ -7,7 +7,6 @@
   <link rel="stylesheet" href="style.css?v=5.0.1">
 </head>
 <body>
-  <!-- Barra superior -->
   <header class="topbar">
     <div class="topbar-main">
       <div class="logo">
@@ -26,7 +25,7 @@
       </button>
       <button class="resource resource-btn resource-ouro" type="button" aria-label="Ouro">
         <img src="assets/ouro.png" alt="" class="resource-icon">
-        <span id="coins">1000</span>
+        <span id="coins">0</span>
       </button>
       <button class="resource resource-btn resource-diamond" type="button" aria-label="Diamante">
         <img src="assets/diamante.png" alt="" class="resource-icon">
@@ -34,7 +33,7 @@
       </button>
       <button class="resource resource-btn resource-energy" type="button" aria-label="Energia">
         <img src="assets/energia.png" alt="" class="resource-icon">
-        <span id="energy">99999</span>
+        <span id="energy">0</span>
       </button>
       <button class="menu-btn-compact harvest open-harvest" type="button">
         <img src="assets/botao_coletar_tudo.png" alt="Colher Tudo" class="menu-icon-compact">
@@ -46,21 +45,13 @@
         <img src="assets/botao_base.png" alt="Passe" class="menu-icon-compact" style="position:relative;">
         <span style="position:absolute; font-size:14px; color:#fff; font-weight:bold;">PASSE</span>
       </button>
-<<<<<< feature/v3.0.1-final-sync-14719019057366838169
-======
-<<<<<< v5.0.1
->>>>>> main
       <button class="menu-btn-compact open-marketplace" type="button">
         <img src="assets/botao_base.png" alt="Market" class="menu-icon-compact" style="position:relative;">
         <span style="position:absolute; font-size:12px; color:#fff; font-weight:bold;">MARKET</span>
       </button>
-<<<<<< feature/v3.0.1-final-sync-14719019057366838169
-======
->>>>>> main
     </div>
   </header>
 
-  <!-- Sidebar -->
   <aside class="sidebar">
     <div class="tools-header"><img src="assets/botao_ferramentas.png" alt="Ferramentas"></div>
     <div class="tool-item" data-item="vasoPequeno"><img src="assets/vaso_pequeno.png" class="tool-icon"><span class="count" id="count-vaso-pequeno">0</span></div>
@@ -68,25 +59,17 @@
     <div class="tool-item" data-item="agua"><img src="assets/agua.png" class="tool-icon"><span class="count" id="count-agua">0</span></div>
     <div class="tool-item" data-item="pesticida"><img src="assets/borrifador_inseticida.png" class="tool-icon"><span class="count" id="count-pesticida">0</span></div>
     <div class="tool-item" data-item="espantalho"><img src="assets/espantalho.png" class="tool-icon"><span class="count" id="count-espantalho">0</span></div>
-
-    <!-- Placeholders para Flores, Árvores e Semente Especial -->
     <div class="tool-item" data-item="flower"><img src="assets/flor.png" class="tool-icon"><span class="count" id="count-flower">0</span></div>
     <div class="tool-item" data-item="tree"><img src="assets/folha.png" class="tool-icon"><span class="count" id="count-tree">0</span></div>
     <div class="tool-item" data-item="sementeEspecial"><img src="assets/semente.png" class="tool-icon"><span class="count" id="count-special-seed">0</span></div>
-
     <div class="sidebar-spacer"></div>
     <section class="rewards-panel" id="rewards-panel">
       <div class="panel-title">Recompensas</div>
       <div class="missions-list" id="missions-list"></div>
     </section>
-      <div class="weather-panel">
-        <img src="assets/caixa_clima.png" alt="" class="weather-icon" id="weather-icon">
-      </div>
-
-    <!-- Botões principais -->
-<<<<<< feature/v3.0.1-final-sync-14719019057366838169
-======
->>>>>> main
+    <div class="weather-panel">
+      <img src="assets/caixa_clima.png" alt="" class="weather-icon" id="weather-icon">
+    </div>
     <div class="menu-buttons">
       <button class="menu-btn-compact daily-checkin" type="button" data-feature-key="CHECKIN_DIARIO">
         <img src="assets/botao_base.png" alt="Check-in" class="menu-icon-compact" style="position:relative;">
@@ -95,12 +78,10 @@
     </div>
   </aside>
 
-  <!-- Área principal -->
   <main class="main">
     <div id="plot-grid" class="plot-grid"></div>
   </main>
 
-  <!-- Modais -->
   <div id="shop-modal" class="shop-modal">
     <div class="shop-content">
       <span class="close-btn">&times;</span>
@@ -136,10 +117,6 @@
     <div class="shop-content">
       <span class="close-season-pass close-btn">&times;</span>
       <h2>Passe de Temporada</h2>
-<<<<<< feature/v3.0.1-final-sync-14719019057366838169
-======
-<<<<<< v5.0.1
-
       <div id="season-pass-container" style="max-height: 400px; overflow-y: auto; margin-top: 15px;"></div>
     </div>
   </div>
@@ -153,19 +130,6 @@
         <button class="shop-tab" onclick="renderMarketplace('sell')">Vender Meus Itens</button>
       </div>
       <div id="marketplace-container" class="shop-grid" style="margin-top: 15px;"></div>
-<<<<<< feature/v3.0.1-final-sync-14719019057366838169
-======
-      <div style="padding: 20px; text-align: center;">
-        <img src="assets/caixa_recompensa.png" style="width: 120px; margin-bottom: 15px;">
-        <p>O Passe de Temporada será liberado na Fase 3 do Roadmap.</p>
-        <p><small>Prepare-se para ganhar recompensas exclusivas a cada nível!</small></p>
-        <div class="inventory-grid" style="margin-top:20px; opacity: 0.5; pointer-events: none;">
-            <div class="inventory-item">Level 1: 100 Ouro</div>
-            <div class="inventory-item">Level 2: 1 Água</div>
-            <div class="inventory-item">Level 3: 5 Diamantes</div>
-        </div>
-      </div>
->>>>>> main
     </div>
   </div>
 
@@ -202,7 +166,6 @@
         </div>
         <button id="admin-close" class="admin-close" type="button">&times;</button>
       </div>
-
       <div class="admin-tabs">
         <button class="admin-tab active" data-admin-tab="conta" type="button">Conta</button>
         <button class="admin-tab" data-admin-tab="usuarios" type="button">Usuários</button>
@@ -217,17 +180,13 @@
         <button class="admin-tab" data-admin-tab="dados" type="button">Dados</button>
         <button class="admin-tab" data-admin-tab="logs" type="button">Logs</button>
       </div>
-
       <div id="admin-content" class="admin-content"></div>
-
       <div class="admin-footer">
         <button id="admin-save" class="admin-action primary" type="button">Salvar Alterações</button>
         <button id="admin-refresh" class="admin-action" type="button">Recarregar Painel</button>
       </div>
     </div>
   </div>
-
-  <!-- Script -->
   <script src="script.js?v=5.0.1"></script>
 </body>
 </html>
