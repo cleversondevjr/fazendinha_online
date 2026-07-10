@@ -5,7 +5,6 @@
   <title>Fazendinha Online</title>
   <base href="/fazendinha/">
   <link rel="stylesheet" href="style.css?v=5.0.1">
-  <script src="/script.js"></script>
 </head>
 <body>
   <header class="topbar">
@@ -13,6 +12,47 @@
       <div class="logo">
         <img src="assets/logo_fazendinha_online.png" alt="Fazendinha Online" class="logo-icon">
       </div>
+      <span class="game-version">v5.0.1</span>
+    </div>
+    <div class="topbar-actions">
+      <button class="menu-btn-compact menu-top-btn open-shop" type="button">
+        <img src="assets/botao_loja.png" alt="Loja" class="menu-icon-compact">
+      </button>
+      <button class="menu-btn-compact menu-top-btn open-inventory" type="button">
+        <img src="assets/botao_inventario.png" alt="Inventário" class="menu-icon-compact">
+      </button>
+      <button class="menu-btn-compact menu-top-btn open-worldtree" type="button">
+        <img src="assets/botao_arvore_mundial.png" alt="Árvore Mundial" class="menu-icon-compact">
+      </button>
+      <button class="resource resource-btn resource-ouro" type="button" aria-label="Ouro">
+        <img src="assets/ouro.png" alt="" class="resource-icon">
+        <span id="coins">0</span>
+      </button>
+      <button class="resource resource-btn resource-diamond" type="button" aria-label="Diamante">
+        <img src="assets/diamante.png" alt="" class="resource-icon">
+        <span id="diamonds">0</span>
+      </button>
+      <button class="resource resource-btn resource-energy" type="button" aria-label="Energia">
+        <img src="assets/energia.png" alt="" class="resource-icon">
+        <span id="energy">0</span>
+      </button>
+      <button class="menu-btn-compact harvest open-harvest" type="button">
+        <img src="assets/botao_coletar_tudo.png" alt="Colher Tudo" class="menu-icon-compact">
+      </button>
+      <button class="menu-btn-compact open-season-pass" type="button" data-feature-key="PASSE_TEMPORADA">
+        <img src="assets/botao_base.png" alt="Passe" class="menu-icon-compact">
+        <span style="position:absolute; font-size:11px; color:#fff; font-weight:bold; pointer-events:none;">PASSE</span>
+      </button>
+      <button class="menu-btn-compact open-marketplace" type="button" data-feature-key="MARKETPLACE">
+        <img src="assets/botao_base.png" alt="Market" class="menu-icon-compact">
+        <span style="position:absolute; font-size:11px; color:#fff; font-weight:bold; pointer-events:none;">MARKET</span>
+      </button>
+      <button class="menu-btn-compact logout-btn" type="button">
+        <img src="assets/botao_sair.png" alt="Sair" class="menu-icon-compact">
+      </button>
+      <button class="resource resource-btn" type="button" aria-label="Clima" style="width:60px; min-width:60px;">
+        <img id="weather-icon" src="assets/caixa_clima.png" alt="Clima" class="resource-icon" style="width:40px; height:40px;">
+      </button>
     </div>
   </header>
 

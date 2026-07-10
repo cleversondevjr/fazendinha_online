@@ -130,12 +130,12 @@ async function loadGameState() {
     }
 }
 
-async function performAction(action, slotIndex = null, itemId = null, missionId = null, quantity = 1) {
+async function performAction(action, slotIndex = null, itemId = null, missionId = null, quantity = 1, price = null) {
     try {
         const res = await apiFetch(`${API_BASE_URL}/action`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action, slotIndex, itemId, missionId, quantity })
+            body: JSON.stringify({ action, slotIndex, itemId, missionId, quantity, price })
         });
         if (res.success) {
             await loadGameState();
@@ -702,16 +702,13 @@ document.addEventListener('click', e => {
     if (plot) {
         const index = parseInt(plot.dataset.plotIndex);
         const state = plotStates.find(s => s.slot_index === index);
+        if (!state) return;
         if (state.crow_active) performAction('remove_crow', index);
+        else if (state.pest_active && itemSelecionadoState.item === 'pesticida') performAction('use_item', index, 'pesticida');
         else if (state.fase === 'ready') performAction('harvest', index);
         else if (state.fase === 'locked') performAction('buy_slot', index);
         else if (itemSelecionadoState.item) performAction('use_item', index, itemSelecionadoState.item);
     }
-
-    if (action === 'use') performAction('use_item', index, itemSelecionadoState.item);
-    else if (action === 'harvest') performAction('harvest', index);
-    else if (action === 'buy_slot') performAction('buy_slot', index);
-    else if (action === 'remove') performAction('remove_plant', index);
 });
 
 document.querySelectorAll(".sidebar .tool-item").forEach(item => {
@@ -785,6 +782,15 @@ if (openPassBtn) {
     openPassBtn.onclick = () => {
         if (originalClick) originalClick();
         renderSeasonPass();
+    };
+}
+
+const openMarketBtn = document.querySelector(".open-marketplace");
+if (openMarketBtn) {
+    const originalClick = openMarketBtn.onclick;
+    openMarketBtn.onclick = () => {
+        if (originalClick) originalClick();
+        renderMarketplace('browse');
     };
 }
 
@@ -1641,7 +1647,7 @@ if (adminOpenBtn) {
     adminOpenBtn.onclick = () => {
         const modal = document.getElementById("admin-modal");
         modal.classList.remove("hidden");
-        modal.style.display = "block";
+        modal.style.display = "flex";
         renderAdminTab('conta');
     }
 }
