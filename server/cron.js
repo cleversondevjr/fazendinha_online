@@ -1,6 +1,23 @@
 const cron = require('node-cron');
 const db = require('./db');
 
+// --- Helper: Weighted Random Select ---
+function weightedRandomSelect(items, n) {
+    if (!items.length) return [];
+    const pool = [];
+    items.forEach(item => { for (let i = 0; i < item.weight; i++) pool.push(item); });
+    const selected = [];
+    const poolCopy = [...pool];
+    for (let i = 0; i < n; i++) {
+        if (!poolCopy.length) break;
+        const randomIndex = Math.floor(Math.random() * poolCopy.length);
+        const picked = poolCopy[randomIndex];
+        selected.push(picked);
+        for (let j = poolCopy.length - 1; j >= 0; j--) { if (poolCopy[j].id === picked.id) poolCopy.splice(j, 1); }
+    }
+    return selected;
+}
+
 /**
  * 1. Quest Rotation - Every 4 hours
  */
@@ -110,19 +127,3 @@ cron.schedule('* * * * *', async () => {
         console.error('Error in game tick:', err);
     }
 });
-
-function weightedRandomSelect(items, n) {
-    if (!items.length) return [];
-    const pool = [];
-    items.forEach(item => { for (let i = 0; i < item.weight; i++) pool.push(item); });
-    const selected = [];
-    const poolCopy = [...pool];
-    for (let i = 0; i < n; i++) {
-        if (!poolCopy.length) break;
-        const randomIndex = Math.floor(Math.random() * poolCopy.length);
-        const picked = poolCopy[randomIndex];
-        selected.push(picked);
-        for (let j = poolCopy.length - 1; j >= 0; j--) { if (poolCopy[j].id === picked.id) poolCopy.splice(j, 1); }
-    }
-    return selected;
-}
