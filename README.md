@@ -12,5 +12,5 @@ O projeto está configurado com **Auto-Merge** e **Webhook**.
 - O Webhook sinaliza o Raspberry Pi, que executa o script `./deploy.sh`.
 
 ## Como Atualizar Manualmente
-```bash
+``bash
 cd /home/pi/fazendinha_online && ./deploy.sh
