@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 // farm2.0 - Complete Game Client
 const API_BASE_URL = 'api/game';
 const ADMIN_API_BASE_URL = 'api/admin';
@@ -1735,6 +1734,3 @@ setInterval(() => {
         }
     }
 }, 1000);
-=======
-window.loadGameState = function() { console.log("FUNCIONOU!"); };
->>>>>>> main
