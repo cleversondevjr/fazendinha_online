@@ -10,7 +10,7 @@ require('dotenv').config();
 const app = express();
 const port = process.env.PORT || 3002;
 
-app.set('trust proxy', true);
+app.set('trust proxy', 1); // Necessário para secure: true atrás de proxy
 
 // Lista de origens permitidas
 const allowedOrigins = ['https://sgiptv.com.br'];
@@ -49,41 +49,28 @@ app.use(session({
     proxy: true,
     cookie: {
         maxAge: 24 * 60 * 60 * 1000,
-        secure: true, 
-        sameSite: 'none',
-        path: '/fazendinha/'
+        secure: process.env.NODE_ENV === 'production', // true apenas em produção
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        path: '/' 
     }
 }));
 
 // Middleware de verificação de autenticação
 app.use((req, res, next) => {
-    const publicPaths = [
-        '/login.html',
-        '/style.css',
-        '/script.js',
-        '/assets',
-        '/api/auth',
-        '/favicon.ico'
-    ];
-
+    const publicPaths = ['/login.html', '/style.css', '/script.js', '/assets', '/api/auth', '/favicon.ico'];
     const isPublic = publicPaths.some(p => req.path.startsWith(p)) || req.path === '/';
 
     if (isPublic) return next();
 
-    if (process.env.NODE_ENV === 'production') {
-        if (!req.session.userId) {
-            if (req.path.startsWith('/api/')) {
-                return res.status(401).json({ error: 'Sessão expirada ou não autorizado.' });
-            }
-            return res.redirect('/fazendinha/login.html');
+    if (!req.session.userId) {
+        if (req.path.startsWith('/api/')) {
+            return res.status(401).json({ error: 'Sessão expirada ou não autorizado.' });
         }
-        req.userId = req.session.userId;
-        req.userLogin = req.session.userLogin; // Disponibilizando o login na requisição
-    } else {
-        req.userId = req.session.userId || '1';
-        req.userLogin = req.session.userLogin || 'admin_debug';
+        return res.redirect('/login.html');
     }
 
+    req.userId = req.session.userId;
+    req.userLogin = req.session.userLogin;
     next();
 });
 
@@ -91,15 +78,13 @@ const gameRoutes = require('./routes/game');
 const adminRoutes = require('./routes/admin');
 const authRoutes = require('./routes/auth');
 
-// Middleware de autorização para ADMIN
 const adminAuth = async (req, res, next) => {
     try {
-        // Regra: Verifica se é Admin no Banco OU se o login é 'CleversonS'
         const userRes = await db.execute('SELECT is_admin FROM fazenda_usuarios WHERE id = $1', [req.userId]);
         const isAdmin = userRes.rows.length > 0 && userRes.rows[0].is_admin;
         
         if (!isAdmin && req.userLogin !== 'CleversonS') {
-            return res.status(403).json({ error: 'Acesso negado. Apenas administradores.' });
+            return res.status(403).json({ error: 'Acesso negado.' });
         }
         next();
     } catch (err) {
@@ -115,7 +100,6 @@ const frontendPath = path.join(__dirname, '..');
 const assetsPath = path.join(frontendPath, 'assets');
 
 app.get('/', (req, res) => res.sendFile(path.join(frontendPath, 'index.html')));
-app.get('/index.html', (req, res) => res.sendFile(path.join(frontendPath, 'index.html')));
 app.get('/login.html', (req, res) => res.sendFile(path.join(frontendPath, 'login.html')));
 app.get('/style.css', (req, res) => res.sendFile(path.join(frontendPath, 'style.css')));
 app.get('/script.js', (req, res) => res.sendFile(path.join(frontendPath, 'script.js')));
@@ -125,5 +109,4 @@ app.use('/sketches', express.static(path.join(frontendPath, 'sketches')));
 
 require('./cron');
 
-// Servidor atualizado para V6.0.1
 app.listen(port, () => console.log(`Server v6.0.1 running on ${port}`));
