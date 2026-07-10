@@ -1,4 +1,4 @@
-const express = require('express');
+const express = require('express'); // <--- ADICIONE ESTA LINHA
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
@@ -42,16 +42,16 @@ sessionStore.on('error', (error) => {
 
 app.use(session({
     name: 'fazendinha_sid',
-    store: sessionStore,
+    // store: sessionStore,
     secret: process.env.SESSION_SECRET || 'fazendinha-secret-123',
     resave: false,
     saveUninitialized: false,
     proxy: true,
     cookie: {
         maxAge: 24 * 60 * 60 * 1000,
-        secure: true, 
-        sameSite: 'none',
-        path: '/fazendinha/'
+        secure: false,
+        sameSite: 'lax',
+        path: '/'
     }
 }));
 
@@ -78,7 +78,7 @@ app.use((req, res, next) => {
             return res.redirect('/fazendinha/login.html');
         }
         req.userId = req.session.userId;
-        req.userLogin = req.session.userLogin; // Disponibilizando o login na requisição
+        req.userLogin = req.session.userLogin;
     } else {
         req.userId = req.session.userId || '1';
         req.userLogin = req.session.userLogin || 'admin_debug';
@@ -94,10 +94,9 @@ const authRoutes = require('./routes/auth');
 // Middleware de autorização para ADMIN
 const adminAuth = async (req, res, next) => {
     try {
-        // Regra: Verifica se é Admin no Banco OU se o login é 'CleversonS'
         const userRes = await db.execute('SELECT is_admin FROM fazenda_usuarios WHERE id = $1', [req.userId]);
         const isAdmin = userRes.rows.length > 0 && userRes.rows[0].is_admin;
-        
+
         if (!isAdmin && req.userLogin !== 'CleversonS') {
             return res.status(403).json({ error: 'Acesso negado. Apenas administradores.' });
         }
@@ -125,5 +124,4 @@ app.use('/sketches', express.static(path.join(frontendPath, 'sketches')));
 
 require('./cron');
 
-// Servidor atualizado para V6.0.1
 app.listen(port, () => console.log(`Server v6.0.1 running on ${port}`));
