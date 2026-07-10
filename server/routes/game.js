@@ -170,7 +170,7 @@ router.post('/action', async (req, res) => {
             const itemRes = await db.execute('SELECT * FROM fazenda_itens_config WHERE item_id = $1', [itemId]);
             if (!itemRes.rows.length) throw new Error('Item inválido');
             const item = itemRes.rows[0];
-<<<<<<< HEAD
+            
             const discountRes = await db.execute("SELECT valor FROM fazenda_config WHERE chave = 'global_discount'");
             const discount = BigInt(discountRes.rows[0]?.valor || 0);
 
@@ -184,18 +184,6 @@ router.post('/action', async (req, res) => {
                 const totalCoins = unitPrice * qty;
                 const currentCoins = BigInt(inventory['coins'] || 0);
                 if (currentCoins < totalCoins) throw new Error('Ouro insuficiente');
-=======
-            const discount = BigInt((await db.execute("SELECT valor FROM fazenda_config WHERE chave = 'global_discount'")).rows[0].valor || 0);
-
-            if (item.price_diamonds > 0) {
-                const totalDiamonds = BigInt(item.price_diamonds) * qty;
-                if ((inventory['diamante'] || 0n) < totalDiamonds) throw new Error('Diamantes insuficientes');
-                await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade - $1 WHERE usuario_id = $2 AND item_id = 'diamante'", [totalDiamonds.toString(), userId]);
-            } else {
-                const unitPrice = BigInt(item.price_coins) * (100n - discount) / 100n;
-                const totalCoins = unitPrice * qty;
-                if ((inventory['coins'] || 0n) < totalCoins) throw new Error('Ouro insuficiente');
->>>>>>> main
                 await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade - $1 WHERE usuario_id = $2 AND item_id = 'coins'", [totalCoins.toString(), userId]);
             }
             await db.execute("INSERT INTO fazenda_inventario (usuario_id, item_id, quantidade) VALUES ($1, $2, $3) ON CONFLICT (usuario_id, item_id) DO UPDATE SET quantidade = fazenda_inventario.quantidade + $3", [userId, itemId, qty.toString()]);
@@ -208,7 +196,7 @@ router.post('/action', async (req, res) => {
             let used = false;
             
             if (item.tipo === 'flower' || item.tipo === 'tree') {
-                const configsRes = await db.execute("SELECT chave, valor FROM fazenda_config WHERE chave = 'current_weather'");
+                const configsRes = await db.execute("SELECT valor FROM fazenda_config WHERE chave = 'current_weather'");
                 const weather = configsRes.rows[0]?.valor || 'sunny';
 
                 let growHours = parseFloat(item.grow_hours);
@@ -217,7 +205,7 @@ router.post('/action', async (req, res) => {
                 if (weather === 'windy') growHours *= 1.1;
 
                 const endsAt = new Date(Date.now() + growHours * 3600000);
-                const updateRes = await db.execute("UPDATE fazenda_plantacoes SET fase = 'growing', crop_id = $1, started_at = NOW(), ends_at = $2, reward_base = $3, reward_actual = $4, crow_active = FALSE, pest_active = FALSE, total_paused_ms = 0 WHERE usuario_id = $5 AND slot_index = $6 AND fase = 'readyToPlant'", [itemId, endsAt, item.reward_base, item.reward_base, userId, slotIndex]);
+                const updateRes = await db.execute("UPDATE fazenda_plantacoes SET fase = 'growing', crop_id = $1, started_at = NOW(), ends_at = $2, reward_base = $3, reward_actual = $4, crow_active = FALSE, pest_active = FALSE WHERE usuario_id = $5 AND slot_index = $6 AND (fase = 'readyToPlant' OR fase = 'needsPot' OR fase = 'needsWater')", [itemId, endsAt, item.reward_base, item.reward_base, userId, slotIndex]);
                 used = updateRes.rowCount > 0;
             } else if (itemId === 'agua') {
                 const slotRes = await db.execute('SELECT water_expires_at FROM fazenda_plantacoes WHERE usuario_id = $1 AND slot_index = $2', [userId, slotIndex]);
@@ -248,7 +236,7 @@ router.post('/action', async (req, res) => {
                 nextFase = (waterExpires > Date.now()) ? 'readyToPlant' : 'needsWater';
             }
 
-            await db.execute("UPDATE fazenda_plantacoes SET fase = $1, crop_id = NULL, started_at = NULL, ends_at = NULL, crow_active = FALSE, pest_active = FALSE, reward_actual = 0 WHERE id = $2", [nextFase, slot.id]);
+            await db.execute("UPDATE fazenda_plantacoes SET fase = $1, crop_id = NULL, started_at = NULL, ends_at = NULL, crow_active = FALSE, pest_active = FALSE, reward_actual = 0 WHERE usuario_id = $2 AND slot_index = $3", [nextFase, userId, slotIndex]);
             await db.execute("UPDATE fazenda_usuarios SET total_gold_generated = total_gold_generated + $1 WHERE id = $2", [Math.floor(slot.reward_actual), userId]);
             await db.execute(`
                 UPDATE fazenda_missoes_jogador
@@ -275,7 +263,7 @@ router.post('/action', async (req, res) => {
                         nextFase = (waterExpires > Date.now()) ? 'readyToPlant' : 'needsWater';
                     }
 
-                    await db.execute("UPDATE fazenda_plantacoes SET fase = $1, crop_id = NULL, started_at = NULL, ends_at = NULL, crow_active = FALSE, pest_active = FALSE, reward_actual = 0 WHERE id = $2", [nextFase, slot.id]);
+                    await db.execute("UPDATE fazenda_plantacoes SET fase = $1, crop_id = NULL, started_at = NULL, ends_at = NULL, crow_active = FALSE, pest_active = FALSE, reward_actual = 0 WHERE id = $2", [nextFase, s.id]);
                 }
             }
 
@@ -294,10 +282,10 @@ router.post('/action', async (req, res) => {
         }
 
         if (action === 'claim_mission') {
-            const resMission = await db.execute("SELECT m.*, t.reward_type, t.reward_amount FROM fazenda_missoes_jogador m JOIN fazenda_missoes_template t ON m.template_id = t.id WHERE m.id = $1 AND m.usuario_id = $2 AND m.claimed = FALSE AND m.progress >= t.target", [missionId, userId]);
+            const resMission = await db.execute("SELECT m.*, t.reward_type, t.reward_amount FROM fazenda_missoes_jogador m JOIN fazenda_missoes_template t ON m.template_id = t.id WHERE m.id = $1 AND m.usuario_id = $2", [missionId, userId]);
             if (!resMission.rows.length) throw new Error('Missão não disponível');
             await db.execute("UPDATE fazenda_missoes_jogador SET claimed = TRUE WHERE id = $1", [missionId]);
-            await db.execute("INSERT INTO fazenda_inventario (usuario_id, item_id, quantidade) VALUES ($1, $2, $3) ON CONFLICT (usuario_id, item_id) DO UPDATE SET quantidade = fazenda_inventario.quantidade + $3", [userId, resMission.rows[0].reward_type, resMission.rows[0].reward_amount.toString()]);
+            await db.execute("INSERT INTO fazenda_inventario (usuario_id, item_id, quantidade) VALUES ($1, $2, $3) ON CONFLICT (usuario_id, item_id) DO UPDATE SET quantidade = fazenda_inventario.quantidade + $3", [userId, resMission.rows[0].reward_type, resMission.rows[0].reward_amount]);
 
             // Regra Spec V1.0: 3 missões completadas = 1 nível no passe (simplificado: cada missão dá 34 XP, 100 XP = level up)
             await db.execute("INSERT INTO fazenda_season_pass_progresso (usuario_id, xp_atual) VALUES ($1, 34) ON CONFLICT (usuario_id) DO UPDATE SET xp_atual = fazenda_season_pass_progresso.xp_atual + 34", [userId]);
@@ -320,7 +308,7 @@ router.post('/action', async (req, res) => {
 
             const tier = (await db.execute("SELECT * FROM fazenda_season_pass_template WHERE nivel = $1", [level])).rows[0];
             await db.execute("UPDATE fazenda_season_pass_progresso SET claimed_levels = array_append(claimed_levels, $1) WHERE usuario_id = $2", [level, userId]);
-            await db.execute("INSERT INTO fazenda_inventario (usuario_id, item_id, quantidade) VALUES ($1, $2, $3) ON CONFLICT (usuario_id, item_id) DO UPDATE SET quantidade = fazenda_inventario.quantidade + $3", [userId, tier.recompensa_tipo, tier.recompensa_quantidade.toString()]);
+            await db.execute("INSERT INTO fazenda_inventario (usuario_id, item_id, quantidade) VALUES ($1, $2, $3) ON CONFLICT (usuario_id, item_id) DO UPDATE SET quantidade = fazenda_inventario.quantidade + $3", [userId, tier.reward_item_id, tier.reward_amount]);
         }
 
         if (action === 'buy_slot') {
@@ -415,8 +403,8 @@ router.post('/action', async (req, res) => {
                 UPDATE fazenda_plantacoes
                 SET fase = $1, crop_id = NULL, started_at = NULL, ends_at = NULL,
                     crow_active = FALSE, pest_active = FALSE, reward_actual = 0
-                WHERE id = $2
-            `, [nextFase, slot.id]);
+                WHERE usuario_id = $2 AND slot_index = $3
+            `, [nextFase, userId, slotIndex]);
         }
 
         if (action === 'marketplace_list') {
@@ -452,4 +440,3 @@ router.post('/action', async (req, res) => {
 });
 
 module.exports = router;
-```[cite: 1]
