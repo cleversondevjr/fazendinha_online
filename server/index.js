@@ -47,6 +47,10 @@ app.use(session({
     }
 }));
 
+// Webhook Routes (BEFORE auth middleware - public access)
+const webhookRoutes = require('./routes/webhook');
+app.use('/api/webhook', webhookRoutes);
+
 // Authentication Middleware
 app.use((req, res, next) => {
     const publicPaths = [
@@ -55,6 +59,7 @@ app.use((req, res, next) => {
         '/script.js',
         '/assets',
         '/api/auth',
+        '/api/webhook',
         '/favicon.ico'
     ];
 
