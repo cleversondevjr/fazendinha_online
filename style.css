@@ -126,6 +126,7 @@ body {
 }
 
 .harvest { background: none; border: none; cursor: pointer; }
+
 .menu-btn-compact {
   width: 156px;
   height: 48px;
@@ -170,6 +171,7 @@ body {
   text-align: center;
   margin-bottom: 14px;
 }
+
 .tools-header img {
   width: 188px;
   height: auto;
@@ -204,6 +206,7 @@ body {
   background: transparent;
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
 }
+
 .tool-item .count {
   text-align: left;
   color: #ffeb3b;
@@ -223,7 +226,9 @@ body {
   justify-content: center;
   justify-self: end;
 }
+
 .use-btn:hover { transform: scale(1.03); }
+
 .use-btn img {
   width: 100%;
   height: 100%;
@@ -283,4 +288,6 @@ body {
   border-radius: 10px;
   padding: 6px 8px;
   text-align: left;
-  font-family: Arial, sans-serif
+  font-family: Arial, sans-serif;
+}
+```[cite: 2]
