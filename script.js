@@ -96,6 +96,12 @@ async function loadGameState() {
             applyLayout(configs.active_layout);
         }
 
+        // Admin access control
+        const adminContainer = document.querySelector(".admin-floating-container");
+        if (adminContainer) {
+            adminContainer.style.display = data.isAdmin ? "flex" : "none";
+        }
+
         // Sincronizar UI com Feature Flags (Roadmap)
         document.querySelectorAll("[data-feature-key]").forEach(el => {
             const key = el.dataset.featureKey;

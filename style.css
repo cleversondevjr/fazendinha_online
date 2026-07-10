@@ -658,6 +658,7 @@ body {
 
 /* Painel Admin */
 .admin-floating-container {
+  display: none; /* Inicia oculto, script.js exibe se for admin */
   position: fixed;
   right: 18px;
   bottom: 18px;

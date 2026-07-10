@@ -80,7 +80,7 @@ const authRoutes = require('./routes/auth');
 
 const adminAuth = async (req, res, next) => {
     try {
-        const userRes = await db.execute('SELECT is_admin FROM fazenda_usuarios WHERE id = ', [req.userId]);
+        const userRes = await db.execute('SELECT is_admin FROM fazenda_usuarios WHERE id = $1', [req.userId]);
         if (userRes.rows.length === 0 || !userRes.rows[0].is_admin) {
             return res.status(403).json({ error: 'Acesso negado. Apenas administradores.' });
         }

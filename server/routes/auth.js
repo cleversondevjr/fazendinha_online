@@ -1,14 +1,16 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const bcrypt = require('bcryptjs');
 const { ensureUserInitialized } = require('../utils/player_init');
 
 router.post('/register', async (req, res) => {
     const { login, email, password } = req.body;
     try {
+        const hashedPassword = await bcrypt.hash(password, 10);
         const result = await db.execute(
             'INSERT INTO fazenda_usuarios (login, email, senha) VALUES ($1, $2, $3) RETURNING id',
-            [login, email, password]
+            [login, email, hashedPassword]
         );
         const userId = result.rows[0].id;
         await ensureUserInitialized(userId);
@@ -35,7 +37,8 @@ router.post('/login', async (req, res) => {
         if (result.rows.length > 0) {
             const user = result.rows[0];
 
-            if (password !== user.senha) {
+            const match = await bcrypt.compare(password, user.senha);
+            if (!match) {
                 console.log(`[AUTH] Senha incorreta para: ${login}`);
                 return res.status(401).json({ error: 'Senha incorreta.' });
             }

@@ -119,7 +119,7 @@ router.get('/state', async (req, res) => {
         await syncEnergy(userId, configsMap);
 
         const inventoryRes = await db.execute('SELECT item_id, quantidade FROM fazenda_inventario WHERE usuario_id = $1', [userId]);
-        const inventory = inventoryRes.rows.reduce((acc, curr) => ({ ...acc, [curr.item_id]: curr.quantidade }), {});
+        const inventory = inventoryRes.rows.reduce((acc, curr) => ({ ...acc, [curr.item_id]: BigInt(curr.quantidade).toString() }), {});
 
         const slotsRes = await db.execute('SELECT * FROM fazenda_plantacoes WHERE usuario_id = $1 ORDER BY slot_index', [userId]);
         const slots = slotsRes.rows.map(s => calculatePlotState(s, configsMap));
@@ -150,7 +150,11 @@ router.get('/state', async (req, res) => {
             return acc;
         }, {});
 
+        const userRes = await db.execute('SELECT is_admin FROM fazenda_usuarios WHERE id = $1', [userId]);
+        const isAdmin = userRes.rows.length > 0 && !!userRes.rows[0].is_admin;
+
         res.json({
+            isAdmin,
             inventory,
             slots,
             missions: missionsRes.rows,
@@ -178,16 +182,19 @@ router.post('/action', async (req, res) => {
             const itemRes = await db.execute('SELECT * FROM fazenda_itens_config WHERE item_id = $1', [itemId]);
             if (!itemRes.rows.length) throw new Error('Item inválido');
             const item = itemRes.rows[0];
-            const discount = BigInt((await db.execute("SELECT valor FROM fazenda_config WHERE chave = 'global_discount'")).rows[0].valor || 0);
+            const discountRes = await db.execute("SELECT valor FROM fazenda_config WHERE chave = 'global_discount'");
+            const discount = BigInt(discountRes.rows[0]?.valor || 0);
 
-            if (item.price_diamonds > 0) {
+            if (BigInt(item.price_diamonds || 0) > 0n) {
                 const totalDiamonds = BigInt(item.price_diamonds) * qty;
-                if ((inventory['diamante'] || 0n) < totalDiamonds) throw new Error('Diamantes insuficientes');
+                const currentDiamonds = BigInt(inventory['diamante'] || 0);
+                if (currentDiamonds < totalDiamonds) throw new Error('Diamantes insuficientes');
                 await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade - $1 WHERE usuario_id = $2 AND item_id = 'diamante'", [totalDiamonds.toString(), userId]);
             } else {
-                const unitPrice = BigInt(item.price_coins) * (100n - discount) / 100n;
+                const unitPrice = BigInt(item.price_coins || 0) * (100n - discount) / 100n;
                 const totalCoins = unitPrice * qty;
-                if ((inventory['coins'] || 0n) < totalCoins) throw new Error('Ouro insuficiente');
+                const currentCoins = BigInt(inventory['coins'] || 0);
+                if (currentCoins < totalCoins) throw new Error('Ouro insuficiente');
                 await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade - $1 WHERE usuario_id = $2 AND item_id = 'coins'", [totalCoins.toString(), userId]);
             }
             await db.execute("INSERT INTO fazenda_inventario (usuario_id, item_id, quantidade) VALUES ($1, $2, $3) ON CONFLICT (usuario_id, item_id) DO UPDATE SET quantidade = fazenda_inventario.quantidade + $3", [userId, itemId, qty.toString()]);
@@ -461,11 +468,11 @@ router.post('/action', async (req, res) => {
             }
 
             if (price.type === 'gold') {
-                if ((inventory['coins'] || 0) < price.cost) throw new Error('Ouro insuficiente');
-                await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade - $1 WHERE usuario_id = $2 AND item_id = 'coins'", [price.cost, userId]);
+                if (BigInt(inventory['coins'] || 0) < BigInt(price.cost)) throw new Error('Ouro insuficiente');
+                await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade - $1 WHERE usuario_id = $2 AND item_id = 'coins'", [price.cost.toString(), userId]);
             } else {
-                if ((inventory['diamante'] || 0) < price.cost) throw new Error('Diamantes insuficientes');
-                await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade - $1 WHERE usuario_id = $2 AND item_id = 'diamante'", [price.cost, userId]);
+                if (BigInt(inventory['diamante'] || 0) < BigInt(price.cost)) throw new Error('Diamantes insuficientes');
+                await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade - $1 WHERE usuario_id = $2 AND item_id = 'diamante'", [price.cost.toString(), userId]);
             }
 
             const updateRes = await db.execute("UPDATE fazenda_plantacoes SET fase = 'needsPot' WHERE usuario_id = $1 AND slot_index = $2 AND fase = 'locked'", [userId, slotIndex]);
