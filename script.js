@@ -1157,6 +1157,7 @@ async function renderAdminTab(tabName) {
             </div>
         `;
     } else if (tabName === 'promocoes') {
+        const adminData = await apiFetch(`${ADMIN_API_BASE_URL}/config`);
         content.innerHTML = `
             <div class="admin-promos">
                 <h3>Promoções e Descontos</h3>
