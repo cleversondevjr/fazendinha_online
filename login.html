@@ -10,69 +10,17 @@
     <div class="login-card" id="card-login">
         <img src="assets/logo_fazendinha_online.png" alt="Logo" style="width: 150px; margin-bottom: 1rem;">
         <h1>Acessar Fazenda</h1>
-<<<<<<< HEAD
-=======
-        
->>>>>>> main
         <div style="margin: 20px 0;">
             <input type="text" id="login-user" placeholder="Login" autocomplete="username">
             <input type="password" id="login-pass" placeholder="Senha" autocomplete="current-password">
         </div>
-<<<<<<< HEAD
         <button id="login-btn">Entrar na Fazenda</button>
         <div class="footer"><span id="game-version-display">v5.0.1</span></div>
     </div>
-=======
-        
-        <button id="login-btn">Entrar na Fazenda</button>
-        <div class="footer"><span id="game-version-display">V6.0.1</span></div>
-    </div>
-    <div class="topbar-actions">
-      <button class="menu-btn-compact menu-top-btn open-shop" type="button">
-        <img src="assets/botao_loja.png" alt="Loja" class="menu-icon-compact">
-      </button>
-      <button class="menu-btn-compact menu-top-btn open-inventory" type="button">
-        <img src="assets/botao_inventario.png" alt="Inventário" class="menu-icon-compact">
-      </button>
-      <button class="menu-btn-compact menu-top-btn open-worldtree" type="button">
-        <img src="assets/botao_arvore_mundial.png" alt="Árvore Mundial" class="menu-icon-compact">
-      </button>
-      <button class="resource resource-btn resource-ouro" type="button" aria-label="Ouro">
-        <img src="assets/ouro.png" alt="" class="resource-icon">
-        <span id="coins">0</span>
-      </button>
-      <button class="resource resource-btn resource-diamond" type="button" aria-label="Diamante">
-        <img src="assets/diamante.png" alt="" class="resource-icon">
-        <span id="diamonds">0</span>
-      </button>
-      <button class="resource resource-btn resource-energy" type="button" aria-label="Energia">
-        <img src="assets/energia.png" alt="" class="resource-icon">
-        <span id="energy">0</span>
-      </button>
-      <button class="menu-btn-compact harvest open-harvest" type="button">
-        <img src="assets/botao_coletar_tudo.png" alt="Colher Tudo" class="menu-icon-compact">
-      </button>
-      <button class="menu-btn-compact logout-btn" type="button">
-        <img src="assets/botao_sair.png" alt="Sair" class="menu-icon-compact">
-      </button>
-      <button class="menu-btn-compact open-season-pass" type="button" data-feature-key="PASSE_TEMPORADA">
-        <img src="assets/botao_base.png" alt="Passe" class="menu-icon-compact">
-        <span>PASSE</span>
-      </button>
-      <button class="menu-btn-compact open-marketplace" type="button">
-        <img src="assets/botao_base.png" alt="Market" class="menu-icon-compact">
-        <span>MARKET</span>
-      </button>
-    </div>
-  </header>
-
->>>>>>> main
     <script>
         document.getElementById('login-btn').addEventListener('click', async () => {
             const user = document.getElementById('login-user').value;
             const pass = document.getElementById('login-pass').value;
-
-  <main class="game-content"></main>
 
             try {
                 const res = await fetch('api/auth/login', {
@@ -83,24 +31,16 @@
 
                 const data = await res.json();
                 if (data.success) {
-<<<<<<< HEAD
-=======
-                    console.log('Login bem sucedido!');
                     if (!navigator.cookieEnabled) {
                         alert('Seu navegador está bloqueando cookies. O jogo não funcionará corretamente.');
                     }
->>>>>>> main
                     window.location.href = 'index.html';
                 } else {
                     alert('Erro: ' + (data.error || 'Credenciais inválidas.'));
                 }
             } catch (err) {
-<<<<<<< HEAD
-                alert('Erro na conexão com o servidor.');
-=======
                 console.error('Erro de conexão:', err);
                 alert('Erro crítico de rede ou servidor. Verifique o console.');
->>>>>>> main
             }
         });
 
@@ -108,10 +48,7 @@
             if (e.key === 'Enter') document.getElementById('login-btn').click();
         });
 
-<<<<<<< HEAD
-=======
         // Buscar versão dinamicamente
->>>>>>> main
         async function fetchVersion() {
             try {
                 const res = await fetch('api/auth/version');
@@ -119,13 +56,9 @@
                 if (data.version) {
                     document.getElementById('game-version-display').textContent = data.version;
                 }
-<<<<<<< HEAD
-            } catch (err) {}
-=======
             } catch (err) {
                 console.error('Erro ao buscar versão:', err);
             }
->>>>>>> main
         }
         fetchVersion();
     </script>

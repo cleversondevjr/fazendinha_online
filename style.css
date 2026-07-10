@@ -288,7 +288,6 @@ body {
   border-radius: 10px;
   padding: 6px 8px;
   text-align: left;
-<<<<<<< HEAD
   font-family: Arial, sans-serif;
   min-height: 0;
   flex: 1 1 0;
@@ -780,7 +779,79 @@ body {
 .admin-table th {
   color: #ffd75b;
   background: rgba(0,0,0,0.35);
+  font-family: Arial, sans-serif;
 }
-=======
-  font-family: Arial, sans-serif
->>>>>>> main
+
+/* Utility */
+.hidden { display: none !important; }
+
+/* Game Dialog */
+.game-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.75);
+}
+
+.game-dialog-box {
+  background: linear-gradient(180deg, #391654, #0d0820);
+  border: 3px solid #d6a532;
+  border-radius: 18px;
+  padding: 28px 32px;
+  max-width: 520px;
+  width: 90%;
+  color: #fff;
+  text-align: center;
+  box-shadow: 0 16px 50px rgba(0,0,0,0.6);
+}
+
+.game-dialog-box h3 {
+  font-size: 22px;
+  color: #ffd75b;
+  margin-bottom: 12px;
+}
+
+.game-dialog-box #game-dialog-message {
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.game-dialog-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.dialog-btn {
+  padding: 10px 26px;
+  border-radius: 12px;
+  border: 2px solid #d6a532;
+  cursor: pointer;
+  font-family: 'Luckiest Guy', cursive, Arial, sans-serif;
+  font-size: 16px;
+  transition: transform 0.1s;
+}
+
+.dialog-btn:hover { transform: scale(1.04); }
+
+.dialog-btn-confirm {
+  background: linear-gradient(180deg, #2f9b25, #104b13);
+  color: #ffd75b;
+}
+
+.dialog-btn-cancel {
+  background: linear-gradient(180deg, #7a2020, #3a0c0c);
+  color: #ffaaaa;
+}
+
+/* Admin modal flex fix */
+.admin-modal.visible,
+.admin-modal[style*="block"],
+.admin-modal[style*="flex"] {
+  display: flex !important;
+}
