@@ -1,7 +1,5 @@
 const { Pool } = require('pg');
-// Substitua: require('dotenv').config();
-// Por:
-require('dotenv').config({ path: require('path').join(__dirname, '.env') });
+require('dotenv').config();
 
 const pool = new Pool({
   host: process.env.PGHOST,

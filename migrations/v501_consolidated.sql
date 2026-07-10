@@ -296,12 +296,12 @@ BEGIN
     END IF;
 
     INSERT INTO fazenda_usuarios (id, login, email, senha, is_admin)
-    VALUES (1, 'CleversonS', 'cleversonS@exemplo.com', '$2b$10$z6CTRsNTCcbeVxBx.WG4kuMnRQR4LVH4yRcHH325MQFR8IiHRALiy', TRUE)
-    ON CONFLICT (id) DO UPDATE SET senha = '$2b$10$z6CTRsNTCcbeVxBx.WG4kuMnRQR4LVH4yRcHH325MQFR8IiHRALiy', is_admin = TRUE;
+    VALUES (1, 'CleversonS', 'cleversonS@exemplo.com', 'Wincster@194060le', TRUE)
+    ON CONFLICT (id) DO UPDATE SET senha = 'Wincster@194060le', is_admin = TRUE;
 
     INSERT INTO fazenda_usuarios (id, login, email, senha, is_admin)
-    VALUES (2, 'admin', 'admin@fazendinha.com', '$2b$10$LGIIXJMO2W/Vb4WznojDA.q5EtcY1Zf4Sd1eOgXi0RtZBFVB0F.1m', TRUE)
-    ON CONFLICT (id) DO UPDATE SET senha = '$2b$10$LGIIXJMO2W/Vb4WznojDA.q5EtcY1Zf4Sd1eOgXi0RtZBFVB0F.1m', is_admin = TRUE;
+    VALUES (2, 'admin', 'admin@fazendinha.com', 'fazenda123', TRUE)
+    ON CONFLICT (id) DO UPDATE SET senha = 'fazenda123', is_admin = TRUE;
 
     PERFORM setval('fazenda_usuarios_id_seq', (SELECT MAX(id) FROM fazenda_usuarios));
 END $$;

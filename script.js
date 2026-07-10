@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 // farm2.0 - Complete Game Client
 const API_BASE_URL = 'api/game';
 const ADMIN_API_BASE_URL = 'api/admin';
@@ -44,6 +43,7 @@ function onLevelUp(level) {
     console.log("Hooks: Level Up to", level);
     showDialog({ title: "Celebrando!", message: `Parabéns! Você subiu para o nível ${level} no Passe de Temporada!` });
 }
+
 function onLockedFeature(msg) {
     showDialog({ title: "Em Breve", message: msg || "Esta função está no nosso Roadmap e será liberada em breve!" });
 }
@@ -69,6 +69,7 @@ async function apiFetch(endpoint, options = {}) {
             return;
         }
     }
+
     if (res.status === 401) {
         console.warn("Sessão expirada ou não autorizada");
         return;
@@ -142,6 +143,10 @@ async function performAction(action, slotIndex = null, itemId = null, missionId 
             await loadGameState();
             onTransactionSuccess();
             if (res.leveledUp) onLevelUp(res.newLevel);
+            if (action === 'buy_item' || action === 'buy_pack') showDialog({ title: "Loja", message: "Transação realizada com sucesso!" });
+            if (action === 'water_world_tree') showDialog({ title: "Árvore Mundial", message: "Obrigado por sua contribuição!" });
+            if (action === 'claim_mission') showDialog({ title: "Missões", message: "Recompensa resgatada!" });
+            if (action === 'checkin') showDialog({ title: "Check-in", message: res.message });
         }
     } catch (err) {
         showDialog({ title: "Ação Falhou", message: err.message });
@@ -248,7 +253,7 @@ function renderPlotState(index) {
     const crop = getCropAsset(state);
     if (crop) {
         const img = document.createElement("img");
-        img.className = "crop-layer";
+        img.className = `crop-layer crop-${crop.type} stage-${crop.stage}`;
         img.src = crop.src;
         soil.appendChild(img);
     }
@@ -708,11 +713,6 @@ document.addEventListener('click', e => {
         else if (state.fase === 'locked') performAction('buy_slot', index);
         else if (itemSelecionadoState.item) performAction('use_item', index, itemSelecionadoState.item);
     }
-
-    if (action === 'use') performAction('use_item', index, itemSelecionadoState.item);
-    else if (action === 'harvest') performAction('harvest', index);
-    else if (action === 'buy_slot') performAction('buy_slot', index);
-    else if (action === 'remove') performAction('remove_plant', index);
 });
 
 document.querySelectorAll(".sidebar .tool-item").forEach(item => {
@@ -1735,6 +1735,3 @@ setInterval(() => {
         }
     }
 }, 1000);
-=======
-window.loadGameState = function() { console.log("FUNCIONOU!"); };
->>>>>>> main
