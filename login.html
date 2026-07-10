@@ -1,84 +1,67 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Fazendinha Online</title>
-    <base href="/fazendinha/">
-    <style>
-        :root { --login-bg: url('assets/ui/login_manha.png'); }
-        body { font-family: 'Segoe UI', sans-serif; background-image: var(--login-bg); background-size: cover; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .login-card { background: white; padding: 2rem; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); width: 100%; max-width: 400px; text-align: center; }
-        h1 { color: #2d5a27; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border: 2px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background: #56ab2f; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        .footer { margin-top: 1.5rem; font-size: 14px; color: #666; }
-    </style>
+  <meta charset="UTF-8">
+  <title>Fazendinha Online</title>
+  <base href="/fazendinha/">
+  <link rel="stylesheet" href="style.css?v=5.0.1">
 </head>
 <body>
-    <div class="login-card" id="card-login">
-        <img src="assets/logo_fazendinha_online.png" alt="Logo" style="width: 150px; margin-bottom: 1rem;">
-        <h1>Acessar Fazenda</h1>
-        
-        <div style="margin: 20px 0;">
-            <input type="text" id="login-user" placeholder="Login" autocomplete="username">
-            <input type="password" id="login-pass" placeholder="Senha" autocomplete="current-password">
-        </div>
-        
-        <button id="login-btn">Entrar na Fazenda</button>
-        <div class="footer"><span id="game-version-display">V6.0.1</span></div>
+  <header class="topbar">
+    <div class="topbar-main">
+      <div class="logo">
+        <img src="assets/logo_fazendinha_online.png" alt="Fazendinha Online" class="logo-icon">
+      </div>
     </div>
+    <div class="topbar-actions">
+      <button class="menu-btn-compact menu-top-btn open-shop" type="button">
+        <img src="assets/botao_loja.png" alt="Loja" class="menu-icon-compact">
+      </button>
+      <button class="menu-btn-compact menu-top-btn open-inventory" type="button">
+        <img src="assets/botao_inventario.png" alt="Inventário" class="menu-icon-compact">
+      </button>
+      <button class="menu-btn-compact menu-top-btn open-worldtree" type="button">
+        <img src="assets/botao_arvore_mundial.png" alt="Árvore Mundial" class="menu-icon-compact">
+      </button>
+      <button class="resource resource-btn resource-ouro" type="button" aria-label="Ouro">
+        <img src="assets/ouro.png" alt="" class="resource-icon">
+        <span id="coins">0</span>
+      </button>
+      <button class="resource resource-btn resource-diamond" type="button" aria-label="Diamante">
+        <img src="assets/diamante.png" alt="" class="resource-icon">
+        <span id="diamonds">0</span>
+      </button>
+      <button class="resource resource-btn resource-energy" type="button" aria-label="Energia">
+        <img src="assets/energia.png" alt="" class="resource-icon">
+        <span id="energy">0</span>
+      </button>
+      <button class="menu-btn-compact harvest open-harvest" type="button">
+        <img src="assets/botao_coletar_tudo.png" alt="Colher Tudo" class="menu-icon-compact">
+      </button>
+      <button class="menu-btn-compact logout-btn" type="button">
+        <img src="assets/botao_sair.png" alt="Sair" class="menu-icon-compact">
+      </button>
+      <button class="menu-btn-compact open-season-pass" type="button" data-feature-key="PASSE_TEMPORADA">
+        <img src="assets/botao_base.png" alt="Passe" class="menu-icon-compact">
+        <span>PASSE</span>
+      </button>
+      <button class="menu-btn-compact open-marketplace" type="button">
+        <img src="assets/botao_base.png" alt="Market" class="menu-icon-compact">
+        <span>MARKET</span>
+      </button>
+    </div>
+  </header>
 
-    <script>
-        document.getElementById('login-btn').addEventListener('click', async () => {
-            const user = document.getElementById('login-user').value;
-            const pass = document.getElementById('login-pass').value;
+  <aside class="sidebar">
+    <div class="tools-header"><img src="assets/botao_ferramentas.png" alt="Ferramentas"></div>
+    <div class="tool-item" data-item="vasoPequeno"><img src="assets/vaso_pequeno.png" class="tool-icon"><span class="count" id="count-vaso-pequeno">0</span></div>
+    <div class="tool-item" data-item="vasoGrande"><img src="assets/vaso_grande.png" class="tool-icon"><span class="count" id="count-vaso-grande">0</span></div>
+    <div class="tool-item" data-item="agua"><img src="assets/agua.png" class="tool-icon"><span class="count" id="count-agua">0</span></div>
+    <div class="tool-item" data-item="pesticida"><img src="assets/borrifador_inseticida.png" class="tool-icon"><span class="count" id="count-pesticida">0</span></div>
+  </aside>
 
-            if (!user || !pass) {
-                alert('Por favor, preencha todos os campos.');
-                return;
-            }
+  <main class="game-content"></main>
 
-            try {
-                const res = await fetch('api/auth/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ login: user, password: pass })
-                });
-
-                const data = await res.json();
-                if (data.success) {
-                    console.log('Login bem sucedido!');
-                    if (!navigator.cookieEnabled) {
-                        alert('Seu navegador está bloqueando cookies. O jogo não funcionará corretamente.');
-                    }
-                    window.location.href = 'index.html';
-                } else {
-                    alert('Erro: ' + (data.error || 'Credenciais inválidas.'));
-                }
-            } catch (err) {
-                console.error('Erro de conexão:', err);
-                alert('Erro crítico de rede ou servidor. Verifique o console.');
-            }
-        });
-
-        document.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') document.getElementById('login-btn').click();
-        });
-
-        // Buscar versão dinamicamente
-        async function fetchVersion() {
-            try {
-                const res = await fetch('api/auth/version');
-                const data = await res.json();
-                if (data.version) {
-                    document.getElementById('game-version-display').textContent = data.version;
-                }
-            } catch (err) {
-                console.error('Erro ao buscar versão:', err);
-            }
-        }
-        fetchVersion();
-    </script>
+  <script src="script.js?v=5.0.1"></script>
 </body>
 </html>
