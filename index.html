@@ -1,13 +1,160 @@
-<div class="tool-item" data-item="pesticida">
-      <img src="assets/borrifador_inseticida.png" class="tool-icon">
-      <span class="count" id="count-pesticida">0</span>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Fazendinha Online</title>
+  <base href="/fazendinha/">
+  <link rel="stylesheet" href="style.css?v=5.0.1">
+<<<<<<< HEAD
+=======
+  <script src="/script_v2.js"></script>
+>>>>>>> main
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-main">
+      <div class="logo">
+        <img src="assets/logo_fazendinha_online.png" alt="Fazendinha Online" class="logo-icon">
+      </div>
     </div>
   </aside>
 
-  <main class="game-content">
-    <!-- Aqui ficaria o conteúdo principal do seu jogo -->
+  <aside class="sidebar">
+    <div class="tools-header"><img src="assets/botao_ferramentas.png" alt="Ferramentas"></div>
+    <div class="tool-item" data-item="vasoPequeno"><img src="assets/vaso_pequeno.png" class="tool-icon"><span class="count" id="count-vaso-pequeno">0</span></div>
+    <div class="tool-item" data-item="vasoGrande"><img src="assets/vaso_grande.png" class="tool-icon"><span class="count" id="count-vaso-grande">0</span></div>
+    <div class="tool-item" data-item="agua"><img src="assets/agua.png" class="tool-icon"><span class="count" id="count-agua">0</span></div>
+<<<<<<< HEAD
+    <div class="tool-item" data-item="pesticida"><img src="assets/borrifador_inseticida.png" class="tool-icon"><span class="count" id="count-pesticida">0</span></div>
+    <div class="tool-item" data-item="espantalho"><img src="assets/espantalho.png" class="tool-icon"><span class="count" id="count-espantalho">0</span></div>
+    <div class="tool-item" data-item="flower"><img src="assets/flor.png" class="tool-icon"><span class="count" id="count-flower">0</span></div>
+    <div class="tool-item" data-item="tree"><img src="assets/folha.png" class="tool-icon"><span class="count" id="count-tree">0</span></div>
+    <div class="tool-item" data-item="sementeEspecial"><img src="assets/semente.png" class="tool-icon"><span class="count" id="count-special-seed">0</span></div>
+    <div class="sidebar-spacer"></div>
+    <section class="rewards-panel" id="rewards-panel">
+      <div class="panel-title">Recompensas</div>
+      <div class="missions-list" id="missions-list"></div>
+    </section>
+    <div class="menu-buttons">
+      <button class="menu-btn-compact daily-checkin" type="button" data-feature-key="CHECKIN_DIARIO">
+        <img src="assets/botao_base.png" alt="Check-in" class="menu-icon-compact" style="position:relative;">
+        <span style="position:absolute; font-size:14px; color:#fff; font-weight:bold;">CHECK-IN</span>
+      </button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div id="plot-grid" class="plot-grid"></div>
   </main>
 
+  <div id="shop-modal" class="shop-modal">
+    <div class="shop-content">
+      <span class="close-btn">&times;</span>
+      <h2>Loja</h2>
+      <div class="shop-tabs" id="shop-tabs">
+        <button class="shop-tab active" data-tab="itens" type="button">Itens</button>
+        <button class="shop-tab" data-tab="flores" type="button">Flores</button>
+        <button class="shop-tab" data-tab="arvores" type="button">Árvores</button>
+        <button class="shop-tab" data-tab="ouro" type="button">Ouro</button>
+        <button class="shop-tab" data-tab="diamantes" type="button">Diamantes</button>
+      </div>
+      <div class="shop-grid" id="shop-grid"></div>
+    </div>
+  </div>
+
+  <div id="inventory-modal" class="inventory-modal">
+    <div class="inventory-content">
+      <span class="close-inventory">&times;</span>
+      <h2>Inventário</h2>
+      <div class="inventory-grid" id="inventory-grid"></div>
+    </div>
+  </div>
+
+  <div id="worldtree-modal" class="worldtree-modal">
+    <div class="worldtree-content">
+      <span class="close-worldtree">&times;</span>
+      <h2>Árvore Mundial</h2>
+      <div id="worldtree-panel"></div>
+    </div>
+  </div>
+
+  <div id="season-pass-modal" class="shop-modal">
+    <div class="shop-content">
+      <span class="close-season-pass close-btn">&times;</span>
+      <h2>Passe de Temporada</h2>
+      <div id="season-pass-container" style="max-height: 400px; overflow-y: auto; margin-top: 15px;"></div>
+    </div>
+  </div>
+
+  <div id="marketplace-modal" class="shop-modal">
+    <div class="shop-content">
+      <span class="close-marketplace close-btn">&times;</span>
+      <h2>Marketplace P2P</h2>
+      <div class="shop-tabs">
+        <button class="shop-tab active" onclick="renderMarketplace('browse')">Comprar</button>
+        <button class="shop-tab" onclick="renderMarketplace('sell')">Vender Meus Itens</button>
+      </div>
+      <div id="marketplace-container" class="shop-grid" style="margin-top: 15px;"></div>
+    </div>
+  </div>
+
+  <div id="game-dialog" class="game-dialog hidden">
+    <div class="game-dialog-box">
+      <h3 id="game-dialog-title">Aviso</h3>
+      <div id="game-dialog-message"></div>
+      <div class="game-dialog-actions">
+        <button id="game-dialog-confirm" class="dialog-btn dialog-btn-confirm" type="button">OK</button>
+        <button id="game-dialog-cancel" class="dialog-btn dialog-btn-cancel" type="button">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="maintenance-overlay" class="game-dialog hidden" style="background:rgba(0,0,0,0.95); z-index:99999;">
+    <div class="game-dialog-box" style="border-color:#ff3d31;">
+      <h3 style="color:#ff3d31;">Servidor em Manutenção</h3>
+      <img src="assets/ui/manutencao.png" onerror="this.src='assets/logo_fazendinha_online.png'" style="width:120px; margin:15px auto;">
+      <p id="maintenance-message">Estamos preparando novidades para você! Voltamos em instantes.</p>
+    </div>
+  </div>
+
+  <div class="admin-floating-container">
+    <div class="game-version-footer">v5.0.1</div>
+    <button id="admin-open" class="admin-floating-btn" type="button">Admin</button>
+  </div>
+
+  <div id="admin-modal" class="admin-modal hidden">
+    <div class="admin-panel">
+      <div class="admin-header">
+        <div>
+          <h2>Painel Admin</h2>
+          <p>Gerencie conta, itens, plantas, árvores, slots e regras locais.</p>
+        </div>
+        <button id="admin-close" class="admin-close" type="button">&times;</button>
+      </div>
+      <div class="admin-tabs">
+        <button class="admin-tab active" data-admin-tab="conta" type="button">Conta</button>
+        <button class="admin-tab" data-admin-tab="usuarios" type="button">Usuários</button>
+        <button class="admin-tab" data-admin-tab="itens" type="button">Itens</button>
+        <button class="admin-tab" data-admin-tab="plantas" type="button">Flores</button>
+        <button class="admin-tab" data-admin-tab="arvores" type="button">Árvores</button>
+        <button class="admin-tab" data-admin-tab="slots" type="button">Slots</button>
+        <button class="admin-tab" data-admin-tab="missoes" type="button">Missões</button>
+        <button class="admin-tab" data-admin-tab="regras" type="button">Regras</button>
+        <button class="admin-tab" data-admin-tab="eventos" type="button">Eventos</button>
+        <button class="admin-tab" data-admin-tab="promocoes" type="button">Promoções</button>
+        <button class="admin-tab" data-admin-tab="dados" type="button">Dados</button>
+        <button class="admin-tab" data-admin-tab="logs" type="button">Logs</button>
+      </div>
+      <div id="admin-content" class="admin-content"></div>
+      <div class="admin-footer">
+        <button id="admin-save" class="admin-action primary" type="button">Salvar Alterações</button>
+        <button id="admin-refresh" class="admin-action" type="button">Recarregar Painel</button>
+      </div>
+    </div>
+  </div>
   <script src="script.js?v=5.0.1"></script>
 </body>
 </html>
+=======
+    <div class="tool-item" data-item="pesticida"><img src="assets/borrifador_inseticida.png" class="tool-icon"><span class="count" id="count-
+>>>>>>> main

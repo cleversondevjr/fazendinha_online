@@ -12,5 +12,20 @@ O projeto está configurado com **Auto-Merge** e **Webhook**.
 - O Webhook sinaliza o Raspberry Pi, que executa o script `./deploy.sh`.
 
 ## Como Atualizar Manualmente
-``bash
+```bash
+<<<<<<< HEAD
 cd /home/pi/fazendinha_online && ./deploy.sh
+```
+
+## Estrutura do Projeto
+- `index.html`: Frontend Principal (v5.0.1).
+- `server/`: Backend em Node.js com Express e PostgreSQL.
+- `assets/`: Recursos visuais.
+- `migrations/`: Scripts de atualização do Banco de Dados.
+
+## Novidades v5.0.1
+- Consolidação de segurança e autenticação.
+- Sincronização final de versões.
+=======
+cd /home/pi/fazendinha_online && ./deploy.sh
+>>>>>>> main

@@ -20,7 +20,10 @@ router.post('/register', async (req, res) => {
 
         if (req.session) {
             req.session.userId = userId;
-            req.session.userLogin = login;
+<<<<<<< HEAD
+=======
+            req.session.userLogin = login; // Armazenando login para uso posterior
+>>>>>>> main
         }
 
         res.json({ success: true, userId });
@@ -41,15 +44,26 @@ router.post('/login', async (req, res) => {
         if (result.rows.length > 0) {
             const user = result.rows[0];
 
-            // Comparação segura usando bcrypt
+<<<<<<< HEAD
             const match = await bcrypt.compare(password, user.senha);
             if (!match) {
-                return res.status(401).json({ error: 'Credenciais inválidas.' });
+=======
+            if (password !== user.senha) {
+>>>>>>> main
+                console.log(`[AUTH] Senha incorreta para: ${login}`);
+                return res.status(401).json({ error: 'Senha incorreta.' });
+            }
+
+            if (!req.session) {
+                console.error(`[AUTH] Sessão não disponível!`);
+                return res.status(500).json({ error: 'Erro de sessão no servidor.' });
             }
 
             req.session.userId = user.id;
-            req.session.userLogin = login;
-            
+<<<<<<< HEAD
+=======
+            req.session.userLogin = login; // Salvando o login para checagem do admin "CleversonS"
+>>>>>>> main
             req.session.save((err) => {
                 if (err) return res.status(500).json({ error: 'Falha na sessão.' });
                 res.json({ success: true, userId: user.id });
@@ -62,8 +76,16 @@ router.post('/login', async (req, res) => {
     }
 });
 
-router.get('/version', (req, res) => {
+router.get('/version', async (req, res) => {
+<<<<<<< HEAD
+    try {
+        const result = await db.execute('SELECT valor FROM fazenda_config WHERE chave = $1', ['version']);
+        res.json({ version: result.rows.length > 0 ? result.rows[0].valor : 'v5.0.1' });
+    } catch (err) { res.json({ version: 'v5.0.1' }); }
+=======
+    // Versão atualizada para V6.0.1 conforme solicitado
     res.json({ version: 'V6.0.1' });
+>>>>>>> main
 });
 
 router.post('/recover', async (req, res) => {

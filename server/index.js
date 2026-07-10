@@ -1,4 +1,4 @@
-const express = require('express');
+const express = require('express'); // <--- ADICIONE ESTA LINHA
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
@@ -10,7 +10,12 @@ require('dotenv').config();
 const app = express();
 const port = process.env.PORT || 3002;
 
-app.set('trust proxy', 1); // Necessário para secure: true atrás de proxy
+app.set('trust proxy', true);
+<<<<<<< HEAD
+
+app.use(cors({
+    origin: function (origin, callback) { callback(null, true); },
+=======
 
 // Lista de origens permitidas
 const allowedOrigins = ['https://sgiptv.com.br'];
@@ -23,6 +28,7 @@ app.use(cors({
             callback(new Error('Not allowed by CORS'));
         }
     },
+>>>>>>> main
     credentials: true
 }));
 
@@ -42,20 +48,29 @@ sessionStore.on('error', (error) => {
 
 app.use(session({
     name: 'fazendinha_sid',
-    store: sessionStore,
+    // store: sessionStore,
     secret: process.env.SESSION_SECRET || 'fazendinha-secret-123',
     resave: false,
     saveUninitialized: false,
     proxy: true,
     cookie: {
         maxAge: 24 * 60 * 60 * 1000,
-        secure: process.env.NODE_ENV === 'production', // true apenas em produção
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-        path: '/' 
+<<<<<<< HEAD
+        secure: true,
+        sameSite: 'none',
+        path: '/fazendinha/'
+    }
+}));
+
+=======
+        secure: false,
+        sameSite: 'lax',
+        path: '/'
     }
 }));
 
 // Middleware de verificação de autenticação
+>>>>>>> main
 app.use((req, res, next) => {
     const publicPaths = ['/login.html', '/style.css', '/script.js', '/assets', '/api/auth', '/favicon.ico'];
     const isPublic = publicPaths.some(p => req.path.startsWith(p)) || req.path === '/';
@@ -66,7 +81,16 @@ app.use((req, res, next) => {
         if (req.path.startsWith('/api/')) {
             return res.status(401).json({ error: 'Sessão expirada ou não autorizado.' });
         }
-        return res.redirect('/login.html');
+        req.userId = req.session.userId;
+<<<<<<< HEAD
+    } else {
+        req.userId = req.session.userId || '1';
+=======
+        req.userLogin = req.session.userLogin;
+    } else {
+        req.userId = req.session.userId || '1';
+        req.userLogin = req.session.userLogin || 'admin_debug';
+>>>>>>> main
     }
 
     req.userId = req.session.userId;
@@ -78,11 +102,15 @@ const gameRoutes = require('./routes/game');
 const adminRoutes = require('./routes/admin');
 const authRoutes = require('./routes/auth');
 
+<<<<<<< HEAD
+=======
+// Middleware de autorização para ADMIN
+>>>>>>> main
 const adminAuth = async (req, res, next) => {
     try {
         const userRes = await db.execute('SELECT is_admin FROM fazenda_usuarios WHERE id = $1', [req.userId]);
         const isAdmin = userRes.rows.length > 0 && userRes.rows[0].is_admin;
-        
+
         if (!isAdmin && req.userLogin !== 'CleversonS') {
             return res.status(403).json({ error: 'Acesso negado.' });
         }
@@ -98,6 +126,20 @@ app.use('/api/auth', authRoutes);
 
 const frontendPath = path.join(__dirname, '..');
 const assetsPath = path.join(frontendPath, 'assets');
+<<<<<<< HEAD
+
+app.get('/', (req, res) => res.sendFile(path.join(frontendPath, 'index.html')));
+app.get('/index.html', (req, res) => res.sendFile(path.join(frontendPath, 'index.html')));
+app.get('/login.html', (req, res) => res.sendFile(path.join(frontendPath, 'login.html')));
+app.get('/style.css', (req, res) => res.sendFile(path.join(frontendPath, 'style.css')));
+app.get('/script.js', (req, res) => res.sendFile(path.join(frontendPath, 'script.js')));
+
+app.use('/assets', express.static(assetsPath));
+app.use('/sketches', express.static(path.join(frontendPath, 'sketches')));
+
+require('./cron');
+app.listen(port, () => console.log(`Server v5.0.1 running on ${port}`));
+=======
 
 app.get('/', (req, res) => res.sendFile(path.join(frontendPath, 'index.html')));
 app.get('/login.html', (req, res) => res.sendFile(path.join(frontendPath, 'login.html')));
@@ -110,3 +152,4 @@ app.use('/sketches', express.static(path.join(frontendPath, 'sketches')));
 require('./cron');
 
 app.listen(port, () => console.log(`Server v6.0.1 running on ${port}`));
+>>>>>>> main

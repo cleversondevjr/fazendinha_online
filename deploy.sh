@@ -23,16 +23,29 @@ set -a
 source server/.env
 set +a
 
-# 3. Banco de Dados (Executa todos os .sql automaticamente)
+<<<<<<< HEAD
+# Execução da migração consolidada (Todas em 1)
+echo "Executando migração consolidada v5.0.1..."
+psql -h $PGHOST -U $PGUSER -d $PGDATABASE -f migrations/v501_consolidated.sql > /dev/null 2>&1
+=======
+# Execução das migrações sequencialmente
 echo "Executando migrações..."
-for file in migrations/*.sql; do
-    echo "Aplicando: $file"
-    psql -h "$PGHOST" -U "$PGUSER" -d "$PGDATABASE" -f "$file" > /dev/null 2>&1
-    if [ $? -ne 0 ]; then
-        echo "ERRO: Falha ao executar $file"
-        exit 1
-    fi
-done
+psql -h $PGHOST -U $PGUSER -d $PGDATABASE -f migrations/full_deploy.sql > /dev/null 2>&1
+psql -h $PGHOST -U $PGUSER -d $PGDATABASE -f migrations/007_fix_users_table.sql > /dev/null 2>&1
+psql -h $PGHOST -U $PGUSER -d $PGDATABASE -f migrations/008_cleanup_users.sql > /dev/null 2>&1
+psql -h $PGHOST -U $PGUSER -d $PGDATABASE -f migrations/009_roadmap_features.sql > /dev/null 2>&1
+psql -h $PGHOST -U $PGUSER -d $PGDATABASE -f migrations/010_update_version_v301.sql > /dev/null 2>&1
+psql -h $PGHOST -U $PGUSER -d $PGDATABASE -f migrations/011_fix_admin_credentials.sql > /dev/null 2>&1
+psql -h $PGHOST -U $PGUSER -d $PGDATABASE -f migrations/012_reset_admin_plain_text.sql > /dev/null 2>&1
+psql -h $PGHOST -U $PGUSER -d $PGDATABASE -f migrations/013_update_version_v302.sql > /dev/null 2>&1
+psql -h $PGHOST -U $PGUSER -d $PGDATABASE -f migrations/014_update_version_v303.sql > /dev/null 2>&1
+psql -h $PGHOST -U $PGUSER -d $PGDATABASE -f migrations/015_update_version_v304.sql > /dev/null 2>&1
+psql -h $PGHOST -U $PGUSER -d $PGDATABASE -f migrations/016_update_version_v305.sql > /dev/null 2>&1
+psql -h $PGHOST -U $PGUSER -d $PGDATABASE -f migrations/017_daily_checkin.sql > /dev/null 2>&1
+psql -h $PGHOST -U $PGUSER -d $PGDATABASE -f migrations/018_update_version_v306.sql > /dev/null 2>&1
+psql -h $PGHOST -U $PGUSER -d $PGDATABASE -f migrations/019_spec_v1_schema.sql > /dev/null 2>&1
+psql -h $PGHOST -U $PGUSER -d $PGDATABASE -f migrations/020_update_version_v501.sql > /dev/null 2>&1
+>>>>>>> main
 
 # 4. Backend (PM2)
 echo "Atualizando dependências..."

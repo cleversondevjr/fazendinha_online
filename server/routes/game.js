@@ -110,7 +110,7 @@ router.get('/state', async (req, res) => {
         await syncEnergy(userId, configsMap);
 
         const inventoryRes = await db.execute('SELECT item_id, quantidade FROM fazenda_inventario WHERE usuario_id = $1', [userId]);
-        const inventory = inventoryRes.rows.reduce((acc, curr) => ({ ...acc, [curr.item_id]: curr.quantidade }), {});
+        const inventory = inventoryRes.rows.reduce((acc, curr) => ({ ...acc, [curr.item_id]: BigInt(curr.quantidade).toString() }), {});
 
         const slotsRes = await db.execute('SELECT * FROM fazenda_plantacoes WHERE usuario_id = $1 ORDER BY slot_index', [userId]);
         const slots = slotsRes.rows.map(s => calculatePlotState(s, configsMap));
@@ -139,7 +139,11 @@ router.get('/state', async (req, res) => {
             return acc;
         }, {});
 
+        const userRes = await db.execute('SELECT is_admin FROM fazenda_usuarios WHERE id = $1', [userId]);
+        const isAdmin = userRes.rows.length > 0 && !!userRes.rows[0].is_admin;
+
         res.json({
+            isAdmin,
             inventory,
             slots,
             missions: missionsRes.rows,
@@ -166,6 +170,21 @@ router.post('/action', async (req, res) => {
             const itemRes = await db.execute('SELECT * FROM fazenda_itens_config WHERE item_id = $1', [itemId]);
             if (!itemRes.rows.length) throw new Error('Item inválido');
             const item = itemRes.rows[0];
+<<<<<<< HEAD
+            const discountRes = await db.execute("SELECT valor FROM fazenda_config WHERE chave = 'global_discount'");
+            const discount = BigInt(discountRes.rows[0]?.valor || 0);
+
+            if (BigInt(item.price_diamonds || 0) > 0n) {
+                const totalDiamonds = BigInt(item.price_diamonds) * qty;
+                const currentDiamonds = BigInt(inventory['diamante'] || 0);
+                if (currentDiamonds < totalDiamonds) throw new Error('Diamantes insuficientes');
+                await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade - $1 WHERE usuario_id = $2 AND item_id = 'diamante'", [totalDiamonds.toString(), userId]);
+            } else {
+                const unitPrice = BigInt(item.price_coins || 0) * (100n - discount) / 100n;
+                const totalCoins = unitPrice * qty;
+                const currentCoins = BigInt(inventory['coins'] || 0);
+                if (currentCoins < totalCoins) throw new Error('Ouro insuficiente');
+=======
             const discount = BigInt((await db.execute("SELECT valor FROM fazenda_config WHERE chave = 'global_discount'")).rows[0].valor || 0);
 
             if (item.price_diamonds > 0) {
@@ -176,6 +195,7 @@ router.post('/action', async (req, res) => {
                 const unitPrice = BigInt(item.price_coins) * (100n - discount) / 100n;
                 const totalCoins = unitPrice * qty;
                 if ((inventory['coins'] || 0n) < totalCoins) throw new Error('Ouro insuficiente');
+>>>>>>> main
                 await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade - $1 WHERE usuario_id = $2 AND item_id = 'coins'", [totalCoins.toString(), userId]);
             }
             await db.execute("INSERT INTO fazenda_inventario (usuario_id, item_id, quantidade) VALUES ($1, $2, $3) ON CONFLICT (usuario_id, item_id) DO UPDATE SET quantidade = fazenda_inventario.quantidade + $3", [userId, itemId, qty.toString()]);
@@ -220,7 +240,183 @@ router.post('/action', async (req, res) => {
             if (slot.fase !== 'ready') throw new Error('Não está pronto');
             
             await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade + $1 WHERE usuario_id = $2 AND item_id = 'coins'", [Math.floor(slot.reward_actual), userId]);
-            await db.execute("UPDATE fazenda_plantacoes SET fase = 'needsPot', crop_id = NULL, started_at = NULL, ends_at = NULL, reward_actual = 0 WHERE id = $1", [slot.id]);
+
+            // Decidir próximo estado: se tiver pote e ainda tiver água, vai para readyToPlant
+            let nextFase = 'needsPot';
+            if (slot.pot_type) {
+                const waterExpires = slot.water_expires_at ? new Date(slot.water_expires_at).getTime() : 0;
+                nextFase = (waterExpires > Date.now()) ? 'readyToPlant' : 'needsWater';
+            }
+
+            await db.execute("UPDATE fazenda_plantacoes SET fase = $1, crop_id = NULL, started_at = NULL, ends_at = NULL, crow_active = FALSE, pest_active = FALSE, reward_actual = 0 WHERE id = $2", [nextFase, slot.id]);
+            await db.execute("UPDATE fazenda_usuarios SET total_gold_generated = total_gold_generated + $1 WHERE id = $2", [Math.floor(slot.reward_actual), userId]);
+            await db.execute(`
+                UPDATE fazenda_missoes_jogador
+                SET progress = LEAST((SELECT target FROM fazenda_missoes_template WHERE id = template_id), progress + 1)
+                WHERE usuario_id = $1 AND claimed = FALSE AND expires_at > NOW()
+                AND template_id IN (SELECT id FROM fazenda_missoes_template WHERE tipo = 'harvest_count')
+            `, [userId]);
+        }
+
+        if (action === 'harvest_all') {
+            const slotsRes = await db.execute('SELECT * FROM fazenda_plantacoes WHERE usuario_id = $1', [userId]);
+            let totalReward = 0;
+            let harvestedCount = 0;
+
+            for (const s of slotsRes.rows) {
+                const slot = calculatePlotState(s, {});
+                if (slot.fase === 'ready') {
+                    totalReward += Math.floor(slot.reward_actual);
+                    harvestedCount++;
+
+                    let nextFase = 'needsPot';
+                    if (slot.pot_type) {
+                        const waterExpires = slot.water_expires_at ? new Date(slot.water_expires_at).getTime() : 0;
+                        nextFase = (waterExpires > Date.now()) ? 'readyToPlant' : 'needsWater';
+                    }
+
+                    await db.execute("UPDATE fazenda_plantacoes SET fase = $1, crop_id = NULL, started_at = NULL, ends_at = NULL, crow_active = FALSE, pest_active = FALSE, reward_actual = 0 WHERE id = $2", [nextFase, slot.id]);
+                }
+            }
+
+            if (harvestedCount > 0) {
+                await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade + $1 WHERE usuario_id = $2 AND item_id = 'coins'", [totalReward, userId]);
+                await db.execute("UPDATE fazenda_usuarios SET total_gold_generated = total_gold_generated + $1 WHERE id = $2", [totalReward, userId]);
+                await db.execute(`
+                    UPDATE fazenda_missoes_jogador
+                    SET progress = LEAST((SELECT target FROM fazenda_missoes_template WHERE id = template_id), progress + $1)
+                    WHERE usuario_id = $2 AND claimed = FALSE AND expires_at > NOW()
+                    AND template_id IN (SELECT id FROM fazenda_missoes_template WHERE tipo = 'harvest_count')
+                `, [harvestedCount, userId]);
+            } else {
+                throw new Error('Nenhuma planta pronta para colher');
+            }
+        }
+
+        if (action === 'claim_mission') {
+            const resMission = await db.execute("SELECT m.*, t.reward_type, t.reward_amount FROM fazenda_missoes_jogador m JOIN fazenda_missoes_template t ON m.template_id = t.id WHERE m.id = $1 AND m.usuario_id = $2 AND m.claimed = FALSE AND m.progress >= t.target", [missionId, userId]);
+            if (!resMission.rows.length) throw new Error('Missão não disponível');
+            await db.execute("UPDATE fazenda_missoes_jogador SET claimed = TRUE WHERE id = $1", [missionId]);
+            await db.execute("INSERT INTO fazenda_inventario (usuario_id, item_id, quantidade) VALUES ($1, $2, $3) ON CONFLICT (usuario_id, item_id) DO UPDATE SET quantidade = fazenda_inventario.quantidade + $3", [userId, resMission.rows[0].reward_type, resMission.rows[0].reward_amount.toString()]);
+
+            // Regra Spec V1.0: 3 missões completadas = 1 nível no passe (simplificado: cada missão dá 34 XP, 100 XP = level up)
+            await db.execute("INSERT INTO fazenda_season_pass_progresso (usuario_id, xp_atual) VALUES ($1, 34) ON CONFLICT (usuario_id) DO UPDATE SET xp_atual = fazenda_season_pass_progresso.xp_atual + 34", [userId]);
+
+            // Check Level Up
+            const prog = (await db.execute("SELECT * FROM fazenda_season_pass_progresso WHERE usuario_id = $1", [userId])).rows[0];
+            let leveledUp = false;
+            if (prog.xp_atual >= 100) {
+                await db.execute("UPDATE fazenda_season_pass_progresso SET nivel_atual = nivel_atual + 1, xp_atual = xp_atual - 100 WHERE usuario_id = $1", [userId]);
+                leveledUp = true;
+            }
+            return res.json({ success: true, leveledUp, newLevel: leveledUp ? prog.nivel_atual + 1 : prog.nivel_atual });
+        }
+
+        if (action === 'claim_pass_reward') {
+            const level = parseInt(missionId); // Reutilizando campo missionId para o nível do passe
+            const progRes = await db.execute("SELECT * FROM fazenda_season_pass_progresso WHERE usuario_id = $1", [userId]);
+            const prog = progRes.rows[0];
+            if (!prog || prog.nivel_atual < level || prog.claimed_levels.includes(level)) throw new Error("Recompensa não disponível");
+
+            const tier = (await db.execute("SELECT * FROM fazenda_season_pass_template WHERE nivel = $1", [level])).rows[0];
+            await db.execute("UPDATE fazenda_season_pass_progresso SET claimed_levels = array_append(claimed_levels, $1) WHERE usuario_id = $2", [level, userId]);
+            await db.execute("INSERT INTO fazenda_inventario (usuario_id, item_id, quantidade) VALUES ($1, $2, $3) ON CONFLICT (usuario_id, item_id) DO UPDATE SET quantidade = fazenda_inventario.quantidade + $3", [userId, tier.recompensa_tipo, tier.recompensa_quantidade.toString()]);
+        }
+
+        if (action === 'buy_slot') {
+            // Validar se slots premium (7 e 8, indices 6 e 7) estão liberados
+            if (slotIndex >= 6) {
+                const check = await isFeatureEnabled('SLOTS_PREMIUM');
+                if (!check.ativa) throw new Error(check.mensagem);
+            }
+
+            const slotPrices = [
+                { type: 'gold', cost: 100 },
+                { type: 'gold', cost: 500 },
+                { type: 'gold', cost: 1000 },
+                { type: 'gold', cost: 2500 },
+                { type: 'gold', cost: 5000 },
+                { type: 'gold', cost: 10000 },
+                { type: 'diamond', cost: 1000 },
+                { type: 'diamond', cost: 4000 }
+            ];
+
+            const price = slotPrices[slotIndex];
+            if (!price) throw new Error('Slot inválido');
+
+            // Regra: Slots de ouro (0-5) devem ser comprados em ordem
+            if (price.type === 'gold' && slotIndex > 0) {
+                const goldSlotsRes = await db.execute('SELECT slot_index, fase FROM fazenda_plantacoes WHERE usuario_id = $1 AND slot_index < $2 ORDER BY slot_index ASC', [userId, slotIndex]);
+                const prevGoldSlots = goldSlotsRes.rows.filter(s => slotPrices[s.slot_index].type === 'gold');
+
+                for (const s of prevGoldSlots) {
+                    if (s.fase === 'locked') {
+                        throw new Error(`Você deve comprar o Slot ${s.slot_index + 1} de ouro primeiro`);
+                    }
+                }
+            }
+
+            if (price.type === 'gold') {
+                if (BigInt(inventory['coins'] || 0) < BigInt(price.cost)) throw new Error('Ouro insuficiente');
+                await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade - $1 WHERE usuario_id = $2 AND item_id = 'coins'", [price.cost.toString(), userId]);
+            } else {
+                if (BigInt(inventory['diamante'] || 0) < BigInt(price.cost)) throw new Error('Diamantes insuficientes');
+                await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade - $1 WHERE usuario_id = $2 AND item_id = 'diamante'", [price.cost.toString(), userId]);
+            }
+
+            const updateRes = await db.execute("UPDATE fazenda_plantacoes SET fase = 'needsPot' WHERE usuario_id = $1 AND slot_index = $2 AND fase = 'locked'", [userId, slotIndex]);
+            if (updateRes.rowCount > 0) {
+                await db.execute(`
+                    UPDATE fazenda_missoes_jogador
+                    SET progress = LEAST((SELECT target FROM fazenda_missoes_template WHERE id = template_id), progress + 1)
+                    WHERE usuario_id = $1 AND claimed = FALSE AND expires_at > NOW()
+                    AND template_id IN (SELECT id FROM fazenda_missoes_template WHERE tipo = 'unlock_slot')
+                `, [userId]);
+            }
+        }
+
+        if (action === 'remove_crow') {
+            const updateRes = await db.execute(`
+                UPDATE fazenda_plantacoes
+                SET crow_active = FALSE,
+                    total_paused_ms = total_paused_ms + CASE
+                        WHEN pause_started_at IS NOT NULL AND pest_active = FALSE AND water_expires_at > NOW() AND (pot_expires_at IS NULL OR pot_expires_at > NOW())
+                        THEN (EXTRACT(EPOCH FROM (NOW() - pause_started_at)) * 1000)
+                        ELSE 0 END,
+                    pause_started_at = CASE
+                        WHEN pest_active = TRUE OR water_expires_at <= NOW() OR (pot_expires_at IS NOT NULL AND pot_expires_at <= NOW())
+                        THEN COALESCE(pause_started_at, NOW())
+                        ELSE NULL END
+                WHERE usuario_id = $1 AND slot_index = $2 AND crow_active = TRUE
+            `, [userId, slotIndex]);
+            if (updateRes.rowCount > 0) {
+                await db.execute(`
+                    UPDATE fazenda_missoes_jogador
+                    SET progress = LEAST((SELECT target FROM fazenda_missoes_template WHERE id = template_id), progress + 1)
+                    WHERE usuario_id = $1 AND claimed = FALSE AND expires_at > NOW()
+                    AND template_id IN (SELECT id FROM fazenda_missoes_template WHERE tipo = 'remove_crow')
+                `, [userId]);
+            }
+        }
+
+        if (action === 'remove_plant') {
+            const slotRes = await db.execute('SELECT * FROM fazenda_plantacoes WHERE usuario_id = $1 AND slot_index = $2', [userId, slotIndex]);
+            if (!slotRes.rows.length) throw new Error('Slot não encontrado');
+            const slot = slotRes.rows[0];
+            if (slot.fase === 'locked' || slot.fase === 'needsPot') throw new Error('Slot já está vazio');
+
+            let nextFase = 'needsPot';
+            if (slot.pot_type) {
+                const waterExpires = slot.water_expires_at ? new Date(slot.water_expires_at).getTime() : 0;
+                nextFase = (waterExpires > Date.now()) ? 'readyToPlant' : 'needsWater';
+            }
+
+            await db.execute(`
+                UPDATE fazenda_plantacoes
+                SET fase = $1, crop_id = NULL, started_at = NULL, ends_at = NULL,
+                    crow_active = FALSE, pest_active = FALSE, reward_actual = 0
+                WHERE id = $2
+            `, [nextFase, slot.id]);
         }
 
         if (action === 'marketplace_list') {
