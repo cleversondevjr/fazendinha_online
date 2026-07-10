@@ -11,7 +11,7 @@ router.post('/register', async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
         
         const result = await db.execute(
-            'INSERT INTO fazenda_usuarios (login, email, senha) VALUES ($1, $2, $3) RETURNING id',
+            'INSERT INTO fazenda_usuarios (login, email, senha, is_admin) VALUES ($1, $2, $3, FALSE) RETURNING id',
             [login, email, hashedPassword]
         );
         
@@ -54,13 +54,14 @@ router.post('/login', async (req, res) => {
             }
 
             req.session.userId = user.id;
+            req.session.isAdmin = user.is_admin;
             req.session.save((err) => {
                 if (err) {
                     console.error('[AUTH] Erro ao salvar sessão:', err);
                     return res.status(500).json({ error: 'Falha ao salvar sessão.' });
                 }
-                console.log(`[AUTH] Login OK: ${login} (ID: ${user.id})`);
-                res.json({ success: true, userId: user.id });
+                console.log(`[AUTH] Login OK: ${login} (ID: ${user.id}, Admin: ${user.is_admin})`);
+                res.json({ success: true, userId: user.id, isAdmin: user.is_admin });
             });
         } else {
             console.log(`[AUTH] Usuário não encontrado: ${login}`);
