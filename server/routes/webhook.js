@@ -129,7 +129,7 @@ router.post('/test', (req, res) => {
         success: true,
         message: 'Webhook em funcionamento!',
         timestamp: timestamp,
-        webhook_url: 'https://fazendinha.sgiptv.com.br/api/webhook/github'
+        webhook_url: 'https://sgiptv.com.br/api/webhook/github'
     });
 });
 
