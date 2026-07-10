@@ -21,9 +21,10 @@ router.post('/github', (req, res) => {
         const logEntry = `\n[${timestamp}] ✅ Webhook recebido do GitHub\n`;
         fs.appendFileSync(logFile, logEntry);
         console.log(logEntry);
+        console.log('Headers recebidos:', JSON.stringify(req.headers, null, 2));
 
-        // Validar evento
-        const event = req.headers['x-github-event'];
+        // Validar evento (case-insensitive)
+        const event = req.headers['x-github-event'] || req.headers['X-GitHub-Event'];
         const payload = req.body;
 
         if (event !== 'push') {
