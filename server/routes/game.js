@@ -182,6 +182,7 @@ router.post('/action', async (req, res) => {
             const itemRes = await db.execute('SELECT * FROM fazenda_itens_config WHERE item_id = $1', [itemId]);
             if (!itemRes.rows.length) throw new Error('Item inválido');
             const item = itemRes.rows[0];
+<<<<<<< HEAD
             const discountRes = await db.execute("SELECT valor FROM fazenda_config WHERE chave = 'global_discount'");
             const discount = BigInt(discountRes.rows[0]?.valor || 0);
 
@@ -195,6 +196,18 @@ router.post('/action', async (req, res) => {
                 const totalCoins = unitPrice * qty;
                 const currentCoins = BigInt(inventory['coins'] || 0);
                 if (currentCoins < totalCoins) throw new Error('Ouro insuficiente');
+=======
+            const discount = BigInt((await db.execute("SELECT valor FROM fazenda_config WHERE chave = 'global_discount'")).rows[0].valor || 0);
+
+            if (item.price_diamonds > 0) {
+                const totalDiamonds = BigInt(item.price_diamonds) * qty;
+                if ((inventory['diamante'] || 0n) < totalDiamonds) throw new Error('Diamantes insuficientes');
+                await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade - $1 WHERE usuario_id = $2 AND item_id = 'diamante'", [totalDiamonds.toString(), userId]);
+            } else {
+                const unitPrice = BigInt(item.price_coins) * (100n - discount) / 100n;
+                const totalCoins = unitPrice * qty;
+                if ((inventory['coins'] || 0n) < totalCoins) throw new Error('Ouro insuficiente');
+>>>>>>> main
                 await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade - $1 WHERE usuario_id = $2 AND item_id = 'coins'", [totalCoins.toString(), userId]);
             }
             await db.execute("INSERT INTO fazenda_inventario (usuario_id, item_id, quantidade) VALUES ($1, $2, $3) ON CONFLICT (usuario_id, item_id) DO UPDATE SET quantidade = fazenda_inventario.quantidade + $3", [userId, itemId, qty.toString()]);

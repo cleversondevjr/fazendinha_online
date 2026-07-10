@@ -13,6 +13,7 @@ O projeto está configurado com **Auto-Merge** e **Webhook**.
 
 ## Como Atualizar Manualmente
 ```bash
+<<<<<<< HEAD
 cd /home/pi/fazendinha_online && ./deploy.sh
 ```
 
@@ -25,3 +26,6 @@ cd /home/pi/fazendinha_online && ./deploy.sh
 ## Novidades v5.0.1
 - Consolidação de segurança e autenticação.
 - Sincronização final de versões.
+=======
+cd /home/pi/fazendinha_online && ./deploy.sh
+>>>>>>> main

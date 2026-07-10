@@ -283,6 +283,7 @@ body {
   border-radius: 10px;
   padding: 6px 8px;
   text-align: left;
+<<<<<<< HEAD
   font-family: Arial, sans-serif;
   min-height: 0;
   flex: 1 1 0;
@@ -775,3 +776,6 @@ body {
   color: #ffd75b;
   background: rgba(0,0,0,0.35);
 }
+=======
+  font-family: Arial, sans-serif
+>>>>>>> main
