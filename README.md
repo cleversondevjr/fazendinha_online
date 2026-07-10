@@ -10,7 +10,7 @@ Fazendinha Online é um jogo web de fazenda em tempo real com elementos de RPG, 
 - **Banco de Dados:** PostgreSQL
 - **Frontend:** HTML5 + CSS3 + JavaScript Vanilla
 - **Autenticação:** BCrypt + Sessions
-- **Deploy:** Automated via GitHub Webhooks
+- **Deploy:** Automático via GitHub Webhooks
 
 ## 📦 Instalação
 
@@ -65,7 +65,7 @@ node server/index.js
 
 ## 🔄 Deploy Automático
 
-Webhook GitHub: `https://fazendinha.sgiptv.com.br/api/webhook/github`
+Webhook GitHub: `https://sgiptv.com.br/api/webhook/github`
 
 Quando há push em `main`, o servidor executa automaticamente:
 ```bash
@@ -126,8 +126,3 @@ Para reportar bugs ou sugestões, abra uma issue no GitHub.
 **Versão:** v5.0.1  
 **Última Atualização:** Julho 2026  
 **Status:** ✅ Em Produção
-# Test
-# Webhook Test sex 10 jul 2026 02:22:18 -03
-# Webhook Fix sex 10 jul 2026 02:26:55 -03
-# Final Test sex 10 jul 2026 02:29:52 -03
-# Webhook Fixed sex 10 jul 2026 02:32:03 -03
