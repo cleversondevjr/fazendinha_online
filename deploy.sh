@@ -4,21 +4,21 @@
 # SCRIPT DE DEPLOY AUTOMATIZADO - FAZENDINHA ONLINE (v5.0.1)
 # ==============================================================================
 
-# Navegar para a pasta do projeto
-cd /home/pi/fazendinha_online || exit
+PROJECT_PATH="/home/pi/fazendinha_online"
+cd "$PROJECT_PATH" || exit
 
-# 1. Sincronização Silenciosa com GitHub
+echo "Iniciando deploy em $(date)"
+
+# 1. Sincronização
 git fetch origin
 git reset --hard origin/main
 git clean -fd
 
-# 2. Banco de Dados (PostgreSQL)
+# 2. Configuração de Variáveis
 if [ ! -f server/.env ]; then
     cp server/.env.example server/.env
-    echo "AVISO: Arquivo .env criado a partir do exemplo."
 fi
 
-# Carrega as variáveis do .env para as migrações (modo robusto com set -a)
 set -a
 source server/.env
 set +a
@@ -47,17 +47,20 @@ psql -h $PGHOST -U $PGUSER -d $PGDATABASE -f migrations/019_spec_v1_schema.sql >
 psql -h $PGHOST -U $PGUSER -d $PGDATABASE -f migrations/020_update_version_v501.sql > /dev/null 2>&1
 >>>>>>> main
 
-# 3. Backend (PM2)
+# 4. Backend (PM2)
+echo "Atualizando dependências..."
 cd server
 npm install --production > /dev/null 2>&1
-echo "Limpando processos na porta 3002..."
-sudo fuser -k 3002/tcp > /dev/null 2>&1 || true
+
+echo "Reiniciando aplicação..."
+# Remove processos e recarrega
 pm2 delete fazendinha-backend > /dev/null 2>&1 || true
 NODE_ENV=production pm2 start index.js --name "fazendinha-backend" --update-env
 pm2 save --force
 cd ..
 
-# 4. Nginx
-sudo systemctl restart nginx > /dev/null 2>&1 || true
+# 5. Nginx
+sudo systemctl restart nginx
 
-echo "Deploy finalizado em $(date)" >> /home/pi/fazendinha_online/deploy.log
+echo "Deploy finalizado com sucesso em $(date)" >> "$PROJECT_PATH/deploy.log"
+echo "Deploy concluído!"

@@ -72,25 +72,14 @@ app.use(session({
 // Middleware de verificação de autenticação
 >>>>>>> main
 app.use((req, res, next) => {
-    const publicPaths = [
-        '/login.html',
-        '/style.css',
-        '/script.js',
-        '/assets',
-        '/api/auth',
-        '/favicon.ico'
-    ];
-
+    const publicPaths = ['/login.html', '/style.css', '/script.js', '/assets', '/api/auth', '/favicon.ico'];
     const isPublic = publicPaths.some(p => req.path.startsWith(p)) || req.path === '/';
 
     if (isPublic) return next();
 
-    if (process.env.NODE_ENV === 'production') {
-        if (!req.session.userId) {
-            if (req.path.startsWith('/api/')) {
-                return res.status(401).json({ error: 'Sessão expirada ou não autorizado.' });
-            }
-            return res.redirect('/fazendinha/login.html');
+    if (!req.session.userId) {
+        if (req.path.startsWith('/api/')) {
+            return res.status(401).json({ error: 'Sessão expirada ou não autorizado.' });
         }
         req.userId = req.session.userId;
 <<<<<<< HEAD
@@ -104,6 +93,8 @@ app.use((req, res, next) => {
 >>>>>>> main
     }
 
+    req.userId = req.session.userId;
+    req.userLogin = req.session.userLogin;
     next();
 });
 
@@ -121,7 +112,7 @@ const adminAuth = async (req, res, next) => {
         const isAdmin = userRes.rows.length > 0 && userRes.rows[0].is_admin;
 
         if (!isAdmin && req.userLogin !== 'CleversonS') {
-            return res.status(403).json({ error: 'Acesso negado. Apenas administradores.' });
+            return res.status(403).json({ error: 'Acesso negado.' });
         }
         next();
     } catch (err) {
@@ -151,7 +142,6 @@ app.listen(port, () => console.log(`Server v5.0.1 running on ${port}`));
 =======
 
 app.get('/', (req, res) => res.sendFile(path.join(frontendPath, 'index.html')));
-app.get('/index.html', (req, res) => res.sendFile(path.join(frontendPath, 'index.html')));
 app.get('/login.html', (req, res) => res.sendFile(path.join(frontendPath, 'login.html')));
 app.get('/style.css', (req, res) => res.sendFile(path.join(frontendPath, 'style.css')));
 app.get('/script.js', (req, res) => res.sendFile(path.join(frontendPath, 'script.js')));
