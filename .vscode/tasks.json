@@ -1,0 +1,26 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Iniciar Aider Local",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-NoExit",
+                "-Command",
+                "$env:OLLAMA_API_BASE=\\\"http://localhost:11434\\\"; & 'C:\\Users\\Cleverson\\AppData\\Local\\Programs\\Python\\Python312\\python.exe' -m aider --model ollama/qwen2.5-coder:7b --no-show-model-warnings"
+            ],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared",
+                "showReuseMessage": false,
+                "clear": true
+            },
+            "runOptions": {
+                "runOn": "folderOpen"
+            }
+        }
+    ]
+}
