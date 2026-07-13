@@ -1,34 +1,21 @@
-param (
-    [string]$RaspberryPiIP = "192.168.0.217",
-    [string]$Username = "pi",
-    [string]$SourcePath = ".",
-    [string]$DestinationPath = "/home/pi/fazendinha"
-)
-
-if (-not $RaspberryPiIP -or -not $Username -or -not $SourcePath -or -not $DestinationPath) {
-    Write-Host "Uso: .\deploy_raspberry.ps1 -RaspberryPiIP <ip-do-raspberrypi> -Username <usuario> -SourcePath <caminho-fonte> -DestinationPath <caminho-destino>" -ForegroundColor Red
-    exit 1
-}
+# Configurações do Servidor
+$RaspberryPiIP = "192.168.0.217"
+$Username = "pi"
+$RemotePath = "/home/pi/fazendinha"
 
 Write-Host "Iniciando deploy para o Raspberry Pi ($RaspberryPiIP)..." -ForegroundColor Cyan
 
-# Cria uma sessão SSH pedindo a senha de forma nativa e segura no PowerShell
-$passwordSecure = Read-Host "Digite a senha para $Username@$RaspberryPiIP" -AsSecureString
-$credential = New-Object System.Management.Automation.PSCredential($Username, $passwordSecure)
+# Pede as credenciais de forma nativa e segura no Windows
+$Credential = Get-Credential -UserName $Username -Message "Wincster194060le"
+$PasswordPlain = $Credential.GetNetworkCredential().Password
 
-# Verifica se a pasta destino existe, caso contrário, cria-a
-$sshCommand = "sshpass -p '$($passwordSecure.GetNetworkCredential().Password)' ssh $Username@$RaspberryPiIP 'mkdir -p $DestinationPath'"
-Invoke-Expression $sshCommand
-
-# Executa o SCP usando o cliente OpenSSH do Windows
-# Nota: Como o SCP padrão do Windows não aceita a senha na linha de comando por segurança,
-# este script vai disparar a janela do OpenSSH para você colar a sua senha 'Wincster@...' com segurança.
-$scpCommand = "scp -r `"$SourcePath`" $Username@${RaspberryPiIP}:${DestinationPath}"
-
-Invoke-Expression $scpCommand
+# Executa o SCP usando o utilitário nativo do Windows OpenSSH
+# Enviamos os arquivos da pasta atual para o servidor
+Write-Host "Transferindo arquivos via SCP..." -ForegroundColor Yellow
+scp -r ./* "${Username}@${RaspberryPiIP}:${RemotePath}"
 
 if ($LASTEXITCODE -eq 0) {
-    Write-Host "Deploy bem-sucedido na pasta /home/pi/fazendinha!" -ForegroundColor Green
+    Write-Host "Deploy concluído com sucesso total!" -ForegroundColor Green
 } else {
-    Write-Host "Erro no deploy. Código de saída: $LASTEXITCODE" -ForegroundColor Red
+    Write-Host "Ocorreu um erro durante a transferência do SCP. Verifique a conexão ou a pasta de destino." -ForegroundColor Red
 }
