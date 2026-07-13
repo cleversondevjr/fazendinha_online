@@ -14,5 +14,9 @@ def commit_and_push(message):
     run_command("git push origin main")
 
 if __name__ == "__main__":
-    message = input("Digite a mensagem do commit: ")
+    if len(sys.argv) != 2:
+        print("Uso: python deploy.py <mensagem-do-commit>")
+        exit(1)
+
+    message = sys.argv[1]
     commit_and_push(message)
