@@ -1,25 +1,32 @@
-# Configurações do Servidor
-$RaspberryPiIP = "192.168.0.217"
-$Username = "pi"
-$RemotePath = "/home/pi/fazendinha"
+import sys
+import subprocess
 
-Write-Host "Iniciando deploy para o Raspberry Pi ($RaspberryPiIP)..." -ForegroundColor Cyan
+def run_command(command, ignore_errors=False):
+    print(f"Executando: {command}")
+    result = subprocess.run(command, shell=True, text=True, capture_output=True, encoding='utf-8', errors='ignore')
+    stdout_str = result.stdout or ""
+    stderr_str = result.stderr or ""
+    if "nothing to commit" in stdout_str or "working tree clean" in stdout_str:
+        print("Aviso do Git: Nada para salvar localmente, continuando o fluxo...")
+        return True
+    if result.returncode != 0 and not ignore_errors:
+        print(f"Erro ao executar comando: {command}")
+        return False
+    return True
 
-# Executa o SCP de forma nativa
-Write-Host "Transferindo arquivos via SCP..." -ForegroundColor Yellow
-scp -r ./* "${Username}@${RaspberryPiIP}:${RemotePath}"
+def commit_and_push(message):
+    if not run_command("git add ."): return False
+    run_command(f'git commit -m "{message}"', ignore_errors=True)
+    run_command("git push origin main", ignore_errors=True)
+    return True
 
-if ($LASTEXITCODE -eq 0) {
-    Write-Host "Transferência concluída! Reiniciando o servidor no Raspberry Pi..." -ForegroundColor Yellow
-    
-    # Executa a reinicialização direta via SSH
-    ssh "${Username}@${RaspberryPiIP}" "cd ${RemotePath} && (pm2 restart all || (pkill -f server.js; nohup node server.js > server.log 2>&1 &))"
-    
-    if ($LASTEXITCODE -eq 0) {
-        Write-Host "Deploy e reinicialização concluídos com sucesso total! O jogo está atualizado." -ForegroundColor Green
-    } else {
-        Write-Host "Arquivos enviados, mas houve um problema ao reiniciar o servidor via SSH." -ForegroundColor Yellow
-    }
-} else {
-    Write-Host "Ocorreu um erro durante a transferência do SCP. Verifique a conexão." -ForegroundColor Red
-}
+def run_powershell_script():
+    subprocess.run('powershell.exe -ExecutionPolicy Bypass -File .\\deploy_raspberry.ps1', shell=True)
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("Uso: python deploy.py <mensagem-do-commit>")
+        exit(1)
+    message = sys.argv[1]
+    commit_and_push(message)
+    run_powershell_script()
