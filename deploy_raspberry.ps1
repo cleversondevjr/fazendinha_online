@@ -5,6 +5,11 @@ param (
     [string]$DestinationPath = "/home/pi/fazendinha"
 )
 
+if (-not $RaspberryPiIP -or -not $Username -or -not $SourcePath -or -not $DestinationPath) {
+    Write-Host "Uso: .\deploy_raspberry.ps1 -RaspberryPiIP <ip-do-raspberrypi> -Username <usuario> -SourcePath <caminho-fonte> -DestinationPath <caminho-destino>" -ForegroundColor Red
+    exit 1
+}
+
 Write-Host "Iniciando deploy para o Raspberry Pi ($RaspberryPiIP)..." -ForegroundColor Cyan
 
 # Cria uma sessão SSH pedindo a senha de forma nativa e segura no PowerShell
