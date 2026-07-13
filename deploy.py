@@ -1,0 +1,18 @@
+import subprocess
+
+def run_command(command):
+    result = subprocess.run(command, shell=True, capture_output=True, text=True)
+    if result.returncode != 0:
+        print(f"Erro ao executar comando: {command}")
+        print(result.stderr)
+        exit(1)
+    return result.stdout.strip()
+
+def commit_and_push(message):
+    run_command("git add .")
+    run_command(f'git commit -m "{message}"')
+    run_command("git push origin main")
+
+if __name__ == "__main__":
+    message = input("Digite a mensagem do commit: ")
+    commit_and_push(message)
