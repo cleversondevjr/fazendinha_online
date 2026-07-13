@@ -1,0 +1,4 @@
+[AUTH] Tentativa de login: username
+[AUTH] Login OK: username (ID: 1, Admin: false)
+[AUTH] Usuário não encontrado: username
+[AUTH] Senha incorreta para: username

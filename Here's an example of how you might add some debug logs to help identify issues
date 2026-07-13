@@ -1,0 +1,26 @@
+// In script.js
+async function login() {
+    const login = document.getElementById("login-input").value;
+    const password = document.getElementById("password-input").value;
+
+    console.log('Login attempt:', { login, password });
+
+    try {
+        const res = await apiFetch(`${API_BASE_URL}/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ login, password })
+        });
+        if (res.success) {
+            console.log('Login successful:', res);
+            // Redirect to the main game page or dashboard
+            window.location.href = "index.html";
+        } else {
+            console.error('Login failed:', res.error);
+            alert(res.error);
+        }
+    } catch (err) {
+        console.error('Error during login:', err.message);
+        alert('Erro ao tentar logar: ' + err.message);
+    }
+}
