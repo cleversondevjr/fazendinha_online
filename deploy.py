@@ -14,6 +14,9 @@ def commit_and_push(message):
     run_command(f'git commit -m "{message}"')
     run_command("git push origin main")
 
+def run_powershell_script():
+    run_command('powershell.exe -ExecutionPolicy Bypass -File .\deploy_raspberry.ps1')
+
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("Uso: python deploy.py <mensagem-do-commit>")
@@ -21,3 +24,4 @@ if __name__ == "__main__":
 
     message = sys.argv[1]
     commit_and_push(message)
+    run_powershell_script()
