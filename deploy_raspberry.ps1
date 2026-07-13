@@ -1,21 +1,25 @@
-# Script de deploy em PowerShell para enviar o projeto via SCP para o Raspberry Pi
-
 param (
-    [string]$RaspberryPiIP,
-    [string]$Username,
-    [string]$Password,
+    [string]$RaspberryPiIP = "192.168.0.217",
+    [string]$Username = "pi",
     [string]$SourcePath = ".",
-    [string]$DestinationPath = "/home/$Username/fazendinha"
+    [string]$DestinationPath = "/home/pi/fazendinha"
 )
 
-# Configurações do SCP
-$scpCommand = "scp -r $SourcePath $Username@$RaspberryPiIP:$DestinationPath"
+Write-Host "Iniciando deploy para o Raspberry Pi ($RaspberryPiIP)..." -ForegroundColor Cyan
 
-# Executa o comando SCP
+# Cria uma sessão SSH pedindo a senha de forma nativa e segura no PowerShell
+$passwordSecure = Read-Host "Digite a senha para $Username@$RaspberryPiIP" -AsSecureString
+$credential = New-Object System.Management.Automation.PSCredential($Username, $passwordSecure)
+
+# Executa o SCP usando o cliente OpenSSH do Windows
+# Nota: Como o SCP padrão do Windows não aceita a senha na linha de comando por segurança,
+# este script vai disparar a janela do OpenSSH para você colar a sua senha 'Wincster@...' com segurança.
+$scpCommand = "scp -r `"$SourcePath`" $Username@${RaspberryPiIP}:${DestinationPath}"
+
 Invoke-Expression $scpCommand
 
 if ($LASTEXITCODE -eq 0) {
-    Write-Output "Deploy bem-sucedido!"
+    Write-Host "Deploy bem-sucedido na pasta /home/pi/fazendinha!" -ForegroundColor Green
 } else {
-    Write-Output "Erro no deploy. Código de saída: $LASTEXITCODE"
+    Write-Host "Erro no deploy. Código de saída: $LASTEXITCODE" -ForegroundColor Red
 }
