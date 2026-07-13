@@ -12,21 +12,7 @@ Fazendinha Online é um jogo web de fazenda em tempo real com elementos de RPG, 
 - **Autenticação:** BCrypt + Sessions
 - **Deploy:** Automático via GitHub Webhooks
 
-## 📦 Instalação
 
-```bash
-# Clone o repositório
-git clone https://github.com/cleversondevjr/fazendinha_online.git
-cd fazendinha_online
-
-# Instale dependências
-npm install
-
-# Configure .env
-cp .env.example .env
-
-# Inicie o servidor
-node server/index.js
 ```
 
 ## 🎮 Funcionalidades
@@ -43,15 +29,10 @@ node server/index.js
 ## 🔐 Segurança
 
 - Senhas com BCrypt (10 rounds)
-- Admin enforcement (apenas CleversonS tem acesso)
+- Admin enforcement (apenas Admin tem acesso)
 - Validação de sessão
 - Proteção contra SQL Injection
 - CORS configurado
-
-## 📊 Admin
-
-**Login:** `CleversonS`
-**Senha:** `Wincster@194060le`
 
 ### Painéis Admin:
 - Gerenciar Recursos de Jogadores
@@ -63,13 +44,14 @@ node server/index.js
 - Roadmap (Feature Flags)
 - Logs de Auditoria
 
-## 🔄 Deploy Automático
+## 🔄 Deploy Automático Via Python
 
 Webhook GitHub: `https://sgiptv.com.br/api/webhook/github`
 
 Quando há push em `main`, o servidor executa automaticamente:
-```bash
-./deploy.sh
+
+& 'C:\Users\Cleverson\AppData\Local\Programs\Python\Python312\python.exe' deploy.py "feat: automacao unificada finalizada com sucesso"
+
 ```
 
 ## 📁 Estrutura
@@ -92,16 +74,7 @@ Quando há push em `main`, o servidor executa automaticamente:
 ├── index.html            # Página do jogo
 ├── login.html            # Página de login
 └── deploy.sh             # Script de deploy
-```
 
-## 📝 Variáveis de Ambiente
-
-```env
-NODE_ENV=production
-PORT=3002
-DATABASE_URL=postgresql://user:password@localhost/fazendinha_online
-SESSION_SECRET=sua-chave-secreta
-GITHUB_WEBHOOK_SECRET=seu-secret-opcional
 ```
 
 ## 🐛 Debugging
@@ -123,8 +96,8 @@ Para reportar bugs ou sugestões, abra uma issue no GitHub.
 
 ---
 
-**Versão:** v5.0.1  
-**Última Atualização:** Julho 2026  
+**Versão:** v5.0.2  
+**Última Atualização:** 13 de Julho 2026  
 **Status:** ✅ Em Produção
 # Webhook Testado sex 10 jul 2026 02:44:24 -03
 # Teste de webhook - sex 10 jul 2026 02:58:53 -03
