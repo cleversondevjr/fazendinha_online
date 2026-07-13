@@ -3,7 +3,7 @@ import subprocess
 
 def run_command(command):
     result = subprocess.run(command, shell=True, capture_output=True, text=True)
-    if result.returncode != 0:
+    if result.returncode != 0 and "nothing to commit" not in result.stderr:
         print(f"Erro ao executar comando: {command}")
         print(result.stderr)
         exit(1)
@@ -11,7 +11,10 @@ def run_command(command):
 
 def commit_and_push(message):
     run_command("git add .")
-    run_command(f'git commit -m "{message}"')
+    try:
+        run_command(f'git commit -m "{message}"')
+    except Exception as e:
+        print(f"Erro ao executar git commit: {e}")
     run_command("git push origin main")
 
 def run_powershell_script():
