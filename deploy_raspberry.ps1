@@ -16,6 +16,10 @@ Write-Host "Iniciando deploy para o Raspberry Pi ($RaspberryPiIP)..." -Foregroun
 $passwordSecure = Read-Host "Digite a senha para $Username@$RaspberryPiIP" -AsSecureString
 $credential = New-Object System.Management.Automation.PSCredential($Username, $passwordSecure)
 
+# Verifica se a pasta destino existe, caso contrário, cria-a
+$sshCommand = "sshpass -p '$($passwordSecure.GetNetworkCredential().Password)' ssh $Username@$RaspberryPiIP 'mkdir -p $DestinationPath'"
+Invoke-Expression $sshCommand
+
 # Executa o SCP usando o cliente OpenSSH do Windows
 # Nota: Como o SCP padrão do Windows não aceita a senha na linha de comando por segurança,
 # este script vai disparar a janela do OpenSSH para você colar a sua senha 'Wincster@...' com segurança.
