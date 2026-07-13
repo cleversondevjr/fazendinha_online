@@ -5,14 +5,14 @@ $RemotePath = "/home/pi/fazendinha"
 
 Write-Host "Iniciando deploy para o Raspberry Pi ($RaspberryPiIP)..." -ForegroundColor Cyan
 
-# Executa o SCP de forma nativa. O próprio terminal pedirá a senha se necessário.
+# Executa o SCP de forma nativa
 Write-Host "Transferindo arquivos via SCP..." -ForegroundColor Yellow
 scp -r ./* "${Username}@${RaspberryPiIP}:${RemotePath}"
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host "Transferência concluída! Reiniciando o servidor no Raspberry Pi..." -ForegroundColor Yellow
     
-    # Executa a reinicialização direta via SSH de forma nativa
+    # Executa a reinicialização direta via SSH
     ssh "${Username}@${RaspberryPiIP}" "cd ${RemotePath} && (pm2 restart all || (pkill -f server.js; nohup node server.js > server.log 2>&1 &))"
     
     if ($LASTEXITCODE -eq 0) {
