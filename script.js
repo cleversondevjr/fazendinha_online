@@ -1,6 +1,6 @@
 // farm2.0 - Complete Game Client
-const API_BASE_URL = 'api/game';
-const ADMIN_API_BASE_URL = 'api/admin';
+const API_BASE_URL = '/api/game';
+const ADMIN_API_BASE_URL = '/api/admin';
 
 let inventario = { coins: 0, diamante: 0, energia: 0 };
 let plotStates = [];
