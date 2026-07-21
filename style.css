@@ -18,6 +18,12 @@ body {
 }
 
 /* Estilizando os campos de entrada */
+.input-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
 input[type="text"],
 input[type="password"] {
     width: calc(100% - 22px);
@@ -30,7 +36,7 @@ input[type="password"] {
 
 /* Estilizando o botão de login */
 button#login-btn {
-    width: calc(100% - 22px);
+    width: 320px;
     padding: 15px; /* Aumentando o tamanho da fonte e do espaçamento interno */
     background-color: #4CAF50;
     color: white;
@@ -38,6 +44,8 @@ button#login-btn {
     border-radius: 4px;
     cursor: pointer;
     font-size: 16px; /* Aumentando o tamanho da fonte */
+    margin-left: auto;
+    margin-right: auto;
 }
 
 button#login-btn:hover {
