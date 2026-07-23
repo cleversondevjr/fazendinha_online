@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Fazendinha Online</title>
+
+<base href="/">
+
+<link rel="stylesheet" href="style.css?v=5.0.1">
+
+</head>
+
+<body onload="setLoginBackground()">
+
+<div class="login-card">
+
+    <img src="assets/logo_fazendinha_online.png"
+         alt="Logo da Fazendinha Online"
+         style="width:150px;margin-bottom:1rem;">
+
+    <div class="input-container">
+        <input 
+            type="text" 
+            id="login-user"
+            placeholder="Login"
+            autocomplete="username"
+            aria-label="Usuário"
+            required
+            style="margin-bottom: 10px;">
+
+        <input 
+            type="password"
+            id="login-pass"
+            placeholder="Senha"
+            autocomplete="current-password"
+            aria-label="Senha"
+            required>
+    </div>
+
+    <button id="login-btn" style="margin-top: 20px;">
+        Entrar na Fazenda
+    </button>
+
+    <div class="additional-buttons">
+        <button id="create-account-btn">Criar Conta</button>
+        <button id="recover-account-btn">Recuperar Conta</button>
+    </div>
+
+</div>
+
+<script>
+
+document
+.getElementById('login-btn')
+.addEventListener('click', async () => {
+
+    const user = document.getElementById('login-user').value;
+    const pass = document.getElementById('login-pass').value;
+
+    if (!user || !pass) {
+        alert('Por favor, preencha todos os campos.');
+        return;
+    }
+
+    try {
+        const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                login: user,
+                password: pass
+            })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+            console.log('Login OK');
+            window.location.href = '/index.html';
+        } else {
+            alert(data.error || 'Credenciais inválidas');
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Erro de conexão com servidor');
+    }
+});
+
+document.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        document.getElementById('login-btn').click();
+    }
+});
+
+function setLoginBackground() {
+    const hour = new Date().getHours();
+
+    let className;
+    if (hour >= 6 && hour < 12) {
+        className = 'manha';
+    } else if (hour >= 12 && hour < 18) {
+        className = 'tarde';
+    } else {
+        className = 'noite';
+    }
+
+    document.body.className = className;
+}
+
+</script>
+
+<script src="http://localhost:35729/livereload.js"></script>
+</body>
+</html>

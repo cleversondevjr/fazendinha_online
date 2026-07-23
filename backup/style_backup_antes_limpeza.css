@@ -1,0 +1,2128 @@
+/* Reset global */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: 'Luckiest Guy', cursive, Arial, sans-serif;
+  background:
+    linear-gradient(rgba(8, 10, 18, 0.55), rgba(8, 10, 18, 0.55)),
+    url('assets/praia_bg.jpg') center/cover no-repeat fixed;
+  color: #fff;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  min-height: 100vh;
+  width: 100%;
+  height: 100%;
+}
+
+/* Topbar */
+.topbar {
+  position: fixed;
+  top: 10px;
+  right: 12px;
+  z-index: 1000;
+  width: calc(100vw - 300px);
+  height: 108px;
+  background: url('assets/topbar_purple.png') center/100% 100% no-repeat;
+}
+
+.topbar-main {
+  position: absolute;
+  left: 14px;
+  top: 10px;
+  width: 112px;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.logo-icon {
+  height: 34px;
+  width: auto;
+  background: transparent;
+  display: block;
+}
+
+.topbar-actions {
+  position: absolute;
+  left: 124px;
+  right: 26px;
+  top: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  height: 52px;
+}
+
+.resource {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #fff;
+  font: inherit;
+}
+
+.resource-btn {
+  border: none;
+  cursor: default;
+  appearance: none;
+  box-shadow: none;
+  background: transparent;
+}
+
+.resource-btn:focus { outline: none; }
+
+.topbar-actions .resource,
+.topbar-actions .harvest,
+.topbar-actions .menu-top-btn,
+.topbar-actions .logout-btn {
+  flex-shrink: 0;
+}
+
+.topbar-actions .resource-btn {
+  position: relative;
+  width: 138px;
+  min-width: 138px;
+  height: 50px;
+  padding: 0 12px;
+  border: none;
+  background: url('assets/botao_base.png') center/100% 100% no-repeat;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.topbar-actions .resource-icon {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+}
+
+.topbar-actions .resource-btn span {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.resource-icon {
+  width: 40px;
+  height: 40px;
+  background: transparent;
+  display: block;
+}
+
+.harvest { background: none; border: none; cursor: pointer; }
+.menu-btn-compact {
+  width: 156px;
+  height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.menu-btn-compact:hover { transform: scale(1.03); }
+
+.menu-icon-compact {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: transparent;
+  display: block;
+}
+
+.menu-top-btn { width: 156px; height: 48px; }
+.logout-btn { background: none; }
+
+/* Sidebar */
+.sidebar {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  width: 236px;
+  background: url('assets/sidebar_purple.png') center/100% 100% no-repeat;
+  height: calc(100vh - 20px);
+  padding: 16px 14px 18px;
+  overflow: hidden;
+  z-index: 800;
+  display: flex;
+  flex-direction: column;
+}
+
+.tools-header {
+  text-align: center;
+  margin-bottom: 14px;
+}
+.tools-header img {
+  width: 188px;
+  height: auto;
+  background: transparent;
+}
+
+.tool-item {
+  display: grid;
+  grid-template-columns: 42px 30px 104px;
+  align-items: center;
+  padding: 4px 2px;
+  margin-bottom: 8px;
+  gap: 10px;
+}
+.tool-icon {
+  width: 38px;
+  height: 38px;
+  background: transparent;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}
+.tool-item .count {
+  text-align: center;
+  color: #ffeb3b;
+  font-size: 20px;
+}
+
+.use-btn {
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  width: 104px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: end;
+}
+.use-btn:hover { transform: scale(1.03); }
+.use-btn img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+}
+
+.use-btn.selected img {
+  filter: drop-shadow(0 0 8px rgba(255, 225, 80, 0.8));
+}
+
+.menu-buttons {
+  margin-top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sidebar-spacer { flex: 1 1 auto; min-height: 14px; }
+
+.rewards-panel,
+.weather-panel {
+  margin-top: 10px;
+  padding: 12px 12px 10px;
+  background: url('assets/caixa_recompensa.png') center/100% 100% no-repeat;
+  text-align: center;
+  width: 100%;
+  height: 186px;
+  min-height: 186px;
+  max-height: 186px;
+  overflow: hidden;
+}
+
+.rewards-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.panel-title {
+  color: #ffcf49;
+  font-size: 16px;
+  text-shadow: 0 2px 0 rgba(0,0,0,0.75);
+}
+
+.missions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow: hidden;
+  flex: 1 1 auto;
+}
+
+.mission-item {
+  background: rgba(10, 8, 26, 0.72);
+  border: 1px solid rgba(255, 215, 90, 0.3);
+  border-radius: 10px;
+  padding: 6px 8px;
+  text-align: left;
+  font-family: Arial, sans-serif;
+  min-height: 0;
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.mission-item.done {
+  border-color: rgba(116, 255, 146, 0.5);
+}
+
+.mission-name {
+  font-size: 12px;
+  color: #fff0b4;
+  font-weight: 700;
+}
+
+.mission-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
+  gap: 8px;
+  font-size: 11px;
+  color: #f6f6f6;
+}
+
+.mission-progress {
+  color: #9fe8ff;
+}
+
+.mission-reward {
+  color: #9fff9f;
+}
+
+.mission-claim {
+  margin-top: 6px;
+  width: 100%;
+  height: 30px;
+  border: none;
+  border-radius: 8px;
+  padding: 0;
+  background: linear-gradient(180deg, #37ad34 0%, #1a6818 100%);
+  color: #ffcf49;
+  font-family: 'Luckiest Guy', cursive, Arial, sans-serif;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.mission-claim:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.weather-icon {
+  width: 100%;
+  height: 138px;
+  display: block;
+  margin: 4px auto 0;
+  object-fit: contain;
+  object-position: center;
+}
+
+/* ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¼rea principal */
+.main {
+  margin-left: 262px;
+  margin-top: 138px;
+  padding: 14px 12px 18px 22px;
+  background: transparent;
+  height: calc(100vh - 138px);
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Grid de plots */
+.plot-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  column-gap: 22px;
+  row-gap: 24px;
+  align-items: start;
+  justify-items: center;
+  width: 100%;
+  max-width: 1266px;
+  margin: 0 auto;
+}
+
+.plot {
+  background: transparent;
+  border: none;
+  padding: 0;
+  width: 100%;
+  position: relative;
+}
+
+.plot-frame {
+  position: relative;
+  width: 100%;
+  max-width: 300px;
+  aspect-ratio: 0.86 / 1;
+  overflow: hidden;
+}
+
+.plot-bg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+  object-position: center top;
+  margin: 0 auto;
+}
+
+.plot.phase-other .plot-bg,
+.plot.phase-needs-pot .plot-bg,
+.plot.phase-locked .plot-bg {
+  width: 100%;
+}
+
+.plot-content {
+  position: absolute;
+  inset: 0;
+}
+
+.info {
+  position: absolute;
+  top: 4.8%;
+  left: 18%;
+  width: 44%;
+  font-size: 12px;
+  color: #ffeb3b;
+  font-weight: 700;
+  line-height: 1.1;
+  text-align: center;
+  text-shadow: 0 2px 0 rgba(0,0,0,0.85);
+  z-index: 2;
+}
+.info .gold-label,
+.info .timer { display: block; }
+.info .timer { font-size: 13px; }
+
+.soil {
+  position: absolute;
+  left: 18.6%;
+  top: 14%;
+  width: 47.8%;
+  height: 63.5%;
+  background: transparent;
+  overflow: visible;
+  z-index: 1;
+}
+.soil img {
+  background: transparent;
+  object-fit: contain;
+  object-position: center;
+  pointer-events: none;
+}
+
+.terrain-layer {
+  position: absolute;
+  left: 50%;
+  bottom: calc(7% + 5px);
+  transform: translateX(-50%);
+  width: calc(93.6% + 10px);
+  height: auto;
+  z-index: 1;
+}
+
+.crop-layer {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  height: auto;
+  z-index: 2;
+}
+
+.crop-layer.crop-flower.stage-semente {
+  width: 30%;
+  bottom: calc(23% + 25px);
+}
+
+.crop-layer.crop-flower.stage-broto {
+  width: 38%;
+  bottom: calc(20% + 25px);
+}
+
+.crop-layer.crop-flower.stage-adulta {
+  width: 58%;
+  bottom: calc(16% + 25px);
+}
+
+.crop-layer.crop-tree.stage-semente {
+  width: 30%;
+  bottom: calc(23% + 25px);
+}
+
+.crop-layer.crop-tree.stage-broto {
+  width: 42%;
+  bottom: calc(18% + 25px);
+}
+
+.crop-layer.crop-tree.stage-adulta {
+  width: 68%;
+  bottom: calc(12% + 25px);
+}
+
+.danger-sign {
+  position: absolute;
+  right: -12%;
+  width: 58px;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+}
+
+.danger-plaque {
+  width: 58px;
+  height: 22px;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #8a2218 0%, #5c140f 100%);
+  border: 2px solid #f5c44a;
+  color: #ffd35a;
+  font-size: 10px;
+  line-height: 18px;
+  text-align: center;
+  text-shadow: 0 1px 0 rgba(0,0,0,0.8);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.35);
+}
+
+.danger-sign img {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+  margin-top: -2px;
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,0.6));
+}
+
+.status-icons {
+  position: absolute;
+  top: 12.8%;
+  right: 13.2%;
+  width: 10.4%;
+  height: 65.4%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  z-index: 2;
+}
+
+.status-slot {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.status-slot img {
+  width: 72%;
+  height: 72%;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.65));
+}
+
+.plot-actions {
+  position: absolute;
+  left: 13.2%;
+  width: 76%;
+  bottom: 14.2%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6%;
+  z-index: 5;
+}
+
+.plot-action-btn {
+  flex: 1;
+  border: none;
+  background-color: transparent;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  padding: 0;
+  cursor: pointer;
+  min-height: 39px;
+}
+
+.plot-action-btn.usar {
+  background-image: url('assets/botao_usar.png');
+}
+
+.plot-action-btn.remove {
+  background-image: url('assets/botao_remover.png');
+}
+
+.plot.locked .plot-action-btn.remove {
+  pointer-events: none;
+}
+
+.plot-action-btn.usar {
+  margin: 0;
+  min-height: 39px;
+}
+
+.plot-action-btn.remove {
+  margin: 0;
+  min-height: 39px;
+}
+
+.plot.ready {
+  filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.3));
+}
+
+/* Modais */
+.shop-modal, .inventory-modal, .worldtree-modal {
+  display: none;
+  position: fixed;
+  z-index: 2000;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.7);
+}
+
+.shop-content, .inventory-content, .worldtree-content {
+  background: #2e2e2e;
+  margin: 5% auto;
+  padding: 20px;
+  border-radius: 12px;
+  width: 80%;
+  max-width: 800px;
+  color: #fff;
+}
+
+.close-btn, .close-inventory, .close-worldtree {
+  float: right;
+  font-size: 28px;
+  cursor: pointer;
+}
+
+.worldtree-summary {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 18px;
+  align-items: center;
+  margin-top: 18px;
+}
+
+.worldtree-visual {
+  position: relative;
+  height: 220px;
+  background: linear-gradient(180deg, rgba(60, 130, 60, 0.25), rgba(20, 40, 20, 0.6));
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.worldtree-art {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.4));
+}
+
+.worldtree-stats p,
+.worldtree-donation-log p {
+  margin-top: 8px;
+}
+
+.worldtree-progress {
+  margin-top: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+.worldtree-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #66bb6a, #c8e6c9);
+  border-radius: 999px;
+}
+
+.worldtree-donations {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.worldtree-donate {
+  border: none;
+  border-radius: 12px;
+  padding: 12px 10px;
+  background: linear-gradient(180deg, #6d4c41, #4e342e);
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+}
+
+.worldtree-donate:hover {
+  transform: translateY(-1px);
+}
+
+.worldtree-donation-log {
+  margin-top: 18px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Loja e InventÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­rio */
+.shop-grid, .inventory-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.shop-qty {
+  width: 76px;
+  margin: 8px auto 0;
+  padding: 5px 8px;
+  border: 1px solid rgba(255, 235, 59, 0.7);
+  border-radius: 8px;
+  background: rgba(16, 16, 16, 0.85);
+  color: #ffeb3b;
+  text-align: center;
+  font: inherit;
+}
+
+.shop-tabs {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.shop-tab {
+  background: #444;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 8px;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+
+.shop-tab.active {
+  background: #6b2cff;
+}
+
+.shop-item, .inventory-item {
+  background: transparent;
+  padding: 12px;
+  border-radius: 8px;
+  text-align: center;
+  border: 1px solid rgba(255,255,255,0.2);
+  transition: border 0.2s;
+}
+.shop-item:hover, .inventory-item:hover {
+  border: 1px solid #ffeb3b;
+}
+
+.shop-item img, .inventory-item img {
+  width: 80px;
+  height: 80px;
+  background: transparent;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+  display: block;
+  margin: 0 auto 10px;
+  object-fit: contain;
+  object-position: center;
+}
+
+.buy-btn {
+  margin-top: 10px;
+  background: #00c853;
+  border: none;
+  padding: 6px 12px;
+  color: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.buy-btn:hover { background: #009624; }
+
+.game-dialog {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.62);
+  z-index: 5000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.game-dialog.hidden {
+  display: none;
+}
+
+.game-dialog-box {
+  width: min(460px, 90vw);
+  padding: 24px 22px 18px;
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(63,25,97,0.98), rgba(25,16,52,0.98));
+  border: 3px solid #d7a92e;
+  box-shadow: 0 18px 48px rgba(0,0,0,0.45);
+  text-align: center;
+}
+
+.game-dialog-box h3 {
+  color: #ffcf49;
+  font-size: 22px;
+  margin-bottom: 10px;
+}
+
+.game-dialog-box p {
+  font-family: Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  margin-bottom: 18px;
+}
+
+.game-dialog-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.dialog-btn {
+  min-width: 130px;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 16px;
+  color: #ffcf49;
+  font-family: 'Luckiest Guy', cursive, Arial, sans-serif;
+  font-size: 18px;
+  cursor: pointer;
+  box-shadow: inset 0 2px 0 rgba(255,255,255,0.2);
+}
+
+.dialog-btn-confirm {
+  background: linear-gradient(180deg, #3ebd3d 0%, #1f7f22 100%);
+}
+
+.dialog-btn-cancel {
+  background: linear-gradient(180deg, #c94334 0%, #8c1e1e 100%);
+}
+
+/* Painel Admin */
+.admin-floating-btn {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 4500;
+  min-width: 96px;
+  height: 42px;
+  border: 2px solid #f7c84b;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #2f9b25 0%, #104b13 100%);
+  color: #ffd75b;
+  font-family: 'Luckiest Guy', cursive, Arial, sans-serif;
+  font-size: 18px;
+  text-shadow: 0 2px 0 #000;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.45);
+  cursor: pointer;
+}
+
+.admin-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 6000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0,0,0,0.72);
+}
+
+.admin-modal.hidden { display: none; }
+
+.admin-panel {
+  width: min(1180px, 96vw);
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  border: 3px solid #d6a532;
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(57, 22, 84, 0.98), rgba(20, 13, 40, 0.98));
+  box-shadow: 0 24px 70px rgba(0,0,0,0.65);
+  overflow: hidden;
+}
+
+.admin-header,
+.admin-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 16px 20px;
+  background: rgba(8, 7, 20, 0.55);
+  border-bottom: 1px solid rgba(255, 215, 90, 0.25);
+}
+
+.admin-footer {
+  border-top: 1px solid rgba(255, 215, 90, 0.25);
+  border-bottom: none;
+  justify-content: flex-end;
+}
+
+.admin-header h2 {
+  color: #ffd75b;
+  font-size: 28px;
+  text-shadow: 0 2px 0 #000;
+}
+
+.admin-header p {
+  margin-top: 4px;
+  color: #e9ddff;
+  font-family: Arial, sans-serif;
+  font-size: 13px;
+}
+
+.admin-close {
+  width: 42px;
+  height: 42px;
+  border: none;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #d83d31 0%, #7c1612 100%);
+  color: #ffd75b;
+  font-size: 32px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.admin-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 20px;
+  background: rgba(0,0,0,0.25);
+}
+
+.admin-tab,
+.admin-action {
+  border: 1px solid rgba(255, 215, 90, 0.45);
+  border-radius: 10px;
+  background: linear-gradient(180deg, #3f3f45 0%, #24242a 100%);
+  color: #fff;
+  padding: 8px 14px;
+  font-family: Arial, sans-serif;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.admin-tab.active,
+.admin-action.primary {
+  background: linear-gradient(180deg, #37ad34 0%, #1a6818 100%);
+  color: #ffd75b;
+  text-shadow: 0 1px 0 #000;
+}
+
+.admin-content {
+  overflow: auto;
+  padding: 18px 20px 22px;
+  font-family: Arial, sans-serif;
+}
+
+.admin-section-title {
+  margin: 4px 0 14px;
+  color: #ffd75b;
+  font-family: 'Luckiest Guy', cursive, Arial, sans-serif;
+  font-size: 22px;
+  text-shadow: 0 2px 0 #000;
+}
+
+.admin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
+}
+
+.admin-card {
+  padding: 12px;
+  border: 1px solid rgba(255, 215, 90, 0.28);
+  border-radius: 14px;
+  background: rgba(10, 9, 24, 0.66);
+}
+
+.admin-card h3 {
+  margin-bottom: 10px;
+  color: #fff0aa;
+  font-size: 15px;
+}
+
+.admin-field {
+  display: grid;
+  gap: 5px;
+  margin-bottom: 10px;
+}
+
+.admin-field label {
+  color: #dbe8ff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.admin-field input,
+.admin-field select,
+.admin-field textarea {
+  width: 100%;
+  min-height: 34px;
+  border: 1px solid rgba(255, 215, 90, 0.4);
+  border-radius: 8px;
+  background: rgba(0,0,0,0.55);
+  color: #fff;
+  padding: 6px 8px;
+  font-family: Arial, sans-serif;
+}
+
+.admin-field textarea {
+  min-height: 220px;
+  resize: vertical;
+  font-family: Consolas, monospace;
+  font-size: 12px;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: rgba(10, 9, 24, 0.66);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.admin-table th,
+.admin-table td {
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  padding: 8px;
+  text-align: left;
+  vertical-align: middle;
+  font-size: 13px;
+}
+
+.admin-table th {
+  color: #ffd75b;
+  background: rgba(0,0,0,0.35);
+}
+
+.admin-table input,
+.admin-table select {
+  width: 100%;
+  min-width: 76px;
+  height: 30px;
+  border: 1px solid rgba(255, 215, 90, 0.35);
+  border-radius: 7px;
+  background: rgba(0,0,0,0.5);
+  color: #fff;
+  padding: 4px 6px;
+}
+
+.admin-inline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.admin-danger {
+  background: linear-gradient(180deg, #d83d31 0%, #7c1612 100%);
+}
+
+
+
+
+
+
+
+
+
+/* LOGIN RESTAURADO */
+/* Estilizando a caixa de login */
+.login-card {
+    position: relative;
+    z-index: 1;
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    width: calc(250px * 0.7); /* Reduzindo a largura em 30% */
+    height: auto; /* Altura automÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡tica para ajustar o conteÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âºdo */
+}
+
+/* Estilizando os campos de entrada */
+.input-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+input[type="text"],
+input[type="password"] {
+    width: calc(100% - 22px);
+    padding: 15px; /* Aumentando o tamanho da fonte e do espaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§amento interno */
+    margin: 10px 0; /* Reduzindo o espaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§o entre as caixas de entrada */
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px; /* Aumentando o tamanho da fonte */
+}
+
+/* Estilizando o botÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o de login */
+button#login-btn {
+    width: 100%; /* BotÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o ocupar toda a largura do container */
+    padding: 15px; /* Aumentando o tamanho da fonte e do espaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§amento interno */
+    background-color: #4CAF50; /* Restaurado para verde */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px; /* Aumentando o tamanho da fonte */
+}
+
+button#login-btn:hover {
+    background-color: #45a049; /* Restaurado para uma tonalidade mais escura de verde ao passar o mouse */
+}
+
+/* Estilizando os botÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âµes adicionais */
+.additional-buttons {
+    margin-top: 20px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.additional-buttons button {
+    width: calc(48% - 10px); /* Reduzindo o espaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§o entre os botÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âµes */
+    padding: 10px; /* Reduzindo o tamanho da fonte e do espaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§amento interno */
+    margin: 5px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px; /* Reduzindo o tamanho da fonte */
+    background-color: #ff0000; /* Cor vermelha */
+    color: white; /* Texto branco */
+}
+
+.additional-buttons button:hover {
+    background-color: #cc0000; /* Sombra de cor vermelha ao passar o mouse */
+}
+
+
+/* LOGIN BACKGROUNDS RESTAURADOS */
+
+body:has(.login-card)::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+
+    width: 100%;
+    height: 100%;
+
+    background-image: url('assets/ui/login_manha.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+
+    filter: blur(15px);
+    transform: scale(1.1);
+
+    z-index: -2;
+}
+
+body:has(.login-card)::after {
+    content: '';
+    position: fixed;
+
+    top: 45px;
+    left: 45px;
+    right: 45px;
+    bottom: 45px;
+
+    background-image: url('assets/ui/login_manha.png');
+    background-size: calc(100% - 90px) calc(100% - 90px);
+    background-position: center;
+    background-repeat: no-repeat;
+
+    z-index: -1;
+}
+
+body:has(.login-card).manha::after {
+    background-image: url('assets/ui/login_manha.png');
+}
+
+body:has(.login-card).tarde::after {
+    background-image: url('assets/ui/login_tarde.png');
+}
+
+body:has(.login-card).noite::after {
+    background-image: url('assets/ui/login_noite.png');
+}
+
+/* AJUSTE FINAL LOGIN */
+body:has(.login-card) {
+    display:flex;
+    justify-content:center;
+    align-items:flex-start;
+    padding-top:180px;
+    height:100vh;
+    box-sizing:border-box;
+}
+
+body:has(.login-card) #card-login,
+body:has(.login-card) #card-register[style="display: block"],
+body:has(.login-card) #card-recover[style="display: block"] {
+    width:320px;
+    padding:20px 25px;
+    border-radius:18px;
+    background:rgba(255,255,255,0.88);
+    box-shadow:0 8px 25px rgba(0,0,0,0.35);
+}
+
+body:has(.login-card) .login-card img {
+    width:120px !important;
+    margin-bottom:10px !important;
+}
+
+body:has(.login-card) input[type="text"],
+body:has(.login-card) input[type="password"] {
+    width:260px;
+    padding:10px;
+    margin:6px 0;
+    font-size:15px;
+}
+
+body:has(.login-card) #login-btn {
+    width:280px;
+    padding:11px;
+    margin-top:12px !important;
+    font-size:16px;
+}
+
+body:has(.login-card) .additional-buttons {
+    margin-top:12px;
+}
+
+body:has(.login-card) .additional-buttons button {
+    padding:9px;
+    font-size:13px;
+}
+
+
+ /* AJUSTE FINAL LOGIN - CENTRALIZACAO */
+body:has(.login-card) {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 120px;
+    min-height: 100vh;
+}
+
+body:has(.login-card) #card-login,
+body:has(.login-card) #card-register[style="display: block"],
+body:has(.login-card) #card-recover[style="display: block"] {
+    width: 300px;
+    padding: 20px;
+    border-radius: 18px;
+    margin: 0 auto;
+}
+
+body:has(.login-card) input[type="text"],
+body:has(.login-card) input[type="password"] {
+    padding: 10px;
+    margin: 6px 0;
+}
+
+body:has(.login-card) button#login-btn {
+    padding: 10px;
+    margin-top: 10px;
+}
+
+body:has(.login-card) .additional-buttons {
+    margin-top: 12px;
+}
+
+
+/* CENTRALIZAÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢O DA TELA DE LOGIN */
+body:has(.login-card){
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    min-height:100vh;
+    padding-top:120px;
+    padding-bottom:40px;
+    box-sizing:border-box;
+}
+
+body:has(.login-card) .login-card{
+    margin:0 auto;
+    transform:translateY(90px);
+    max-height:none;
+}
+
+ /* AJUSTE DOS BOTÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ES CRIAR CONTA / RECUPERAR CONTA */
+.additional-buttons{
+    margin-top:18px;
+    display:flex;
+    justify-content:center;
+    gap:10px;
+}
+
+.additional-buttons button{
+    width:120px;
+    height:34px;
+    padding:0;
+    margin:0;
+    border:none;
+    border-radius:4px;
+    cursor:pointer;
+    font-size:12px;
+    font-weight:600;
+    background:#ff0000;
+    color:#fff;
+}
+
+.additional-buttons button:hover{
+    background:#cc0000;
+}
+
+
+ /* AJUSTE DA FONTE DOS BOTÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ES SECUNDÃƒÆ’Ã†â€™Ãƒâ€šÃ‚ÂRIOS */
+.additional-buttons button{
+    font-size:10px !important;
+    letter-spacing:0;
+    white-space:nowrap;
+}
+
+
+
+/* CADASTRO E RECUPERACAO - MESMO ESTILO DO LOGIN */
+
+#card-register,
+#card-recover {
+    position: relative;
+    z-index: 1;
+    background-color: rgba(255,255,255,0.9);
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    text-align: center;
+    width: 175px;
+}
+
+#card-register h2,
+#card-recover h2 {
+    margin-bottom: 20px;
+    font-size: 22px;
+}
+
+#card-register input,
+#card-recover input {
+    width: calc(100% - 22px);
+    padding: 12px;
+    margin: 8px 0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 15px;
+}
+
+#card-register button,
+#card-recover button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 10px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 15px;
+}
+
+#card-register button:hover,
+#card-recover button:hover {
+    background-color: #45a049;
+}
+
+#back-login-register,
+#back-login-recover {
+    background-color: #888 !important;
+}
+
+
+
+/* CADASTRO E RECUPERACAO PADRAO LOGIN */
+
+#card-register,
+#card-recover {
+    width: calc(250px * 0.7);
+    height: auto;
+    position: relative;
+    z-index: 1;
+    background-color: rgba(255,255,255,0.9);
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+#card-register h1,
+#card-recover h1 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 22px;
+}
+
+#card-register input,
+#card-recover input {
+    width: calc(100% - 22px);
+    padding: 15px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+#card-register button,
+#card-recover button {
+    width: 100%;
+    padding: 15px;
+    margin-top: 12px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: normal;
+}
+
+#card-register button:hover,
+#card-recover button:hover {
+    background-color: #45a049;
+}
+
+#card-register #back-login-register,
+#card-recover #back-login-recover {
+    background-color: #888;
+}
+
+
+.login-style-btn {
+    width:100%;
+    padding:15px;
+    background-color:#4CAF50;
+    color:white;
+    border:none;
+    border-radius:4px;
+    cursor:pointer;
+    font-size:16px;
+}
+
+.login-style-btn:hover {
+    background-color:#45a049;
+}
+
+
+/* ===== CADASTRO E RECUPERACAO IGUAL LOGIN ===== */
+
+#card-register,
+#card-recover {
+    width: 320px !important;
+    padding: 25px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+
+#card-register img,
+#card-recover img {
+    width:150px;
+    margin-bottom:1rem;
+}
+
+
+#card-register h1,
+#card-recover h1 {
+    font-size:24px;
+    margin-bottom:20px;
+}
+
+
+#card-register input,
+#card-recover input {
+    width:100%;
+    box-sizing:border-box;
+    padding:12px;
+    margin-bottom:10px;
+    border-radius:6px;
+    border:1px solid #ccc;
+    font-size:16px;
+}
+
+
+#register-btn,
+#recover-btn {
+    width:280px !important;
+    padding:11px !important;
+    margin-top:12px !important;
+    background-color:#4CAF50 !important;
+    color:white !important;
+    border:none !important;
+    border-radius:4px !important;
+    cursor:pointer;
+    font-size:16px !important;
+    font-weight:bold !important;
+}
+
+
+#register-btn:hover,
+#recover-btn:hover {
+    background-color:#45a049 !important;
+}
+
+
+#back-login-register,
+#back-login-recover {
+    width:280px !important;
+    padding:11px !important;
+    margin-top:10px !important;
+    background:#888 !important;
+    color:white;
+    border:none;
+    border-radius:4px;
+    font-size:16px;
+}
+
+
+#card-register .input-container {
+    width:100%;
+}
+
+
+/* Ajuste final: login e cadastro com mesmo tamanho */
+
+#card-login,
+#card-register,
+#card-recover {
+    width: 320px;
+    box-sizing: border-box;
+}
+
+
+/* Cadastro mais compacto */
+#card-register .input-container {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+
+#card-register input,
+#card-recover input {
+    margin: 5px 0;
+    padding: 12px;
+}
+
+
+/* MantÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©m o botÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â£o padrÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â£o */
+#card-register button,
+#card-recover button {
+    margin-top: 8px;
+}
+
+
+/* Logo alinhada igual ao login */
+#card-register img,
+#card-recover img {
+    width: 150px;
+    margin-bottom: 1rem;
+}
+
+
+/* CorreÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â£o: cadastro dentro da caixa */
+
+#card-register,
+#card-recover {
+    width: 320px;
+    padding: 30px;
+    box-sizing: border-box;
+}
+
+
+#card-register input,
+#card-recover input {
+    width: 100%;
+    box-sizing: border-box;
+    margin: 5px 0;
+    padding: 12px;
+}
+
+
+#card-register button,
+#card-recover button {
+    width: 100%;
+    box-sizing: border-box;
+    margin-top: 10px;
+}
+
+
+#card-register .input-container {
+    gap: 0;
+}
+
+
+#card-register h1,
+#card-recover h1 {
+    margin-bottom: 15px;
+}
+
+
+
+/* CORREÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢O DEFINITIVA CARD CADASTRO */
+
+
+
+
+#card-register img,
+#card-recover img {
+    display: block;
+    margin: 0 auto 15px auto;
+}
+
+
+#card-register .input-container {
+    width: 100%;
+}
+
+
+#card-register input,
+#card-recover input {
+    display: block;
+    width: 100% !important;
+    height: 42px;
+    padding: 10px;
+    margin: 6px 0 !important;
+    box-sizing: border-box !important;
+}
+
+
+#card-register button,
+#card-recover button {
+    display: block;
+    width: 100% !important;
+    height: 42px;
+    padding: 10px;
+    margin: 10px 0 0 0 !important;
+    box-sizing: border-box !important;
+}
+
+
+#card-register h1,
+#card-recover h1 {
+    margin: 10px 0 15px 0;
+    font-size: 22px;
+}
+
+
+
+/* Corrige altura do cadastro */
+#card-register,
+#card-recover {
+    height: auto !important;
+    min-height: unset !important;
+    max-height: none !important;
+    overflow: visible !important;
+    display: block;
+}
+
+
+/* MantÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©m tudo dentro da caixa */
+#card-register *,
+#card-recover * {
+    box-sizing: border-box;
+}
+
+
+#card-register {
+    padding-bottom: 30px !important;
+}
+
+
+#card-register button,
+#card-recover button {
+    position: relative !important;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+}
+
+
+/* PADRAO UNICO LOGIN / CADASTRO / RECUPERACAO */
+
+body:has(.login-card) {
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    min-height:100vh;
+    padding-top:120px;
+    box-sizing:border-box;
+}
+
+
+body:has(.login-card) #card-login,
+body:has(.login-card) #card-register[style="display: block"],
+body:has(.login-card) #card-recover[style="display: block"] {
+    width:320px !important;
+    box-sizing:border-box;
+    padding:25px !important;
+    border-radius:18px;
+    background:rgba(255,255,255,0.88);
+    box-shadow:0 8px 25px rgba(0,0,0,0.35);
+    margin:0 auto;
+    transform:none !important;
+}
+
+
+#card-login,
+#card-register,
+#card-recover {
+    width:320px !important;
+}
+
+
+#card-register input,
+#card-recover input {
+    width:260px;
+    margin:5px auto;
+    display:block;
+}
+
+
+#card-register .input-container {
+    gap:4px;
+}
+
+
+#card-register button,
+#card-recover button {
+    width:280px;
+    margin-left:auto;
+    margin-right:auto;
+}
+
+
+
+/* ==================================================
+   FIX DEFINITIVO - MESMO TAMANHO DAS TELAS LOGIN
+   CADASTRO E RECUPERACAO
+================================================== */
+
+body:has(.login-card) {
+    display:flex !important;
+    justify-content:center !important;
+    align-items:center !important;
+    min-height:100vh !important;
+    padding:0 !important;
+}
+
+
+body:has(.login-card) #card-login,
+body:has(.login-card) #card-register[style="display: block"],
+body:has(.login-card) #card-recover[style="display: block"] {
+
+    width:360px !important;
+    height:520px !important;
+
+    box-sizing:border-box !important;
+
+    padding:30px !important;
+
+    display:flex !important;
+    flex-direction:column !important;
+    justify-content:flex-start !important;
+    align-items:center !important;
+
+    margin:0 !important;
+
+    transform:none !important;
+
+}
+
+
+#card-login,
+#card-register,
+#card-recover {
+
+    width:360px !important;
+    height:520px !important;
+
+}
+
+
+/* Logo igual em todas */
+
+#card-login img,
+#card-register img,
+#card-recover img {
+
+    width:150px !important;
+    height:auto;
+
+    margin-bottom:15px !important;
+
+}
+
+
+/* titulo */
+
+#card-login h1,
+#card-register h1,
+#card-recover h1 {
+
+    margin:5px 0 15px 0 !important;
+
+}
+
+
+/* campos */
+
+#card-login input,
+#card-register input,
+#card-recover input {
+
+    width:280px !important;
+
+    height:42px !important;
+
+    box-sizing:border-box;
+
+    margin:5px 0 !important;
+
+}
+
+
+/* botoes */
+
+#card-login button,
+#card-register button,
+#card-recover button {
+
+    width:280px !important;
+
+    height:42px !important;
+
+    margin-top:10px !important;
+
+}
+
+
+.additional-buttons {
+
+    width:280px;
+
+}
+
+
+
+/* CORREÃƒÆ’Ã¢â‚¬Â¡ÃƒÆ’Ã†â€™O FINAL DAS TELAS LOGIN/CADASTRO/RECUPERACAO */
+
+#card-login,
+#card-register,
+#card-recover {
+    width: 300px;
+    min-height: 430px;
+    padding: 20px;
+    box-sizing: border-box;
+    border-radius: 18px;
+    background: rgba(255,255,255,0.88);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.35);
+    text-align: center;
+    margin: 0 auto;
+}
+
+
+/* MantÃƒÆ’Ã‚Â©m apenas a tela ativa visÃƒÆ’Ã‚Â­vel */
+#card-register[style*="display:none"],
+#card-recover[style*="display:none"] {
+    display:none !important;
+}
+
+
+/* Logo igual em todas */
+#card-login img,
+#card-register img,
+#card-recover img {
+    width:120px !important;
+    margin-bottom:10px !important;
+}
+
+
+/* Campos iguais */
+#card-login input,
+#card-register input,
+#card-recover input {
+    width:260px;
+    padding:10px;
+    margin:6px auto;
+    box-sizing:border-box;
+    font-size:15px;
+}
+
+
+/* BotÃƒÆ’Ã‚Âµes iguais */
+#card-login button,
+#card-register button,
+#card-recover button {
+    width:280px;
+    padding:11px;
+    margin-top:10px;
+    font-size:16px;
+}
+
+
+/* ÃƒÆ’Ã‚Ârea interna cadastro */
+#card-register .input-container {
+    gap:0;
+}
+
+
+/* CONTROLE DE VISIBILIDADE DAS TELAS */
+
+#card-register,
+#card-recover {
+    display:none;
+}
+
+
+#card-login,
+#card-register,
+#card-recover {
+    flex-shrink:0;
+}
+
+
+/* quando o javascript ativar */
+#card-register.active,
+#card-recover.active {
+    display:block;
+}
+
+
+/* CORREÃƒÆ’Ã¢â‚¬Â¡ÃƒÆ’Ã†â€™O FINAL - SOMENTE UMA TELA DE LOGIN POR VEZ */
+
+.login-card {
+    flex-shrink: 0;
+}
+
+
+/* Caixa padrÃƒÆ’Ã‚Â£o */
+#card-login,
+#card-register,
+#card-recover {
+    width:300px;
+    min-height:430px;
+    padding:20px;
+    box-sizing:border-box;
+    border-radius:18px;
+    background:rgba(255,255,255,0.88);
+    box-shadow:0 8px 25px rgba(0,0,0,0.35);
+}
+
+
+/* Cadastro e recuperaÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â£o comeÃƒÆ’Ã‚Â§am ocultos */
+#card-register,
+#card-recover {
+    display:none;
+}
+
+
+/* O javascript controla a tela ativa */
+#card-register[style="display: block"],
+#card-recover[style="display: block"] {
+    display:block !important;
+}
+
+
+/* Evita caixas lado a lado */
+body:has(.login-card) {
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+
+/* CONTROLE FINAL DAS TELAS */
+
+.login-card {
+    display:none;
+}
+
+.login-card.active {
+    display:flex !important;
+    flex-direction:column;
+    align-items:center;
+    justify-content:flex-start;
+}
+
+
+/* posi��o igual para todas */
+
+body:has(.login-card) {
+    display:flex;
+    justify-content:center;
+    align-items:flex-start;
+    padding-top:180px;
+}
+
+
+/* tamanho padr�o */
+
+#card-login,
+#card-register,
+#card-recover {
+
+    width:360px !important;
+    height:520px !important;
+
+    box-sizing:border-box;
+
+    padding:30px;
+
+}
+
+
+/* CONTROLE FINAL DAS TELAS LOGIN */
+
+.login-card {
+    display:none;
+}
+
+#card-login.active,
+#card-register.active,
+#card-recover.active {
+    display:flex !important;
+    flex-direction:column;
+    align-items:center;
+}
+
+
+/* Mant�m somente uma caixa vis�vel */
+#card-login:not(.active),
+#card-register:not(.active),
+#card-recover:not(.active) {
+    display:none !important;
+}
+
+
+/* ===== CORRE��O FINAL VISIBILIDADE LOGIN ===== */
+
+.login-card {
+    display:none;
+}
+
+.login-card.active {
+    display:flex !important;
+    flex-direction:column;
+    align-items:center;
+    justify-content:flex-start;
+}
+
+
+/* Apenas o card ativo aparece */
+#card-login:not(.active),
+#card-register:not(.active),
+#card-recover:not(.active) {
+    display:none !important;
+}
+
+
+/* =====================================================
+   PATCH FINAL - UMA TELA POR VEZ
+===================================================== */
+
+/* Todas escondidas por padr�o */
+.login-card {
+    display:none !important;
+}
+
+
+/* Somente a tela ativa aparece */
+.login-card.active {
+    display:flex !important;
+    flex-direction:column;
+    align-items:center;
+    justify-content:flex-start;
+}
+
+
+/* Ignora regras antigas de style inline */
+#card-register[style],
+#card-recover[style] {
+    display:none !important;
+}
+
+
+#card-register.active,
+#card-recover.active,
+#card-login.active {
+    display:flex !important;
+}
+
+
+/* Mant�m todas no mesmo lugar */
+body:has(.login-card) {
+    display:flex !important;
+    justify-content:center !important;
+    align-items:flex-start !important;
+    padding-top:180px !important;
+}
+
+
+
+/* =====================================================
+   CORRE��O DEFINITIVA - CONTROLE POR ACTIVE
+===================================================== */
+
+.login-card {
+    display:none !important;
+}
+
+
+.login-card.active {
+    display:flex !important;
+    flex-direction:column !important;
+    align-items:center !important;
+    justify-content:flex-start !important;
+}
+
+
+/* remove qualquer regra antiga */
+#card-login:not(.active),
+#card-register:not(.active),
+#card-recover:not(.active) {
+    display:none !important;
+}
+
+
+/* mesmo posicionamento */
+body:has(.login-card) {
+    display:flex !important;
+    justify-content:center !important;
+    align-items:flex-start !important;
+    padding-top:180px !important;
+}
+

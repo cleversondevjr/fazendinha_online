@@ -1,0 +1,39 @@
+/* Reset global */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: 'Luckiest Guy', cursive, Arial, sans-serif;
+  background-color: #4e7e2e;
+  color: #fff;
+}
+
+.topbar {
+  position: fixed;
+  top: 10px;
+  right: 12px;
+  z-index: 1000;
+  width: calc(100% - 282px);
+  height: 108px;
+  background: url('assets/topbar_purple.png') center/100% 100% no-repeat;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+}
+
+.main {
+  margin-left: 262px;
+  margin-top: 138px;
+  padding: 14px 12px 18px 22px;
+  background-color: transparent;
+  height: calc(100vh - 138px);
+}

@@ -1,0 +1,570 @@
+[33mcommit 33dd0035b2237c13fc26067831ac94ee793d455c[m
+Author: Cleverson <suportesgiptv01@gmail.com>
+Date:   Wed Jul 15 00:07:13 2026 -0300
+
+    Corrige login, sessoes, caminhos frontend e ajustes do servidor
+
+ index.html | 183 [32m+++++++++++++++++++++++++++++++++++++++++++[m[31m------------------[m
+ 1 file changed, 131 insertions(+), 52 deletions(-)
+
+[33mcommit a6187c2c9690710cdb5463c94233b18336906985[m
+Author: cleversondevjr <cleversonleite2014@gmail.com>
+Date:   Mon Jul 13 19:53:33 2026 -0300
+
+    **fix:** Corrigir estrutura HTML e caminhos de assets para garantir renderização correta do jogo.
+    
+    Co-authored-by: aider (ollama/qwen2.5-coder:14b) <aider@aider.chat>
+
+ index.html | 224 [32m++++++++++++++[m[31m-----------------------------------------------[m
+ 1 file changed, 52 insertions(+), 172 deletions(-)
+
+[33mcommit aefc8c3362265b071173fad48c7d2b87beb2a3be[m
+Author: Copilot <198982749+Copilot@users.noreply.github.com>
+Date:   Fri Jul 10 03:36:39 2026 -0300
+
+    fix: gameplay end-to-end — merge conflicts, missing endpoints, broken use_item, UI topbar (#115)
+    
+    The game was unplayable: login.html had unresolved merge conflict
+    markers, the main game topbar was stripped of all action buttons, every
+    plot click threw a `ReferenceError`, and critical backend routes/action
+    handlers were missing entirely.
+    
+    ## Merge Conflict Artifacts
+    - **`login.html`** — 6 conflict markers made the page fail to parse
+    - **`style.css`** — Orphaned `<<<<<<< HEAD` inside `.mission-item` +
+    corrupt `>>>>>>> main` at EOF
+    
+    ## Missing UI (index.html)
+    Topbar was a logo-only skeleton. Added all required controls: Shop,
+    Inventory, World Tree, Season Pass, Marketplace, Logout,
+    coin/diamond/energy counters, weather icon. Removed duplicate `<script>`
+    in `<head>`.
+    
+    ## Critical JS Bug
+    Dead code after a block-scoped `const` referenced `action` and `index`
+    out of scope — every click on the game board threw `ReferenceError:
+    action is not defined`:
+    ```js
+    // Was (unreachable, undefined vars crash the handler):
+    if (action === 'use') performAction('use_item', index, ...);
+    
+    // Fixed: removed dead block, guard added to plot click path
+    const state = plotStates.find(s => s.slot_index === index);
+    if (!state) return;
+    ```
+    
+    ## Slot Progression (`use_item`)
+    All consumable handlers were missing — using any tool threw `'Ação
+    inválida para este slot'`:
+    - **`vasoPequeno` / `vasoGrande`** — sets `pot_type`, `pot_expires_at`
+    (12h/24h), transitions `needsPot → needsWater` or `readyToPlant`
+    - **`pesticida`** — clears `pest_active` with symmetric pause accounting
+    (mirrors `remove_crow`)
+    - **`espantalho`** — sets `scarecrow_until` (+6h)
+    - Crop planting now requires `readyToPlant` phase (enforces
+    pot→water→plant flow)
+    
+    ## Missing Backend Routes
+    | Route | Purpose |
+    |---|---|
+    | `GET /api/game/season-pass` | Player progress + tier rewards |
+    | `GET /api/game/marketplace` | Active P2P listings (feature-flagged) |
+    | `POST /api/game/checkin` | Daily check-in (+100 coins, +5 energy, +10
+    pass XP) |
+    
+    ## Missing Action Handlers
+    - `water_world_tree` — up to 2 contributions/day via config key
+    - `collect_tree_reward` — once/day when daily water goal met
+    - `buy_pack` — diamond→gold conversion (hardcoded pack_gold_1/2)
+    
+    ## Additional Fixes
+    - **`claim_pass_reward`** — was using non-existent columns
+    `reward_item_id`/`reward_amount`; corrected to
+    `recompensa_tipo`/`recompensa_quantidade`
+    - **`performAction`** — missing `price` param for `marketplace_list`
+    - **Admin `promocoes` tab** — referenced `adminData` from a different
+    `else if` scope → `ReferenceError`
+    - **Admin modal** — opened with `display:block`, breaking flex
+    centering; changed to `flex`
+    - **CSS** — added missing `.hidden`, `.game-dialog`, and
+    `.game-dialog-box` rules
+    
+    ## Known Limitations
+    Season pass, check-in, and marketplace require their respective feature
+    flags enabled in `fazenda_features`. World tree contribution tracking
+    uses `fazenda_config` as a KV store for per-user daily keys.
+    
+    ---------
+    
+    Co-authored-by: copilot-swe-agent[bot] <198982749+Copilot@users.noreply.github.com>
+
+ index.html | 42 [32m+++++++++++++++++++++++++++++++++++++++++[m[31m-[m
+ 1 file changed, 41 insertions(+), 1 deletion(-)
+
+[33mcommit d6cf77edbb1e8ad57a94ce6482bd154d68626728[m
+Author: CLEVERSON SILVA LEITE <cleversonleite2014@gmail.com>
+Date:   Fri Jul 10 03:06:44 2026 -0300
+
+    Resolver conflito de merge no index.html - manter versão consolidada
+
+ index.html | 11 [32m++[m[31m---------[m
+ 1 file changed, 2 insertions(+), 9 deletions(-)
+
+[33mcommit b182cbfd77eb2d5fa6205dd4354d8afd81ef3fb8[m
+Author: CLEVERSON SILVA LEITE <cleversonleite2014@gmail.com>
+Date:   Fri Jul 10 01:22:02 2026 -0300
+
+    chore: consolidate migrations and final cleanup of conflict markers (#112)
+    
+    - Consolidated all database migrations (001-020) into
+    migrations/v501_consolidated.sql.
+    - Updated deploy.sh to execute only the consolidated migration.
+    - Removed redundant migration files from the repository.
+    - Reconstructed login.html to resolve the double login box issue.
+    - Removed all Git conflict markers from HTML, JS, CSS, and SQL files.
+    - Final synchronization of the project to version v5.0.1.
+    
+    ---------
+    
+    Co-authored-by: google-labs-jules[bot] <161369871+google-labs-jules[bot]@users.noreply.github.com>
+    Co-authored-by: Cleverson <suportesgiptv01@gmail.com>
+
+ index.html | 157 [32m+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++[m[31m--[m
+ 1 file changed, 152 insertions(+), 5 deletions(-)
+
+[33mcommit fae1c2aaf47ac468e1ceb63322d0bdb522df44e9[m
+Author: CLEVERSON SILVA LEITE <cleversonleite2014@gmail.com>
+Date:   Fri Jul 10 00:31:53 2026 -0300
+
+    Add 'pesticida' tool item and restructure HTML
+    
+    Added a new tool item for 'pesticida' in the header and updated the structure to include a main content area.
+
+ index.html | 69 [32m++++++++++[m[31m----------------------------------------------------[m
+ 1 file changed, 11 insertions(+), 58 deletions(-)
+
+[33mcommit 0a00e47806cc5cba6ad5ce9026ef6cd0524b502a[m
+Author: CLEVERSON SILVA LEITE <cleversonleite2014@gmail.com>
+Date:   Thu Jul 9 12:31:24 2026 -0300
+
+    Feature/v3.0.1 final sync 14719019057366838169 (#111)
+    
+    Co-authored-by: google-labs-jules[bot] <161369871+google-labs-jules[bot]@users.noreply.github.com>
+
+ index.html | 181 [32m+[m[31m------------------------------------------------------------[m
+ 1 file changed, 1 insertion(+), 180 deletions(-)
+
+[33mcommit 929fcb023b897b0f230c5db57576cb0ea7245d47[m
+Author: CLEVERSON SILVA LEITE <cleversonleite2014@gmail.com>
+Date:   Thu Jul 9 10:34:50 2026 -0300
+
+    Feature/v3.0.1 final sync 14719019057366838169 (#110)
+    
+    Co-authored-by: google-labs-jules[bot] <161369871+google-labs-jules[bot]@users.noreply.github.com>
+
+ index.html | 34 [32m++++++++++++++++++++[m[31m--------------[m
+ 1 file changed, 20 insertions(+), 14 deletions(-)
+
+[33mcommit f40370cd5afeaa9a64635905c1ae8bad6319d0e3[m
+Author: CLEVERSON SILVA LEITE <cleversonleite2014@gmail.com>
+Date:   Thu Jul 9 01:21:17 2026 -0300
+
+    Feature/v3.0.1 final sync 14719019057366838169 (#109)
+    
+    Co-authored-by: google-labs-jules[bot] <161369871+google-labs-jules[bot]@users.noreply.github.com>
+
+ index.html | 23 [32m+[m[31m----------------------[m
+ 1 file changed, 1 insertion(+), 22 deletions(-)
+
+[33mcommit 311470726c2c4f4ee245b7e72b60431e1c58dcfd[m
+Author: CLEVERSON SILVA LEITE <cleversonleite2014@gmail.com>
+Date:   Thu Jul 9 00:23:23 2026 -0300
+
+    Feature/v3.0.1 final sync 14719019057366838169 (#107)
+    
+    Co-authored-by: google-labs-jules[bot] <161369871+google-labs-jules[bot]@users.noreply.github.com>
+
+ index.html | 32 [32m++++++++++++++++++++++++++[m[31m------[m
+ 1 file changed, 26 insertions(+), 6 deletions(-)
+
+[33mcommit 98183d37968073730f7cdb2e9a7710bbe920cb7a[m
+Author: CLEVERSON SILVA LEITE <cleversonleite2014@gmail.com>
+Date:   Wed Jul 8 22:44:21 2026 -0300
+
+    fix: enable public access to login and improve UI interactivity (#105)
+    
+    Co-authored-by: google-labs-jules[bot] <161369871+google-labs-jules[bot]@users.noreply.github.com>
+
+ index.html | 21 [32m++++++++++++++++++[m[31m---[m
+ 1 file changed, 18 insertions(+), 3 deletions(-)
+
+[33mcommit 1a0a87e06d0c198174fb91517999b7dd98184ad9[m
+Author: CLEVERSON SILVA LEITE <cleversonleite2014@gmail.com>
+Date:   Wed Jul 8 17:51:15 2026 -0300
+
+    V5.0.1 (#104)
+    
+    Co-authored-by: google-labs-jules[bot] <161369871+google-labs-jules[bot]@users.noreply.github.com>
+
+ index.html | 27 [32m+++++++++++++++++++++++++++[m
+ 1 file changed, 27 insertions(+)
+
+[33mcommit b55f61216fee58efb1f4563ed3bfbd520e9307dd[m
+Author: CLEVERSON SILVA LEITE <cleversonleite2014@gmail.com>
+Date:   Wed Jul 8 10:44:25 2026 -0300
+
+    Feature/v3.0.1 final sync 14719019057366838169 (#99)
+    
+    Co-authored-by: google-labs-jules[bot] <161369871+google-labs-jules[bot]@users.noreply.github.com>
+
+ index.html | 17 [32m+++++++++[m[31m--------[m
+ 1 file changed, 9 insertions(+), 8 deletions(-)
+
+[33mcommit 246f049d1c96707064f8b7970ccc1f4735184527[m
+Author: CLEVERSON SILVA LEITE <cleversonleite2014@gmail.com>
+Date:   Wed Jul 8 07:45:14 2026 -0300
+
+    feat: Fazendinha Online v3.0.6 - Sync version, UI refinements, and Ro… (#98)
+    
+    …admap features
+    
+    - Synchronized version v3.0.6 across all layers (package.json, HTML,
+    CSS, JS, README, deploy.sh and DB config).
+    - Refined game asset positioning: decreased sizes by 20%, shifted left
+    by 15px, and adjusted vertical alignment.
+    - Implemented "Check-in Diário" (Daily Check-in) with backend route, DB
+    table, and frontend integration.
+    - Added "Passe de Temporada" (Season Pass) UI placeholder and feature
+    flag integration.
+    - Hardened CORS security with a whitelist and scoped session cookies to
+    '/fazendinha/'.
+    - Updated database migrations (017-018) to reflect new features and
+    synchronized version keys.
+    - Fixed water retention logic to preserve state after harvest if still
+    valid.
+    - Removed bcrypt dependency and fixed 'CleversonS' admin login with
+    plain-text password support.
+    
+    Co-authored-by: google-labs-jules[bot] <161369871+google-labs-jules[bot]@users.noreply.github.com>
+
+ index.html | 36 [32m+++++++++++++++++++++++++++++++[m[31m-----[m
+ 1 file changed, 31 insertions(+), 5 deletions(-)
+
+[33mcommit 784dcac0a39b48d70dd7eff4a2b8e0ff8ac0582d[m
+Author: CLEVERSON SILVA LEITE <cleversonleite2014@gmail.com>
+Date:   Tue Jul 7 23:33:38 2026 -0300
+
+    Feature/v3.0.1 final sync 14719019057366838169 (#97)
+    
+    Co-authored-by: google-labs-jules[bot] <161369871+google-labs-jules[bot]@users.noreply.github.com>
+
+ index.html | 1 [31m-[m
+ 1 file changed, 1 deletion(-)
+
+[33mcommit 281dc856e84fcf7106a646e68bc2872497166e3e[m
+Author: CLEVERSON SILVA LEITE <cleversonleite2014@gmail.com>
+Date:   Tue Jul 7 19:28:59 2026 -0300
+
+    fix: consolidated v3.0.5 with security hardening and plain-text auth (#94)
+    
+    - Upgraded project version to v3.0.5 across all core files.
+    - Implemented restricted static file serving in server/index.js to
+    prevent source leaks.
+    - Switched authentication to plain-text as requested and removed
+    bcryptjs.
+    - Refactored login.html with "Restricted Access" logic (?admin=true).
+    - Added database migrations 013-016 for version synchronization.
+    - Updated migration 012 to use ON CONFLICT for the admin user.
+    - Robustified deploy.sh to execute all migrations in order.
+    
+    Co-authored-by: google-labs-jules[bot] <161369871+google-labs-jules[bot]@users.noreply.github.com>
+
+ index.html | 8 [32m++++[m[31m----[m
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+[33mcommit 50fa9c5b89337ec52e36ee65934fa36813fbacd7[m
+Author: CLEVERSON SILVA LEITE <cleversonleite2014@gmail.com>
+Date:   Mon Jul 6 22:58:59 2026 -0300
+
+    Feature/v3.0.1 final sync 14719019057366838169 (#91)
+    
+    Co-authored-by: google-labs-jules[bot] <161369871+google-labs-jules[bot]@users.noreply.github.com>
+    Co-authored-by: cleversondevjr <9503948+cleversondevjr@users.noreply.github.com>
+
+ index.html | 13 [32m++++++[m[31m-------[m
+ 1 file changed, 6 insertions(+), 7 deletions(-)
+
+[33mcommit c201b640dde38550f17ff6ea2af931be509f1e2b[m
+Author: CLEVERSON SILVA LEITE <cleversonleite2014@gmail.com>
+Date:   Mon Jul 6 22:13:33 2026 -0300
+
+    Feature/v3.0.1 final sync 14719019057366838169 (#87)
+    
+    Co-authored-by: google-labs-jules[bot] <161369871+google-labs-jules[bot]@users.noreply.github.com>
+    Co-authored-by: cleversondevjr <9503948+cleversondevjr@users.noreply.github.com>
+
+ index.html | 8 [32m++++[m[31m----[m
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+[33mcommit a7faf63b584a0b419566d48e997d90c8dc8e24d1[m
+Author: google-labs-jules[bot] <161369871+google-labs-jules[bot]@users.noreply.github.com>
+Date:   Mon Jul 6 16:51:45 2026 +0000
+
+    feat: finalização da v3.0.1 com gestão de roadmap e correções admin
+    
+    - Correção das credenciais de acesso para 'CleversonS' e 'admin' via migração 011.
+    - Implementação de lógica segura para garantir ID 1 ao administrador principal.
+    - Restrição de visibilidade do botão Admin apenas para usuários autorizados.
+    - Adição da aba 'Roadmap' no Painel Admin para controle de Feature Flags.
+    - Implementação da listagem completa de usuários no Painel Admin.
+    - Inclusão do utilitário 'server/verify_system.js' para diagnósticos de saúde do sistema.
+    - Sincronização da versão v3.0.1 em todos os metadados do projeto.
+    
+    Co-authored-by: cleversondevjr <9503948+cleversondevjr@users.noreply.github.com>
+
+ index.html | 1 [32m+[m
+ 1 file changed, 1 insertion(+)
+
+[33mcommit ec353b59a1ee24f0f646c94be0b8a4d14f6d549c[m
+Author: CLEVERSON SILVA LEITE <cleversonleite2014@gmail.com>
+Date:   Mon Jul 6 11:36:21 2026 -0300
+
+    chore: finalize v3.0.1 sync and implement feature locking logic (#71)
+    
+    - Synchronized v3.0.1 across package.json, index.html, login.html, and README.md.
+    - Implemented `applyRoadmapFlags()` in script.js to dynamically lock features based on the roadmap state.
+    - Integrated feature locking into slot rendering, shop tabs, and resources.
+    - Realigned terrain and crop layers in style.css for better visual consistency.
+    - Added grayscale and lock icon styles for blocked features.
+    
+    Co-authored-by: google-labs-jules[bot] <161369871+google-labs-jules[bot]@users.noreply.github.com>
+    Co-authored-by: cleversondevjr <9503948+cleversondevjr@users.noreply.github.com>
+
+ index.html | 4 [32m++[m[31m--[m
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+[33mcommit 01d5cbca79bf920656dfe02e7542e1f8263fa106[m
+Author: google-labs-jules[bot] <161369871+google-labs-jules[bot]@users.noreply.github.com>
+Date:   Mon Jul 6 14:36:02 2026 +0000
+
+    chore: finalize v3.0.1 sync and implement feature locking logic
+    
+    - Synchronized v3.0.1 across package.json, index.html, login.html, and README.md.
+    - Implemented `applyRoadmapFlags()` in script.js to dynamically lock features based on the roadmap state.
+    - Integrated feature locking into slot rendering, shop tabs, and resources.
+    - Realigned terrain and crop layers in style.css for better visual consistency.
+    - Added grayscale and lock icon styles for blocked features.
+    
+    Co-authored-by: cleversondevjr <9503948+cleversondevjr@users.noreply.github.com>
+
+ index.html | 4 [32m++[m[31m--[m
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+[33mcommit 7362950a6635d915f6d5dbcd1b14f074f8928f8c[m
+Author: google-labs-jules[bot] <161369871+google-labs-jules[bot]@users.noreply.github.com>
+Date:   Mon Jul 6 13:04:36 2026 +0000
+
+    Rollout v3.0.1: Deploy Automatizado e Correções de Produção
+    
+    - Atualização da versão para v3.0.1 em todo o projeto.
+    - Melhoria na segurança do `deploy.sh` (proteção de .env e carregamento robusto de variáveis).
+    - Migrações SQL idempotentes para evitar duplicidade de missões.
+    - Endpoint `/api/auth/version` e tela de login dinâmica buscando versão do DB.
+    - Validação de lógica de crescimento e verificação visual do frontend.
+    - Configuração pronta para deploy automático via Webhook no Raspberry Pi.
+    
+    Co-authored-by: cleversondevjr <9503948+cleversondevjr@users.noreply.github.com>
+
+ index.html | 8 [32m++++[m[31m----[m
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+[33mcommit cb2641297785e333bdb5e64798aebc2a515f10ab[m
+Author: google-labs-jules[bot] <161369871+google-labs-jules[bot]@users.noreply.github.com>
+Date:   Sat Jul 4 03:13:42 2026 +0000
+
+    feat: automação total de merge/deploy e sistema de Roadmap
+    
+    - Implementa Auto-Merge via GitHub Actions (sem cliques necessários).
+    - Implementa Feature Flags (Roadmap) no Painel Admin com controle de data e status.
+    - Protege rotas de Diamantes e Slots Premium no backend via Feature Flags.
+    - Corrige falha de segurança no middleware de sessão e implementa Logout completo.
+    - Torna as migrações SQL idempotentes para evitar falhas no auto-deploy.
+    - Força liberação da porta 3002 no deploy.sh.
+    - Adiciona Logs de Auditoria no Painel Admin.
+    - Disponibiliza script de limpeza para a versão antiga (/farm).
+    
+    Co-authored-by: cleversondevjr <9503948+cleversondevjr@users.noreply.github.com>
+
+ index.html | 1 [32m+[m
+ 1 file changed, 1 insertion(+)
+
+[33mcommit 65caa368666ccaed5f56c3fb68586636fa2e9892[m
+Author: CLEVERSON SILVA LEITE <cleversonleite2014@gmail.com>
+Date:   Fri Jul 3 09:21:32 2026 -0300
+
+    Feature/deploy setup fazendinha online 17290538717656269941
+
+ index.html | 9 [32m+++++[m[31m----[m
+ 1 file changed, 5 insertions(+), 4 deletions(-)
+
+[33mcommit f901de54e50e9d7ea9a7b988e732f3e13e22dc95[m
+Author: google-labs-jules[bot] <161369871+google-labs-jules[bot]@users.noreply.github.com>
+Date:   Fri Jul 3 07:13:51 2026 +0000
+
+    feat: deploy Fazendinha V.2.1.0 com correções de UI, SQL e Gestão de Usuários
+    
+    - Corrigido erro de SQL 'column target does not exist' nas missões.
+    - Corrigido bug de itens duplicados na loja.
+    - Nova interface baseada no tema de Praia (PvU Style).
+    - Migração de limpeza de usuários para reset de ambiente (ID 1: CleversonS).
+    - Melhorias na segurança do script de deploy e padronização de versões.
+    - Implementada lista de usuários no Painel Admin.
+    
+    Co-authored-by: cleversondevjr <9503948+cleversondevjr@users.noreply.github.com>
+
+ index.html | 9 [32m+++++[m[31m----[m
+ 1 file changed, 5 insertions(+), 4 deletions(-)
+
+[33mcommit 07ec2e71d6603060b9c114cf8715867e6e1c198e[m
+Author: google-labs-jules[bot] <161369871+google-labs-jules[bot]@users.noreply.github.com>
+Date:   Tue Jun 30 18:59:52 2026 +0000
+
+    Fix: Admin access for CleversonS and sync game version to v1.1.0.
+    
+    - Updated game version to v1.1.0 across all files (index.html, login.html, migrations).
+    - Fixed Admin login by regenerating Bcrypt hash for 'Wincster@194060le'.
+    - Ensured migration uses 'ON CONFLICT DO UPDATE' to force password reset on deploy.
+    - Added server-side auth logs for better troubleshooting.
+    - Synchronized migrations/full_deploy.sql.
+    
+    Co-authored-by: cleversondevjr <9503948+cleversondevjr@users.noreply.github.com>
+
+ index.html | 8 [32m++++[m[31m----[m
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+[33mcommit 8bf3dfb65fe39174cfb69080a018f7fd568201ab[m
+Author: google-labs-jules[bot] <161369871+google-labs-jules[bot]@users.noreply.github.com>
+Date:   Tue Jun 30 04:20:03 2026 +0000
+
+    Melhorias gerais: UI responsiva, compra em lote, novo sistema de autenticação e correções de lógica de jogo.
+    
+    - Centralização dos slots e topbar responsiva via Flexbox.
+    - Implementação de compra em lote com diálogo de confirmação.
+    - Sistema de autenticação completo (Cadastro, Login e Recuperação de Senha).
+    - Refatoração da sidebar (ícones sem botões 'Usar') e fechamento automático do inventário.
+    - Nova regra de água (2h, acumulável até 2 ou 4 por slot) e visualização de tempo restante.
+    - Correções no cron job para expiração de recursos e espantalho.
+    - Painel Admin com busca por login, controle de versão e abas de eventos/promoções.
+    
+    Co-authored-by: cleversondevjr <9503948+cleversondevjr@users.noreply.github.com>
+
+ index.html | 25 [32m++++++++++++++++++[m[31m-------[m
+ 1 file changed, 18 insertions(+), 7 deletions(-)
+
+[33mcommit e7dbb244b024714f6e9d61deba3d3a46b4566414[m
+Author: google-labs-jules[bot] <161369871+google-labs-jules[bot]@users.noreply.github.com>
+Date:   Tue Jun 30 02:20:09 2026 +0000
+
+    Automação de Deploy e Atualização Visual (v1.0.5)
+    
+    - Adicionado script auto_deploy.sh para atualização automática completa.
+    - Adicionado script diagnostico_sistema.sh para auditoria local no Raspberry Pi.
+    - Atualização visual para Tema Fazenda (v1.0.5) com cache-busting.
+    - Ajuste final na lógica de logout e redirecionamento.
+    
+    Co-authored-by: cleversondevjr <9503948+cleversondevjr@users.noreply.github.com>
+
+ index.html | 6 [32m+++[m[31m---[m
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+[33mcommit 45e2a0008b1acc67401795936914cad5ec6c3e81[m
+Author: google-labs-jules[bot] <161369871+google-labs-jules[bot]@users.noreply.github.com>
+Date:   Mon Jun 29 21:07:03 2026 +0000
+
+    Cache-busting v1.0.4 e finalização de deploy para sgiptv.com.br/fazendinha
+    
+    - Forçado cache-busting v1.0.4 no index.html (CSS e JS).
+    - Adicionada tag <base href="/fazendinha/"> para compatibilidade com subdiretório.
+    - Consolidação final de segurança e caminhos relativos no frontend.
+    
+    Co-authored-by: cleversondevjr <9503948+cleversondevjr@users.noreply.github.com>
+
+ index.html | 6 [32m+++[m[31m---[m
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+[33mcommit c1d1e676e2b83b63f084119660b22b4825f0003d[m
+Author: google-labs-jules[bot] <161369871+google-labs-jules[bot]@users.noreply.github.com>
+Date:   Sat Jun 27 01:24:35 2026 +0000
+
+    feat: preparar projeto para deploy em sgiptv.com.br/fazendinha
+    
+    - Atualização do frontend para v1.0.3 com suporte a subcaminho (/fazendinha).
+    - Implementação de persistência de layout no Painel Admin via UPSERT.
+    - Criação de guias de deploy (DEPLOY_QUICKSTART.md, FINAL_INSTRUCTIONS.md).
+    - Configuração de backend para porta 3002 e ambiente de produção.
+    - Limpeza de dependências e organização de arquivos.
+    - Adição de migração 003 para configurações de layout.
+    - Diagnóstico automatizado para Raspberry Pi incluído.
+    
+    Co-authored-by: cleversondevjr <9503948+cleversondevjr@users.noreply.github.com>
+
+ index.html | 5 [32m+++[m[31m--[m
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+[33mcommit eb8b393a1068b5448cfa59bb3730633c6702b735[m
+Author: google-labs-jules[bot] <161369871+google-labs-jules[bot]@users.noreply.github.com>
+Date:   Fri Jun 26 02:21:04 2026 +0000
+
+    Forçar atualização de versão e porta do servidor
+    
+    - Versão v1.0.3 visível no topo para confirmar atualização
+    - Porta do servidor fixada em 3002 no código
+    - Lógica de clima (renderWeather) integrada no script.js
+    - Cache-busting atualizado para v1.0.3
+    
+    Co-authored-by: cleversondevjr <9503948+cleversondevjr@users.noreply.github.com>
+
+ index.html | 1 [32m+[m
+ 1 file changed, 1 insertion(+)
+
+[33mcommit 2400c309f57b2c4dfeed2bf27271491652db088f[m
+Author: google-labs-jules[bot] <161369871+google-labs-jules[bot]@users.noreply.github.com>
+Date:   Thu Jun 25 13:53:30 2026 +0000
+
+    fix: corrigir redirecionamento de login e fluxo de acesso
+    
+    - Criado login.html local para gerenciar sessoes sem depender de dominios externos.
+    - Atualizado server/index.js para redirecionar erros de 401 para a nova pagina de login local.
+    - Adicionado cache-busting (v=1.0.1) no index.html para forçar atualização de scripts e CSS.
+    - Melhorada a logica de logout no script.js para limpar cookies.
+    - Atualizado FIX_CONNECTIVITY.md com guia passo-a-passo para limpar redirecionamentos antigos no Nginx e Cloudflare.
+    
+    Co-authored-by: cleversondevjr <9503948+cleversondevjr@users.noreply.github.com>
+
+ index.html | 4 [32m++[m[31m--[m
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+[33mcommit 5a68ca65ad3f25bf8e4c9ff5fe33f7b471f86e66[m
+Author: google-labs-jules[bot] <161369871+google-labs-jules[bot]@users.noreply.github.com>
+Date:   Wed Jun 24 03:37:26 2026 +0000
+
+    Configuração para Deploy em Subpath e Produção
+    
+    - Adicionado `<base href="/fazendinha/">` ao index.html para suporte a subdiretório.
+    - Atualizado CORS no backend (server/index.js) para sgiptv.com.br.
+    - Criado `nginx.conf.example` com configuração de proxy reverso.
+    - Criado `DEPLOY.md` com instruções completas para instalação no Raspberry Pi.
+    
+    Co-authored-by: cleversondevjr <9503948+cleversondevjr@users.noreply.github.com>
+
+ index.html | 1 [32m+[m
+ 1 file changed, 1 insertion(+)
+
+[33mcommit 5d738f094bf1ef9afbecdeceec7a94b701ca719a[m
+Author: cleversondevjr <cleversonleite2014@gmail.com>
+Date:   Tue Jun 23 23:49:26 2026 -0300
+
+    Initial commit - Projeto Farm PostgreSQL completo com assets
+
+ index.html | 150 [32m+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++[m
+ 1 file changed, 150 insertions(+)
