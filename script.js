@@ -12,7 +12,7 @@ let itemShopPrices = {};
 
 const itemSelecionadoState = { item: null };
 
-// --- Sessão e Inatividade ---
+// --- SessÃ£o e Inatividade ---
 const INACTIVITY_LIMIT = 30 * 60 * 1000;
 let inactivityTimer;
 
@@ -41,10 +41,10 @@ function onRareDrop() {
 
 function onLevelUp(level) {
     console.log("Hooks: Level Up to", level);
-    showDialog({ title: "Celebrando!", message: `Parabéns! Você subiu para o nível ${level} no Passe de Temporada!` });
+    showDialog({ title: "Celebrando!", message: `ParabÃ©ns! VocÃª subiu para o nÃ­vel ${level} no Passe de Temporada!` });
 }
 function onLockedFeature(msg) {
-    showDialog({ title: "Em Breve", message: msg || "Esta função está no nosso Roadmap e será liberada em breve!" });
+    showDialog({ title: "Em Breve", message: msg || "Esta funÃ§Ã£o estÃ¡ no nosso Roadmap e serÃ¡ liberada em breve!" });
 }
 
 function onTransactionSuccess() {
@@ -70,6 +70,7 @@ async function apiFetch(endpoint, options = {}) {
     }
     if (res.status === 401) {
         console.warn("Sessão expirada ou não autorizada");
+        logout();
         return;
     }
     if (!res.ok) {
@@ -89,7 +90,7 @@ async function loadGameState() {
         configs = data.configs || {};
         const roadmap = data.roadmap || {};
 
-        // Aplica o layout salvo nas configurações
+        // Aplica o layout salvo nas configuraÃ§Ãµes
         if (configs.active_layout && configs.active_layout !== 'default') {
             applyLayout(configs.active_layout);
         }
@@ -143,7 +144,7 @@ async function performAction(action, slotIndex = null, itemId = null, missionId 
             if (res.leveledUp) onLevelUp(res.newLevel);
         }
     } catch (err) {
-        showDialog({ title: "Ação Falhou", message: err.message });
+        showDialog({ title: "AÃ§Ã£o Falhou", message: err.message });
     }
 }
 
@@ -191,7 +192,7 @@ function getCropAsset(state) {
     const type = config.tipo || 'flower';
 
     let stage = "semente";
-    // Regra: Estágio 1 (0-39% semente), Estágio 2 (40-79% broto), Estágio 3 (80-100% adulta)
+    // Regra: EstÃ¡gio 1 (0-39% semente), EstÃ¡gio 2 (40-79% broto), EstÃ¡gio 3 (80-100% adulta)
     if (progress >= 0.80) stage = "adulta";
     else if (progress >= 0.40) stage = "broto";
     else stage = "semente";
@@ -252,7 +253,7 @@ function renderPlotState(index) {
         soil.appendChild(img);
     }
 
-    // --- Overlay de Corvo e Praga no Solo (facilitando identificação) ---
+    // --- Overlay de Corvo e Praga no Solo (facilitando identificaÃ§Ã£o) ---
     if (state.crow_active) {
         const crow = document.createElement("div");
         crow.className = "danger-sign danger-crow";
@@ -272,7 +273,7 @@ function renderPlotState(index) {
         soil.appendChild(pestOverlay);
     }
 
-    // --- Renderização dos 5 Ícones de Status ---
+    // --- RenderizaÃ§Ã£o dos 5 Ãcones de Status ---
     const slots = plotEl.querySelectorAll(".status-slot");
     slots.forEach(s => {
         s.innerHTML = ""; // Limpar
@@ -292,14 +293,14 @@ function renderPlotState(index) {
         slots[0].style.visibility = "visible";
         slots[0].style.cursor = "pointer";
     }
-    // 2. Água (Slot 2)
+    // 2. Ãgua (Slot 2)
     if (state.fase !== 'needsWater' && state.fase !== 'needsPot' && state.fase !== 'locked') {
         const waterImg = document.createElement("img");
         waterImg.src = "assets/agua.png";
-        waterImg.title = `Água: ${formatDuration(new Date(state.water_expires_at).getTime() - Date.now())} restantes`;
+        waterImg.title = `Ãgua: ${formatDuration(new Date(state.water_expires_at).getTime() - Date.now())} restantes`;
         waterImg.onclick = (e) => {
             e.stopPropagation();
-            showDialog({title: "Info Água", message: `Falta ${formatDuration(new Date(state.water_expires_at).getTime() - Date.now())} para a terra secar.`});
+            showDialog({title: "Info Ãgua", message: `Falta ${formatDuration(new Date(state.water_expires_at).getTime() - Date.now())} para a terra secar.`});
         };
         slots[1].appendChild(waterImg);
         slots[1].style.visibility = "visible";
@@ -343,11 +344,11 @@ function renderPlotState(index) {
         timer.textContent = state.fase.toUpperCase().replace('NEEDS', 'AGUARDANDO ');
     }
 
-    // --- Controle de Visibilidade dos Botões de Ação ---
+    // --- Controle de Visibilidade dos BotÃµes de AÃ§Ã£o ---
     const actions = plotEl.querySelector(".plot-actions");
     if (actions) {
         const p = slotPrices[index];
-        // Mostrar ações se não estiver bloqueado
+        // Mostrar aÃ§Ãµes se nÃ£o estiver bloqueado
         const isLocked = state.fase === 'locked';
         actions.style.display = isLocked ? "none" : "flex";
 
@@ -370,7 +371,7 @@ function renderPlotState(index) {
 
         const removeBtn = actions.querySelector(".remove");
         if (removeBtn) {
-            // Mostrar remover apenas se houver algo no slot que não seja 'locked' ou 'needsPot'
+            // Mostrar remover apenas se houver algo no slot que nÃ£o seja 'locked' ou 'needsPot'
             const canRemove = (state.fase !== 'locked' && state.fase !== 'needsPot');
             removeBtn.style.visibility = canRemove ? "visible" : "hidden";
             removeBtn.dataset.action = "remove";
@@ -381,11 +382,11 @@ function renderPlotState(index) {
 function renderMissions() {
     const list = document.getElementById("missions-list");
     if (!list || !missionsState.length) {
-        if (list) list.innerHTML = "<p style='font-size:12px; opacity:0.7;'>Nenhuma missão ativa.</p>";
+        if (list) list.innerHTML = "<p style='font-size:12px; opacity:0.7;'>Nenhuma missÃ£o ativa.</p>";
         return;
     }
 
-    // Exibir apenas a primeira missão ativa por vez conforme solicitado
+    // Exibir apenas a primeira missÃ£o ativa por vez conforme solicitado
     const mission = missionsState.find(m => !m.claimed) || missionsState[0];
 
     list.innerHTML = `
@@ -398,7 +399,7 @@ function renderMissions() {
             <button class="mission-claim" onclick="performAction('claim_mission', null, null, ${mission.id})" ${mission.progress < mission.target || mission.claimed ? 'disabled' : ''}>
                 ${mission.claimed ? 'Resgatado' : 'Resgatar'}
             </button>
-            <p style="font-size: 9px; margin-top: 5px; text-align: center; opacity: 0.6;">Próxima missão em: <span id="mission-timer">--:--</span></p>
+            <p style="font-size: 9px; margin-top: 5px; text-align: center; opacity: 0.6;">PrÃ³xima missÃ£o em: <span id="mission-timer">--:--</span></p>
         </div>
     `;
 
@@ -418,10 +419,10 @@ function updateMissionTimer() {
 }
 
 function getItemAsset(itemId) {
-    // Primeiro verifica se temos uma configuração dinâmica para este item
+    // Primeiro verifica se temos uma configuraÃ§Ã£o dinÃ¢mica para este item
     const item = itemShopPrices[itemId] || cropCatalog[itemId];
     if (item && item.image_asset) {
-        // Se já tem o caminho completo (ex: flores/imagem.png), retorna ele
+        // Se jÃ¡ tem o caminho completo (ex: flores/imagem.png), retorna ele
         if (item.image_asset.includes('/')) return item.image_asset;
         return item.image_asset;
     }
@@ -439,7 +440,7 @@ function getItemAsset(itemId) {
 
     if (mappings[itemId]) return mappings[itemId];
 
-    // Fallback para flores que não estão no mapeamento estático mas seguem o padrão de nome
+    // Fallback para flores que nÃ£o estÃ£o no mapeamento estÃ¡tico mas seguem o padrÃ£o de nome
     if (cropCatalog[itemId]) {
         if (itemId.includes('_adulta')) return `flores/${itemId}.png`;
         return `flores/${itemId}_adulta.png`;
@@ -477,7 +478,7 @@ function renderShopTab(tabName) {
                 <img src="assets/diamante.png">
                 <p>Pacote de Diamante 1</p>
                 <p>R$ 10,00</p>
-                <button class="buy-btn" onclick="showDialog({title:'Loja', message:'Em breve: Integração com Pagamento'})">Comprar</button>
+                <button class="buy-btn" onclick="showDialog({title:'Loja', message:'Em breve: IntegraÃ§Ã£o com Pagamento'})">Comprar</button>
             </div>
         `;
         return;
@@ -543,7 +544,7 @@ function selectItem(id) {
         else item.classList.remove("selected");
     });
 
-    // Fechar modal de inventário automaticamente se aberto
+    // Fechar modal de inventÃ¡rio automaticamente se aberto
     const invModal = document.getElementById("inventory-modal");
     if (invModal) invModal.style.display = "none";
 
@@ -564,13 +565,13 @@ function renderAll() {
     updateSidebarCounts();
     renderWeather();
 
-    // Atualizar Versão do Jogo na Topbar e Footer
+    // Atualizar VersÃ£o do Jogo na Topbar e Footer
     const versionEls = document.querySelectorAll(".game-version, .game-version-footer");
     versionEls.forEach(el => {
         if (configs.game_version) el.textContent = configs.game_version;
     });
 
-    // Atualiza a árvore mundial se o modal estiver aberto
+    // Atualiza a Ã¡rvore mundial se o modal estiver aberto
     const treeModal = document.getElementById("worldtree-modal");
     if (treeModal && treeModal.style.display === "block") {
         renderWorldTree();
@@ -668,7 +669,7 @@ if (openHarvestBtn) {
     openHarvestBtn.onclick = () => {
         const readySlots = plotStates.filter(s => s.fase === 'ready');
         if (readySlots.length === 0) {
-            return showDialog({ title: "Colheita", message: "Não há plantas prontas para colher!" });
+            return showDialog({ title: "Colheita", message: "NÃ£o hÃ¡ plantas prontas para colher!" });
         }
         performAction('harvest_all');
     };
@@ -691,7 +692,7 @@ document.addEventListener('click', e => {
         } else if (action === 'harvest_all') {
             performAction('harvest_all');
         } else if (action === 'remove') {
-            if (confirm("Deseja realmente remover o conteúdo deste slot? (Nenhum recurso será devolvido)")) {
+            if (confirm("Deseja realmente remover o conteÃºdo deste slot? (Nenhum recurso serÃ¡ devolvido)")) {
                 performAction('remove_plant', index);
             }
         }
@@ -755,7 +756,7 @@ if (dailyBtn) {
     };
 }
 
-// Forçar recarregamento do inventário ao abrir o modal
+// ForÃ§ar recarregamento do inventÃ¡rio ao abrir o modal
 const openInvBtn = document.querySelector(".open-inventory");
 if (openInvBtn) {
     const originalClick = openInvBtn.onclick;
@@ -804,14 +805,14 @@ async function renderSeasonPass() {
 
         container.innerHTML = `
             <div style="background:rgba(0,0,0,0.3); padding:15px; border-radius:10px; margin-bottom:15px;">
-                <p>Nível Atual: <strong>${prog.nivel_atual}</strong></p>
+                <p>NÃ­vel Atual: <strong>${prog.nivel_atual}</strong></p>
                 <p>Progresso: ${prog.xp_atual} XP</p>
                 <div class="worldtree-progress"><div class="worldtree-progress-bar" style="width:${Math.min(100, prog.xp_atual)}%"></div></div>
             </div>
             <div class="inventory-grid">
                 ${tiers.map(t => `
                     <div class="inventory-item" style="${t.nivel <= prog.nivel_atual ? 'border-color:#4caf50' : 'opacity:0.6'}">
-                        <p>Nível ${t.nivel}</p>
+                        <p>NÃ­vel ${t.nivel}</p>
                         <img src="assets/${t.recompensa_tipo === 'diamante' ? 'diamante.png' : 'ouro.png'}" style="width:30px;">
                         <p>${t.recompensa_quantidade} ${t.recompensa_tipo}</p>
                         ${t.nivel <= prog.nivel_atual && !prog.claimed_levels.includes(t.nivel) ?
@@ -837,7 +838,7 @@ async function renderMarketplace(mode = 'browse') {
                     <img src="assets/${getItemAsset(id)}" style="width:50px;">
                     <p>${id}</p>
                     <input type="number" id="market-qty-${id}" value="1" min="1" max="${qty}" style="width:60px;">
-                    <input type="number" id="market-price-${id}" placeholder="Preço (Diamante)" style="width:80px; margin-top:5px;">
+                    <input type="number" id="market-price-${id}" placeholder="PreÃ§o (Diamante)" style="width:80px; margin-top:5px;">
                     <button class="buy-btn" onclick="listOnMarket('${id}')">Listar</button>
                 </div>
             `).join('');
@@ -864,7 +865,7 @@ async function renderMarketplace(mode = 'browse') {
 async function listOnMarket(itemId) {
     const qty = document.getElementById(`market-qty-${itemId}`).value;
     const price = document.getElementById(`market-price-${itemId}`).value;
-    if (!price || price <= 0) return alert("Defina um preço em diamantes");
+    if (!price || price <= 0) return alert("Defina um preÃ§o em diamantes");
     await performAction('marketplace_list', null, itemId, null, qty, price);
     renderMarketplace('sell');
 }
@@ -872,7 +873,7 @@ async function listOnMarket(itemId) {
 function renderWorldTree() {
     const panel = document.getElementById("worldtree-panel");
     if (!panel || !worldTreeState) {
-        if (panel) panel.innerHTML = "<p>Nenhum dado da Árvore Mundial disponível no momento.</p>";
+        if (panel) panel.innerHTML = "<p>Nenhum dado da Ãrvore Mundial disponÃ­vel no momento.</p>";
         return;
     }
 
@@ -889,20 +890,20 @@ function renderWorldTree() {
                     <div class="worldtree-progress-bar" style="width: ${progress}%"></div>
                 </div>
                 <p>Geral: ${worldTreeState.agua_atual} / ${worldTreeState.meta_agua} gotas</p>
-                <p>Sua contribuição ajuda a todos!</p>
+                <p>Sua contribuiÃ§Ã£o ajuda a todos!</p>
             </div>
         </div>
         <div class="worldtree-donations">
             <button class="worldtree-donate" onclick="performAction('water_world_tree')">
-                Regar Árvore (1 gota)
+                Regar Ãrvore (1 gota)
             </button>
             <button class="worldtree-donate" onclick="performAction('collect_tree_reward')" ${!worldTreeState.reward_available ? 'disabled' : ''}>
                 Coletar Recompensa Coletiva
             </button>
         </div>
         <div class="worldtree-donation-log">
-            <p><small>* Você pode contribuir com até 2 gotas a cada 6 horas.</small></p>
-            <p><small>* A recompensa de 100 Ouro é liberada para todos que contribuíram no dia, assim que a meta for atingida.</small></p>
+            <p><small>* VocÃª pode contribuir com atÃ© 2 gotas a cada 6 horas.</small></p>
+            <p><small>* A recompensa de 100 Ouro Ã© liberada para todos que contribuÃ­ram no dia, assim que a meta for atingida.</small></p>
         </div>
     `;
 }
@@ -919,7 +920,7 @@ async function renderAdminTab(tabName) {
             <div class="admin-account-manager">
                 <h3>Gerenciar Recursos do Jogador</h3>
                 <div class="admin-inline-actions">
-                    <input type="text" id="admin-user-search-query" placeholder="ID ou Login do Usuário">
+                    <input type="text" id="admin-user-search-query" placeholder="ID ou Login do UsuÃ¡rio">
                     <button class="admin-action primary" onclick="searchUserAccount()">Buscar</button>
                 </div>
                 <div id="admin-user-result" class="admin-grid" style="margin-top: 20px;">
@@ -932,7 +933,7 @@ async function renderAdminTab(tabName) {
             <div class="admin-slots-manager">
                 <h3>Gerenciar Slots de Jogador</h3>
                 <div class="admin-inline-actions">
-                    <input type="number" id="admin-slots-search-id" placeholder="ID do Usuário">
+                    <input type="number" id="admin-slots-search-id" placeholder="ID do UsuÃ¡rio">
                     <button class="admin-action primary" onclick="searchUserSlots()">Buscar Slots</button>
                 </div>
                 <div id="admin-slots-result" style="margin-top: 20px;"></div>
@@ -943,7 +944,7 @@ async function renderAdminTab(tabName) {
         const crops = adminData.items.filter(i => i.tipo === 'flower');
         content.innerHTML = `
             <div class="admin-crops-manager">
-                <h3>Parâmetros de Flores</h3>
+                <h3>ParÃ¢metros de Flores</h3>
                 <div class="admin-table-container">
                     <table class="admin-table">
                         <thead>
@@ -952,7 +953,7 @@ async function renderAdminTab(tabName) {
                                 <th>Label</th>
                                 <th>Tempo (h)</th>
                                 <th>Recompensa</th>
-                                <th>Ações</th>
+                                <th>AÃ§Ãµes</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -975,7 +976,7 @@ async function renderAdminTab(tabName) {
         const trees = adminData.items.filter(i => i.tipo === 'tree');
         content.innerHTML = `
             <div class="admin-crops-manager">
-                <h3>Parâmetros de Árvores</h3>
+                <h3>ParÃ¢metros de Ãrvores</h3>
                 <div class="admin-table-container">
                     <table class="admin-table">
                         <thead>
@@ -984,7 +985,7 @@ async function renderAdminTab(tabName) {
                                 <th>Label</th>
                                 <th>Tempo (h)</th>
                                 <th>Recompensa</th>
-                                <th>Ações</th>
+                                <th>AÃ§Ãµes</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1018,9 +1019,9 @@ async function renderAdminTab(tabName) {
                             <tr>
                                 <th>ID (Imagem)</th>
                                 <th>Label</th>
-                                <th>Preço Ouro</th>
-                                <th>Preço Diam.</th>
-                                <th>Ações</th>
+                                <th>PreÃ§o Ouro</th>
+                                <th>PreÃ§o Diam.</th>
+                                <th>AÃ§Ãµes</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1045,8 +1046,8 @@ async function renderAdminTab(tabName) {
         const adminData = await apiFetch(`${ADMIN_API_BASE_URL}/config`);
         content.innerHTML = `
             <div class="admin-mission-manager">
-                <h3>Modelos de Missões</h3>
-                <button class="admin-action" onclick="showMissionForm()">+ Criar Missão</button>
+                <h3>Modelos de MissÃµes</h3>
+                <button class="admin-action" onclick="showMissionForm()">+ Criar MissÃ£o</button>
                 <div class="admin-table-container">
                     <table class="admin-table">
                         <thead>
@@ -1056,7 +1057,7 @@ async function renderAdminTab(tabName) {
                                 <th>Tipo</th>
                                 <th>Meta</th>
                                 <th>Recompensa</th>
-                                <th>Ações</th>
+                                <th>AÃ§Ãµes</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1090,9 +1091,9 @@ async function renderAdminTab(tabName) {
                 <div class="admin-grid" style="margin-bottom: 20px;">
                     <div class="admin-card" style="border: 2px solid #ff3d31;">
                         <div class="admin-field">
-                            <label>Modo Manutenção</label>
+                            <label>Modo ManutenÃ§Ã£o</label>
                             <select id="config-maintenance_mode">
-                                <option value="true" ${isMaintenance ? 'selected' : ''}>ATIVADO (Bloquear Usuários)</option>
+                                <option value="true" ${isMaintenance ? 'selected' : ''}>ATIVADO (Bloquear UsuÃ¡rios)</option>
                                 <option value="false" ${!isMaintenance ? 'selected' : ''}>DESATIVADO (Normal)</option>
                             </select>
                             <button class="admin-action primary admin-danger" onclick="saveConfig('maintenance_mode')">Atualizar Modo</button>
@@ -1107,31 +1108,31 @@ async function renderAdminTab(tabName) {
                     </div>
                 </div>
 
-                <h3>Aparência e Layout</h3>
+                <h3>AparÃªncia e Layout</h3>
                 <div class="admin-card" style="margin-bottom: 20px; border: 2px solid #ffeb3b;">
                     <div class="admin-field">
-                        <label>Versão do Jogo</label>
+                        <label>VersÃ£o do Jogo</label>
                         <input type="text" id="config-game_version" value="${currentVersion}">
-                        <button class="admin-action" onclick="saveConfig('game_version')">Atualizar Versão</button>
+                        <button class="admin-action" onclick="saveConfig('game_version')">Atualizar VersÃ£o</button>
                     </div>
                     <div class="admin-field">
                         <label>Escolher Layout do Jogo</label>
                         <select id="config-active_layout" onchange="applyLayout(this.value)">
                             <option value="default" ${currentLayout === 'default' ? 'selected' : ''}>Original (Roxo)</option>
                             <option value="immersive" ${currentLayout === 'immersive' ? 'selected' : ''}>Imersivo (Glassmorphism)</option>
-                            <option value="retro" ${currentLayout === 'retro' ? 'selected' : ''}>Retrô RPG (Madeira/Papel)</option>
+                            <option value="retro" ${currentLayout === 'retro' ? 'selected' : ''}>RetrÃ´ RPG (Madeira/Papel)</option>
                             <option value="neon" ${currentLayout === 'neon' ? 'selected' : ''}>Neon Moderno (PvU 2.0)</option>
                             <option value="junina" ${currentLayout === 'junina' ? 'selected' : ''}>Festa Junina (Brasil)</option>
-                            <option value="kids" ${currentLayout === 'kids' ? 'selected' : ''}>Dia das Crianças</option>
+                            <option value="kids" ${currentLayout === 'kids' ? 'selected' : ''}>Dia das CrianÃ§as</option>
                             <option value="natal" ${currentLayout === 'natal' ? 'selected' : ''}>Natal</option>
                             <option value="anonovo" ${currentLayout === 'anonovo' ? 'selected' : ''}>Ano Novo</option>
                         </select>
-                        <p><small>O layout muda instantaneamente para você. Clique abaixo para salvar para todos.</small></p>
+                        <p><small>O layout muda instantaneamente para vocÃª. Clique abaixo para salvar para todos.</small></p>
                         <button class="admin-action primary" onclick="saveConfig('active_layout')">Salvar Layout para Todos</button>
                     </div>
                 </div>
 
-                <h3>Configurações Globais</h3>
+                <h3>ConfiguraÃ§Ãµes Globais</h3>
                 <div class="admin-grid">
                     ${adminData.configs.filter(c => c.chave !== 'active_layout').map(c => `
                         <div class="admin-card">
@@ -1151,8 +1152,8 @@ async function renderAdminTab(tabName) {
             <div class="admin-events">
                 <h3>Gerenciar Eventos Ativos</h3>
                 <div class="admin-card" style="border: 2px dashed #ffeb3b; text-align: center; padding: 40px;">
-                    <p>Módulo de Eventos Temporários</p>
-                    <small>Em breve: Eventos de Natal, Carnaval e Aniversário.</small>
+                    <p>MÃ³dulo de Eventos TemporÃ¡rios</p>
+                    <small>Em breve: Eventos de Natal, Carnaval e AniversÃ¡rio.</small>
                 </div>
             </div>
         `;
@@ -1160,7 +1161,7 @@ async function renderAdminTab(tabName) {
         const adminData = await apiFetch(`${ADMIN_API_BASE_URL}/config`);
         content.innerHTML = `
             <div class="admin-promos">
-                <h3>Promoções e Descontos</h3>
+                <h3>PromoÃ§Ãµes e Descontos</h3>
                 <div class="admin-card">
                     <div class="admin-field">
                         <label>Desconto Global na Loja (%)</label>
@@ -1172,10 +1173,10 @@ async function renderAdminTab(tabName) {
         `;
     } else if (tabName === 'dados') {
         const stats = await apiFetch(`${ADMIN_API_BASE_URL}/stats`);
-        // Simulação de Ranking Global (Será movido para endpoint específico no futuro)
+        // SimulaÃ§Ã£o de Ranking Global (SerÃ¡ movido para endpoint especÃ­fico no futuro)
         content.innerHTML = `
             <div class="admin-stats">
-                <h3>Estatísticas do Jogo</h3>
+                <h3>EstatÃ­sticas do Jogo</h3>
                 <div class="admin-grid">
                     <div class="admin-card">
                         <p>Total de Jogadores: <strong>${stats.totalUsers}</strong></p>
@@ -1184,7 +1185,7 @@ async function renderAdminTab(tabName) {
                         <p>Slots Desbloqueados: <strong>${stats.activeSlots}</strong></p>
                     </div>
                     <div class="admin-card">
-                        <p>Total Ouro em Circulação: <strong>${stats.totalEconomy}</strong></p>
+                        <p>Total Ouro em CirculaÃ§Ã£o: <strong>${stats.totalEconomy}</strong></p>
                     </div>
                 </div>
 
@@ -1192,7 +1193,7 @@ async function renderAdminTab(tabName) {
                 <div class="admin-table-container">
                     <table class="admin-table">
                         <thead>
-                            <tr><th>Pos</th><th>Usuário (ID)</th><th>Total Gerado</th><th>Status Pix</th></tr>
+                            <tr><th>Pos</th><th>UsuÃ¡rio (ID)</th><th>Total Gerado</th><th>Status Pix</th></tr>
                         </thead>
                         <tbody>
                             <tr><td>1</td><td>CleversonS (1)</td><td>150.000</td><td><button>Pagar</button></td></tr>
@@ -1201,7 +1202,7 @@ async function renderAdminTab(tabName) {
                         </tbody>
                     </table>
                 </div>
-                <button class="admin-action" style="margin-top:10px;">Exportar Relatório CSV</button>
+                <button class="admin-action" style="margin-top:10px;">Exportar RelatÃ³rio CSV</button>
             </div>
         `;
     } else if (tabName === 'logs') {
@@ -1212,7 +1213,7 @@ async function renderAdminTab(tabName) {
                 <div class="admin-table-container">
                     <table class="admin-table">
                         <thead>
-                            <tr><th>Data</th><th>Admin</th><th>Ação</th><th>Detalhes</th></tr>
+                            <tr><th>Data</th><th>Admin</th><th>AÃ§Ã£o</th><th>Detalhes</th></tr>
                         </thead>
                         <tbody>
                             ${logs.map(l => `
@@ -1232,7 +1233,7 @@ async function renderAdminTab(tabName) {
         const users = await apiFetch(`${ADMIN_API_BASE_URL}/users/list`);
         content.innerHTML = `
             <div class="admin-users-manager">
-                <h3>Lista de Usuários</h3>
+                <h3>Lista de UsuÃ¡rios</h3>
                 <div class="admin-table-container">
                     <table class="admin-table">
                         <thead>
@@ -1241,7 +1242,7 @@ async function renderAdminTab(tabName) {
                                 <th>Login</th>
                                 <th>Email</th>
                                 <th>Admin</th>
-                                <th>Ações</th>
+                                <th>AÃ§Ãµes</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1250,7 +1251,7 @@ async function renderAdminTab(tabName) {
                                     <td>${u.id}</td>
                                     <td>${u.login}</td>
                                     <td>${u.email || '-'}</td>
-                                    <td>${u.is_admin ? 'Sim' : 'Não'}</td>
+                                    <td>${u.is_admin ? 'Sim' : 'NÃ£o'}</td>
                                     <td>
                                         <button onclick="searchUserAccountById(${u.id})">Editar Recursos</button>
                                         ${u.id !== 1 ? `<button class="admin-danger" onclick="deleteUserAdmin(${u.id})">Excluir</button>` : ''}
@@ -1274,18 +1275,18 @@ async function searchUserAccountById(userId) {
 }
 
 async function deleteUserAdmin(userId) {
-    if (!confirm(`Tem certeza que deseja excluir o usuário ID ${userId}? Esta ação é irreversível.`)) return;
+    if (!confirm(`Tem certeza que deseja excluir o usuÃ¡rio ID ${userId}? Esta aÃ§Ã£o Ã© irreversÃ­vel.`)) return;
     try {
         await apiFetch(`${ADMIN_API_BASE_URL}/user/${userId}`, { method: 'DELETE' });
         renderAdminTab('usuarios');
     } catch (err) {
-        alert("Erro ao excluir usuário: " + err.message);
+        alert("Erro ao excluir usuÃ¡rio: " + err.message);
     }
 }
 
 async function searchUserAccount() {
     const query = document.getElementById("admin-user-search-query").value;
-    if (!query) return alert("Digite um ID ou Login válido.");
+    if (!query) return alert("Digite um ID ou Login vÃ¡lido.");
 
     try {
         const data = await apiFetch(`${ADMIN_API_BASE_URL}/user/search?q=${query}`);
@@ -1305,7 +1306,7 @@ async function searchUserAccount() {
             <div class="admin-card">
                 <h3>Recursos</h3>
                 <div class="admin-field">
-                    <label>ID do Usuário</label>
+                    <label>ID do UsuÃ¡rio</label>
                     <input type="text" value="${data.usuario_id}" disabled>
                 </div>
                 <div class="admin-field">
@@ -1321,7 +1322,7 @@ async function searchUserAccount() {
                     <input type="number" id="edit-user-energia" value="${data.energia}">
                 </div>
 
-                <h3 style="margin-top:20px;">Inventário (Itens)</h3>
+                <h3 style="margin-top:20px;">InventÃ¡rio (Itens)</h3>
                 ${invEntries}
 
                 <div class="admin-field" style="margin-top:10px;">
@@ -1337,20 +1338,20 @@ async function searchUserAccount() {
             </div>
         `;
     } catch (err) {
-        alert("Erro ao buscar usuário: " + err.message);
+        alert("Erro ao buscar usuÃ¡rio: " + err.message);
     }
 }
 
 async function searchUserSlots() {
     const id = document.getElementById("admin-slots-search-id").value;
-    if (!id) return alert("Digite um ID válido.");
+    if (!id) return alert("Digite um ID vÃ¡lido.");
     try {
         const res = await apiFetch(`${ADMIN_API_BASE_URL}/user/${id}/slots`);
         const container = document.getElementById("admin-slots-result");
         container.innerHTML = `
             <table class="admin-table">
                 <thead>
-                    <tr><th>Slot</th><th>Fase</th><th>Planta</th><th>Vaso</th><th>Ações</th></tr>
+                    <tr><th>Slot</th><th>Fase</th><th>Planta</th><th>Vaso</th><th>AÃ§Ãµes</th></tr>
                 </thead>
                 <tbody>
                     ${res.slots.map(s => `
@@ -1360,7 +1361,7 @@ async function searchUserSlots() {
                                 <select id="slot-fase-${s.id}">
                                     <option value="locked" ${s.fase === 'locked' ? 'selected' : ''}>Bloqueado</option>
                                     <option value="needsPot" ${s.fase === 'needsPot' ? 'selected' : ''}>Sem Vaso</option>
-                                    <option value="needsWater" ${s.fase === 'needsWater' ? 'selected' : ''}>Sem Água</option>
+                                    <option value="needsWater" ${s.fase === 'needsWater' ? 'selected' : ''}>Sem Ãgua</option>
                                     <option value="readyToPlant" ${s.fase === 'readyToPlant' ? 'selected' : ''}>Pronto p/ Plantar</option>
                                     <option value="growing" ${s.fase === 'growing' ? 'selected' : ''}>Crescendo</option>
                                     <option value="ready" ${s.fase === 'ready' ? 'selected' : ''}>Pronto p/ Colher</option>
@@ -1401,7 +1402,7 @@ async function deleteItemAdmin(itemId) {
 }
 
 async function deleteMissionAdmin(id) {
-    if (!confirm(`Tem certeza que deseja excluir a missão ID ${id}?`)) return;
+    if (!confirm(`Tem certeza que deseja excluir a missÃ£o ID ${id}?`)) return;
     try {
         await apiFetch(`${ADMIN_API_BASE_URL}/missions/${id}`, { method: 'DELETE' });
         renderAdminTab('missoes');
@@ -1412,7 +1413,7 @@ async function saveCropParams(itemId) {
     const grow = parseFloat(document.getElementById(`crop-grow-${itemId}`).value);
     const reward = parseFloat(document.getElementById(`crop-reward-${itemId}`).value);
 
-    // Precisamos buscar o objeto completo para não perder outros campos no save_item
+    // Precisamos buscar o objeto completo para nÃ£o perder outros campos no save_item
     const adminData = await apiFetch(`${ADMIN_API_BASE_URL}/config`);
     const item = adminData.items.find(i => i.item_id === itemId);
 
@@ -1422,7 +1423,7 @@ async function saveCropParams(itemId) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
     });
-    alert("Parâmetros salvos!");
+    alert("ParÃ¢metros salvos!");
 }
 
 async function saveUserAccount(userId) {
@@ -1469,7 +1470,7 @@ async function saveConfig(chave) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ chave, valor })
         });
-        alert('Configuração atualizada!');
+        alert('ConfiguraÃ§Ã£o atualizada!');
         renderAdminTab('regras');
     } catch (err) {
         alert('Erro ao salvar: ' + err.message);
@@ -1529,7 +1530,7 @@ function showMissionForm(mission = null) {
         </div>
     `;
 
-    document.getElementById("game-dialog-title").textContent = mission ? "Editar Missão" : "Nova Missão";
+    document.getElementById("game-dialog-title").textContent = mission ? "Editar MissÃ£o" : "Nova MissÃ£o";
     document.getElementById("game-dialog-message").innerHTML = formHtml;
     dialog.classList.remove("hidden");
 
@@ -1573,23 +1574,23 @@ function showItemForm(item = null) {
                 <img id="edit-preview" src="${item ? 'assets/'+getItemAsset(item.item_id) : ''}" style="width:50px; height:50px; margin-top:5px; border: 1px solid #555;">
             </div>
             <div class="form-group">
-                <label>Nome Visível (Label):</label>
+                <label>Nome VisÃ­vel (Label):</label>
                 <input type="text" id="edit-item-label" value="${item?.label || ''}">
             </div>
             <div class="form-group">
                 <label>Tipo:</label>
                 <select id="edit-item-tipo">
-                    <option value="item" ${item?.tipo === 'item' ? 'selected' : ''}>Consumível (Vaso/Água/Pesticida)</option>
+                    <option value="item" ${item?.tipo === 'item' ? 'selected' : ''}>ConsumÃ­vel (Vaso/Ãgua/Pesticida)</option>
                     <option value="flower" ${item?.tipo === 'flower' ? 'selected' : ''}>Flor</option>
-                    <option value="tree" ${item?.tipo === 'tree' ? 'selected' : ''}>Árvore</option>
+                    <option value="tree" ${item?.tipo === 'tree' ? 'selected' : ''}>Ãrvore</option>
                 </select>
             </div>
             <div class="form-group">
-                <label>Preço em Ouro:</label>
+                <label>PreÃ§o em Ouro:</label>
                 <input type="number" id="edit-item-price-coins" value="${item?.price_coins || 0}">
             </div>
             <div class="form-group">
-                <label>Preço em Diamantes:</label>
+                <label>PreÃ§o em Diamantes:</label>
                 <input type="number" id="edit-item-price-diamonds" value="${item?.price_diamonds || 0}">
             </div>
             <div class="form-group">
@@ -1685,17 +1686,17 @@ function syncPlotStateLocal(index) {
 
     const now = Date.now();
 
-    // 1. Expiração do Pote
+    // 1. ExpiraÃ§Ã£o do Pote
     if (state.pot_expires_at && new Date(state.pot_expires_at).getTime() < now) {
         state.fase = 'needsPot';
     }
 
-    // 2. Expiração da Água
+    // 2. ExpiraÃ§Ã£o da Ãgua
     if (state.water_expires_at && new Date(state.water_expires_at).getTime() < now) {
         if (state.fase !== 'needsPot') state.fase = 'needsWater';
     }
 
-    // 3. Progresso e transição para 'ready'
+    // 3. Progresso e transiÃ§Ã£o para 'ready'
     if (state.fase === 'growing') {
         const isPaused = state.crow_active || state.pest_active || state.fase === 'needsPot' || state.fase === 'needsWater';
 
@@ -1741,3 +1742,4 @@ setInterval(() => {
         }
     }
 }, 1000);
+
