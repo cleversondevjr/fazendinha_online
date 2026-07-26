@@ -12,3 +12,8 @@ node_modules/
 style_ok_*
 login_ok_*
 
+
+# Backups CSS locais
+style_*.css
+style_css_*.css
+
