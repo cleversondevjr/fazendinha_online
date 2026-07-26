@@ -4,8 +4,8 @@
   "description": "Fazendinha Online Game",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js"
+    "start": "node server/index.js",
+    "dev": "nodemon server/index.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
