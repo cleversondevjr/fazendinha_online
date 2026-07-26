@@ -2,3 +2,13 @@ node_modules/
 .env
 *.log
 .aider*
+
+# Backups temporarios locais
+*.bak
+*.before*
+*_backup_*
+*_before_*
+*_temp*
+style_ok_*
+login_ok_*
+
