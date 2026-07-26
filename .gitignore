@@ -17,3 +17,7 @@ login_ok_*
 style_*.css
 style_css_*.css
 
+
+# Backups style css antigos
+style.css.bak_*
+
