@@ -1,3 +1,39 @@
+﻿
+function getCheckinDiaAtual(){
+
+    const agora = new Date();
+
+    const dataSP = new Intl.DateTimeFormat(
+        "pt-BR",
+        {
+            timeZone:"America/Sao_Paulo",
+            day:"2-digit",
+            month:"2-digit",
+            year:"numeric"
+        }
+    ).format(agora);
+
+    const [dia,mes,ano] = dataSP.split("/");
+
+    const inicio = new Date(
+        `${ano}-${mes}-01T00:00:00-03:00`
+    );
+
+    const atual = new Date(
+        `${ano}-${mes}-${dia}T00:00:00-03:00`
+    );
+
+    const numeroDia =
+        Math.floor(
+            (atual - inicio) / 86400000
+        ) + 1;
+
+    if(numeroDia >=1 && numeroDia<=28){
+        return numeroDia;
+    }
+
+    return null;
+}
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
@@ -22,8 +58,7 @@ router.use(async (req, res, next) => {
             if (!isAdmin && !bypassList.includes(clientIp)) {
                 return res.status(503).json({
                     maintenance: true,
-                    message: "Servidor em manutenção para atualizações. Voltamos em breve!"
-                });
+                    message: "Servidor em manutenção para atualizações. Voltamos em breve!",});
             }
         }
         next();
@@ -142,7 +177,8 @@ router.get('/state', async (req, res) => {
         const userRes = await db.execute('SELECT is_admin FROM fazenda_usuarios WHERE id = $1', [userId]);
         const isAdmin = userRes.rows.length > 0 && !!userRes.rows[0].is_admin;
 
-        res.json({
+
+    res.json({
             isAdmin,
             inventory,
             slots,
@@ -153,6 +189,7 @@ router.get('/state', async (req, res) => {
             roadmap: featuresMap
         });
     } catch (err) {
+        console.error('[GAME ERROR]', err);
         res.status(500).json({ error: err.message });
     }
 });
@@ -343,19 +380,47 @@ router.post('/action', async (req, res) => {
             const resMission = await db.execute("SELECT m.*, t.reward_type, t.reward_amount FROM fazenda_missoes_jogador m JOIN fazenda_missoes_template t ON m.template_id = t.id WHERE m.id = $1 AND m.usuario_id = $2", [missionId, userId]);
             if (!resMission.rows.length) throw new Error('Missão não disponível');
             await db.execute("UPDATE fazenda_missoes_jogador SET claimed = TRUE WHERE id = $1", [missionId]);
-            await db.execute("INSERT INTO fazenda_inventario (usuario_id, item_id, quantidade) VALUES ($1, $2, $3) ON CONFLICT (usuario_id, item_id) DO UPDATE SET quantidade = fazenda_inventario.quantidade + $3", [userId, resMission.rows[0].reward_type, resMission.rows[0].reward_amount]);
+            await db.execute("INSERT INTO fazenda_inventario (usuario_id, item_id, quantidade) VALUES ($1, $2, $3) ON CONFLICT (usuario_id, item_id) DO UPDATE SET quantidade = fazenda_inventario.quantidade + $3", [userId, resMission.rows[0].reward_type, resMission.rows[0].reward_amount]);        // XP do Passe: missão concluída = 34 XP.
+        // 100 XP = 1 nível. As recompensas do Passe NÃO são entregues automaticamente.
+        await db.execute(`
+            INSERT INTO fazenda_season_pass_progresso
+                (usuario_id, nivel_atual, xp_atual, claimed_levels)
+            VALUES ($1, 0, 34, '{}')
+            ON CONFLICT (usuario_id)
+            DO UPDATE SET
+                xp_atual = fazenda_season_pass_progresso.xp_atual + 34,
+                updated_at = NOW()
+        `, [userId]);
 
-            // Regra Spec V1.0: 3 missões completadas = 1 nível no passe (simplificado: cada missão dá 34 XP, 100 XP = level up)
-            await db.execute("INSERT INTO fazenda_season_pass_progresso (usuario_id, xp_atual) VALUES ($1, 34) ON CONFLICT (usuario_id) DO UPDATE SET xp_atual = fazenda_season_pass_progresso.xp_atual + 34", [userId]);
+        const prog = (await db.execute(`
+            SELECT * FROM fazenda_season_pass_progresso
+            WHERE usuario_id = $1
+        `, [userId])).rows[0];
 
-            // Check Level Up
-            const prog = (await db.execute("SELECT * FROM fazenda_season_pass_progresso WHERE usuario_id = $1", [userId])).rows[0];
-            let leveledUp = false;
-            if (prog.xp_atual >= 100) {
-                await db.execute("UPDATE fazenda_season_pass_progresso SET nivel_atual = nivel_atual + 1, xp_atual = xp_atual - 100 WHERE usuario_id = $1", [userId]);
-                leveledUp = true;
-            }
-            return res.json({ success: true, leveledUp, newLevel: leveledUp ? prog.nivel_atual + 1 : prog.nivel_atual });
+        let nivelAtual = Number(prog.nivel_atual || 0);
+        let xpAtual = Number(prog.xp_atual || 0);
+
+        while (xpAtual >= 100 && nivelAtual < 30) {
+            xpAtual -= 100;
+            nivelAtual++;
+        }
+
+        await db.execute(`
+            UPDATE fazenda_season_pass_progresso
+            SET nivel_atual = $1,
+                xp_atual = $2,
+                updated_at = NOW()
+            WHERE usuario_id = $3
+        `, [nivelAtual, xpAtual, userId]);
+
+        return res.json({
+            success: true,
+            xpGanho: 34,
+            nivelAtual,
+            xpAtual,
+            xpNecessario: 100,
+            nivelMaximo: 30
+        });
         }
 
         if (action === 'claim_pass_reward') {
@@ -500,7 +565,7 @@ router.post('/action', async (req, res) => {
             const contributed = parseInt(contribRes.rows[0]?.valor || '0');
             if (contributed >= 2) throw new Error('Você já contribuiu 2 vezes hoje para a Árvore Mundial');
             await db.execute(
-                "INSERT INTO fazenda_config (chave, valor) VALUES ($1, $2) ON CONFLICT (chave) DO UPDATE SET valor = (CAST(valor AS INTEGER) + 1)::TEXT, updated_at = NOW()",
+                "INSERT INTO fazenda_config (chave, valor) VALUES ($1, $2) ON CONFLICT (chave) DO UPDATE SET valor = (CAST(fazenda_config.valor AS INTEGER) + 1)::TEXT, updated_at = NOW()",
                 [contribKey, '1']
             );
             await db.execute(
@@ -539,8 +604,11 @@ router.post('/action', async (req, res) => {
             await db.execute("UPDATE fazenda_inventario SET quantidade = quantidade + $1 WHERE usuario_id = $2 AND item_id = 'coins'", [pack.reward.toString(), userId]);
         }
 
-        res.json({ success: true });
+
+
+    res.json({ success: true });
     } catch (err) {
+        console.error('[GAME ERROR]', err);
         res.status(500).json({ error: err.message });
     }
 });
@@ -566,11 +634,14 @@ router.get('/season-pass', async (req, res) => {
             "SELECT * FROM fazenda_season_pass_template ORDER BY nivel ASC"
         );
 
-        res.json({
+
+
+    res.json({
             progress: prog,
             tiers: tiersRes.rows
         });
     } catch (err) {
+        console.error('[GAME ERROR]', err);
         res.status(500).json({ error: err.message });
     }
 });
@@ -591,8 +662,11 @@ router.get('/marketplace', async (req, res) => {
             LIMIT 50
         `, [userId]);
 
-        res.json({ items: itemsRes.rows });
+
+
+    res.json({ items: itemsRes.rows });
     } catch (err) {
+        console.error('[GAME ERROR]', err);
         res.status(500).json({ error: err.message });
     }
 });
@@ -600,44 +674,359 @@ router.get('/marketplace', async (req, res) => {
 // POST /api/game/checkin
 router.post('/checkin', async (req, res) => {
     const userId = req.userId;
+    const diaSolicitado = Number(req.body?.dia);
+
     try {
         const check = await isFeatureEnabled('CHECKIN_DIARIO');
-        if (!check.ativa) throw new Error(check.mensagem || 'Check-in diário ainda não disponível');
 
-        const today = new Date().toISOString().slice(0, 10);
-        const checkinKey = `checkin_${userId}_${today}`;
-        const alreadyChecked = (await db.execute("SELECT valor FROM fazenda_config WHERE chave = $1", [checkinKey])).rows[0];
-
-        if (alreadyChecked) {
-            throw new Error('Você já fez o check-in hoje! Volte amanhã.');
+        if (!check.ativa) {
+            throw new Error(check.mensagem || 'Check-in diário ainda não disponível');
         }
 
-        // Mark check-in
-        await db.execute(
-            "INSERT INTO fazenda_config (chave, valor) VALUES ($1, 'true') ON CONFLICT (chave) DO NOTHING",
-            [checkinKey]
-        );
-
-        // Reward: 100 coins + 5 energy
-        await db.execute(
-            "UPDATE fazenda_inventario SET quantidade = quantidade + 100 WHERE usuario_id = $1 AND item_id = 'coins'",
-            [userId]
-        );
-        await db.execute(
-            "UPDATE fazenda_inventario SET quantidade = LEAST(100, quantidade + 5) WHERE usuario_id = $1 AND item_id = 'energia'",
+        let progresso = await db.execute(
+            "SELECT * FROM fazenda_checkin_progresso WHERE usuario_id=$1",
             [userId]
         );
 
-        // XP for season pass
+        if (!progresso.rows.length) {
+            await db.execute(
+                `INSERT INTO fazenda_checkin_progresso
+                    (usuario_id,dia_atual,ciclo,ultima_data,recompensas_coletadas)
+                 VALUES($1,0,1,NULL,'[]'::jsonb)`,
+                [userId]
+            );
+
+            progresso = await db.execute(
+                "SELECT * FROM fazenda_checkin_progresso WHERE usuario_id=$1",
+                [userId]
+            );
+        }
+
+        const dados = progresso.rows[0];
+
+        const coletadas = Array.isArray(dados.recompensas_coletadas)
+            ? dados.recompensas_coletadas.map(Number)
+            : [];
+
+        const tipo = req.body?.tipo;
+
+    const semanas = {
+        1: [1,2,3,4,5,6,7],
+        2: [8,9,10,11,12,13,14],
+        3: [15,16,17,18,19,20,21],
+        4: [22,23,24,25,26,27,28]
+    };
+
+    const semanasCompletas = {
+        1: semanas[1].every(d => coletadas.includes(d)),
+        2: semanas[2].every(d => coletadas.includes(d)),
+        3: semanas[3].every(d => coletadas.includes(d)),
+        4: semanas[4].every(d => coletadas.includes(d))
+    };
+
+    const bonusMensalCompleto =
+        semanasCompletas[1] &&
+        semanasCompletas[2] &&
+        semanasCompletas[3] &&
+        semanasCompletas[4];
+
+    if (tipo === 'bonus_semanal') {
+        const semana = Number(req.body?.semana);
+
+        if (!Number.isInteger(semana) || semana < 1 || semana > 4) {
+            throw new Error('Bônus semanal inválido.');
+        }
+
+        if (!semanasCompletas[semana]) {
+            throw new Error(`O bônus da Semana ${semana} ainda não está liberado.`);
+        }
+
+        const coluna = `bonus_semana_${semana}`;
+
+        if (dados[coluna]) {
+            throw new Error(`O bônus da Semana ${semana} já foi coletado.`);
+        }
+
+        await db.execute("INSERT INTO fazenda_inventario (usuario_id, item_id, quantidade) VALUES ($1, 'diamante', 50) ON CONFLICT (usuario_id, item_id) DO UPDATE SET quantidade = fazenda_inventario.quantidade + 50", [userId]);
         await db.execute(
-            "INSERT INTO fazenda_season_pass_progresso (usuario_id, xp_atual) VALUES ($1, 10) ON CONFLICT (usuario_id) DO UPDATE SET xp_atual = fazenda_season_pass_progresso.xp_atual + 10",
+            `UPDATE fazenda_checkin_progresso
+             SET ${coluna}=TRUE,
+                 updated_at=NOW()
+             WHERE usuario_id=$1`,
             [userId]
         );
 
-        res.json({ success: true, message: 'Check-in realizado! +100 Ouro e +5 Energia' });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
+        return res.json({
+            success: true,
+            tipo: 'bonus_semanal',
+            semana,
+            message: `Bônus da Semana ${semana} coletado!`
+        });
     }
+
+    if (tipo === 'bonus_mensal') {
+        if (!bonusMensalCompleto) {
+            throw new Error('O bônus mensal ainda não está liberado.');
+        }
+
+        if (dados.bonus_mensal) {
+            throw new Error('O bônus mensal já foi coletado.');
+        }
+
+        await db.execute(
+            `UPDATE fazenda_checkin_progresso
+             SET bonus_mensal=TRUE,
+                 updated_at=NOW()
+             WHERE usuario_id=$1`,
+            [userId]
+        );
+
+        return res.json({
+            success: true,
+            tipo: 'bonus_mensal',
+            message: 'Bônus mensal coletado!'
+        });
+    }
+    const diaAtual = getCheckinDiaAtual();
+
+    if (!diaAtual) {
+        throw new Error('Check-in encerrado neste período.');
+    }
+
+    if (!Number.isInteger(diaSolicitado) || diaSolicitado < 1 || diaSolicitado > 28) {
+        throw new Error('Dia de check-in inválido.');
+    }
+
+    if (diaSolicitado > diaAtual) {
+        throw new Error('Este dia ainda não está disponível.');
+    }
+
+    if (coletadas.includes(diaSolicitado)) {
+            throw new Error(`O Dia ${diaSolicitado} já foi coletado.`);
+        }
+    const recompensa = await db.execute(
+            "SELECT * FROM fazenda_checkin_recompensas WHERE dia=$1",
+            [diaSolicitado]
+        );
+
+        if (!recompensa.rows.length) {
+            throw new Error('Recompensa não encontrada.');
+        }
+
+        const r = recompensa.rows[0];
+
+        /*
+         * Recompensas normais:
+         * coins, energia e diamante entram no inventário.
+         */
+        if (r.tipo_recompensa !== 'bonus' && r.item_id) {
+            await db.execute(
+                `INSERT INTO fazenda_inventario
+                    (usuario_id,item_id,quantidade)
+                 VALUES($1,$2,$3)
+                 ON CONFLICT(usuario_id,item_id)
+                 DO UPDATE SET quantidade =
+                    fazenda_inventario.quantidade + $3`,
+                [userId, r.item_id, r.quantidade]
+            );
+        }
+
+            /*
+     * Registra a recompensa coletada.
+     * Os bônus semanais são liberados quando TODOS os dias
+     * daquela semana estiverem coletados, independente da ordem.
+     */
+
+const novasColetadas = [...new Set([...coletadas, diaSolicitado])];
+
+const semana1CompletaAposColeta = [1,2,3,4,5,6,7].every(d => novasColetadas.includes(d));
+
+const semana2CompletaAposColeta = [8,9,10,11,12,13,14].every(d => novasColetadas.includes(d));
+
+const semana3CompletaAposColeta = [15,16,17,18,19,20,21].every(d => novasColetadas.includes(d));
+
+const semana4CompletaAposColeta = [22,23,24,25,26,27,28].every(d => novasColetadas.includes(d));
+
+const bonusMensalCompletoAposColeta = semana1CompletaAposColeta && semana2CompletaAposColeta && semana3CompletaAposColeta && semana4CompletaAposColeta;
+
+
+const bonusLiberados = {
+    semana1: semana1CompletaAposColeta && !dados.bonus_semana_1,
+    semana2: semana2CompletaAposColeta && !dados.bonus_semana_2,
+    semana3: semana3CompletaAposColeta && !dados.bonus_semana_3,
+    semana4: semana4CompletaAposColeta && !dados.bonus_semana_4,
+    mensal: bonusMensalCompletoAposColeta && !dados.bonus_mensal
+};
+
+    await db.execute(
+        `UPDATE fazenda_checkin_progresso
+         SET dia_atual=GREATEST(COALESCE(dia_atual,0),$1),
+             ultima_data=CURRENT_DATE,
+             recompensas_coletadas=
+                COALESCE(recompensas_coletadas,'[]'::jsonb)
+                || jsonb_build_array($1),
+             updated_at=NOW()
+         WHERE usuario_id=$2`,
+        [
+        diaSolicitado,
+        userId
+    ]
+    );    res.json({
+        success: true,
+        dia: diaSolicitado,
+        totalDias: 28,
+        recompensa: r,
+        message: r.tipo_recompensa === 'bonus'
+            ? `${r.titulo} coletado!`
+            : `Recompensa do Dia ${diaSolicitado} coletada!`,
+        bonusLiberados
+    });
+
+    } catch (err) {
+        console.error('[CHECKIN ERROR]', err);
+
+        res.status(500).json({
+            error: err.message
+        });
+    }
+});
+router.get('/checkin', async (req,res)=>{
+
+    const userId=req.userId;
+
+    try{
+
+        const progresso=await db.execute(
+            "SELECT * FROM fazenda_checkin_progresso WHERE usuario_id=$1",
+            [userId]
+        );
+
+        const recompensas=await db.execute(
+            "SELECT * FROM fazenda_checkin_recompensas ORDER BY dia"
+        );
+
+        const diaReal = getCheckinDiaAtual();
+
+const dadosProgresso = progresso.rows[0] || {
+        dia_atual:0,
+        ciclo:1,
+        recompensas_coletadas:[]
+    };
+
+    dadosProgresso.recompensas_coletadas = dadosProgresso.recompensas_coletadas || [];
+
+    const diaJogo = diaReal || 0;
+    dadosProgresso.dia_atual = diaJogo;
+    const coletados = dadosProgresso.recompensas_coletadas || [];
+
+    const diasStatus = recompensas.rows.map(r => ({
+        ...r,
+        status:
+            coletados.includes(r.dia)
+                ? "collected"
+                : r.dia === diaJogo
+                    ? "available"
+                    : r.dia < diaJogo
+                        ? "missed"
+                        : "locked"
+    }));
+
+
+
+const bonusSemanais = [
+    { semana: 1, liberado: [1,2,3,4,5,6,7].every(d => coletados.includes(d)) && !dadosProgresso.bonus_semana_1, coletado: !!dadosProgresso.bonus_semana_1 },
+    { semana: 2, liberado: [8,9,10,11,12,13,14].every(d => coletados.includes(d)) && !dadosProgresso.bonus_semana_2, coletado: !!dadosProgresso.bonus_semana_2 },
+    { semana: 3, liberado: [15,16,17,18,19,20,21].every(d => coletados.includes(d)) && !dadosProgresso.bonus_semana_3, coletado: !!dadosProgresso.bonus_semana_3 },
+    { semana: 4, liberado: [22,23,24,25,26,27,28].every(d => coletados.includes(d)) && !dadosProgresso.bonus_semana_4, coletado: !!dadosProgresso.bonus_semana_4 }
+];
+
+const bonusMensal = {
+    liberado: Array.from({ length: 28 }, (_, i) => i + 1).every(d => coletados.includes(d)) && !dadosProgresso.bonus_mensal,
+    coletado: !!dadosProgresso.bonus_mensal
+};
+res.json({
+    bonusSemanais,
+    bonusMensal,
+        progresso: dadosProgresso,
+        recompensas: diasStatus,
+    });
+
+    }catch(err){
+
+        res.status(500).json({
+            error:err.message
+        });
+
+    }
+
 });
 
 module.exports = router;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
